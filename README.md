@@ -15,7 +15,7 @@ https://github.com/m2sf/m2bsk/blob/master/grammar/m2cli-grammar.gll
 
 The grammar of the compiler's input language is in the project repository
 
-https://github.com/m2sf/m2bsk/blob/master/grammar/m2bsk-grammar.gll
+https://github.com/m2sf/m2c/blob/master/grammar/m2c-grammar.gll
 
 For a graphical representation of the grammar, see section
 [Syntax Diagrams](https://github.com/m2sf/m2bsk/wiki/Language-Specification-(D)-:-Syntax-Diagrams).
