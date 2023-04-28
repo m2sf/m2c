@@ -1,4 +1,4 @@
-## M2C — C-hosted Modula-2 to C Translator Project ##
+## M2C — A C-hosted Modula-2 to C Translator Project ##
 Welcome to the M2C Modula-2 to C Translator Project
 
 ### Objective ###
