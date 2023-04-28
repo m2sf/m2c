@@ -1,1 +1,1 @@
-linguist-vendored *.vim
+*.vim linguist-vendored
