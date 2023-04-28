@@ -1,1 +1,2 @@
+*.txt linguist-documentation
 *.vim linguist-vendored
