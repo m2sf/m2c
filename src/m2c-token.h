@@ -322,38 +322,6 @@ bool m2c_token_is_malformed_literal (m2c_token_t token);
 
 
 /* --------------------------------------------------------------------------
- * function m2c_token_for_resword(lexeme, length)
- * --------------------------------------------------------------------------
- * Tests if the given lexeme represents a reserved word and returns the
- * corresponding token or TOKEN_UNKNOWN if it does not match a reserved word.
- * ----------------------------------------------------------------------- */
-
-m2c_token_t m2c_token_for_resword (const char *lexeme, uint_t length);
-
-
-/* --------------------------------------------------------------------------
- * function m2c_lexeme_for_resword(token)
- * --------------------------------------------------------------------------
- * Returns an immutable pointer to a NUL terminated character string with
- * the lexeme for the reserved word represented by token.  Returns NULL
- * if the token does not represent a reserved word.
- * ----------------------------------------------------------------------- */
-
-const char *m2c_lexeme_for_resword (m2c_token_t token);
-
-
-/* --------------------------------------------------------------------------
- * function m2c_lexeme_for_special_symbol(token)
- * --------------------------------------------------------------------------
- * Returns an immutable pointer to a NUL terminated character string with
- * the lexeme for the special symbol represented by token.  Returns NULL
- * if the token does not represent a special symbol.
- * ----------------------------------------------------------------------- */
-
-const char *m2c_lexeme_for_special_symbol (m2c_token_t token);
-
-
-/* --------------------------------------------------------------------------
  * function m2c_name_for_token(token)
  * --------------------------------------------------------------------------
  * Returns an immutable pointer to a NUL terminated character string with
