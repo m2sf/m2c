@@ -38,8 +38,6 @@
 #ifndef M2C_TOKEN_H
 #define M2C_TOKEN_H
 
-#include "m2c-common.h"
-
 #include <stdbool.h>
 
 
@@ -53,186 +51,274 @@
 typedef enum {
   /* Null Token */
   
-  TOKEN_UNKNOWN,
+  TOKEN_INVALID,              /* 0 */
   
   /* Reserved Words */
 
-  TOKEN_AND,              /* "AND" */
-  TOKEN_ARRAY,            /* "ARRAY" */
-  TOKEN_BEGIN,            /* "BEGIN" */
-  TOKEN_BY,               /* "BY" */
-  TOKEN_CASE,             /* "CASE" */
-  TOKEN_CONST,            /* "CONST" */
-  TOKEN_DEFINITION,       /* "DEFINITION" */
-  TOKEN_DIV,              /* "DIV" */
-  TOKEN_DO,               /* "DO" */
-  TOKEN_ELSE,             /* "ELSE" */
-  TOKEN_ELSIF,            /* "ELSIF" */
-  TOKEN_END,              /* "END" */
-  TOKEN_EXIT,             /* "EXIT" */
-  TOKEN_EXPORT,           /* "EXPORT" */
-  TOKEN_FOR,              /* "FOR" */
-  TOKEN_FROM,             /* "FROM" */
-  TOKEN_IF,               /* "IF" */
-  TOKEN_IMPLEMENTATION,   /* "IMPLEMENTATION" */
-  TOKEN_IMPORT,           /* "IMPORT" */
-  TOKEN_IN,               /* "IN" */
-  TOKEN_LOOP,             /* "LOOP" */
-  TOKEN_MOD,              /* "MOD" */
-  TOKEN_MODULE,           /* "MODULE" */
-  TOKEN_NOT,              /* "NOT" */
-  TOKEN_OF,               /* "OF" */
-  TOKEN_OR,               /* "OR" */
-  TOKEN_POINTER,          /* "POINTER" */
-  TOKEN_PROCEDURE,        /* "PROCEDURE" */
-  TOKEN_QUALIFIED,        /* "QUALIFIED" */
-  TOKEN_RECORD,           /* "RECORD" */
-  TOKEN_REPEAT,           /* "REPEAT" */
-  TOKEN_RETURN,           /* "RETURN" */
-  TOKEN_SET,              /* "SET" */
-  TOKEN_THEN,             /* "THEN" */
-  TOKEN_TO,               /* "TO" */
-  TOKEN_TYPE,             /* "TYPE" */
-  TOKEN_UNTIL,            /* "UNTIL" */
-  TOKEN_VAR,              /* "VAR" */
-  TOKEN_WHILE,            /* "WHILE" */
-  TOKEN_WITH,             /* "WITH" */
+  TOKEN_ALIAS,                /* 1 */
+  TOKEN_AND,                  /* 2 */   /* operator */
+  TOKEN_ARGLIST,              /* 3 */
+  TOKEN_ARRAY,                /* 4 */
+  TOKEN_BEGIN,                /* 5 */
+  TOKEN_CASE,                 /* 6 */
+  TOKEN_CONST,                /* 7 */
+  TOKEN_COPY,                 /* 8 */
+  TOKEN_DEFINITION,           /* 9 */
+  TOKEN_DIV,                 /* 10 */   /* operator */
+  TOKEN_DO,                  /* 11 */
+  TOKEN_ELSE,                /* 12 */
+  TOKEN_ELSIF,               /* 13 */
+  TOKEN_END,                 /* 14 */
+  TOKEN_EXIT,                /* 15 */
+  TOKEN_FOR,                 /* 16 */
+  TOKEN_IF,                  /* 17 */
+  TOKEN_IMPLEMENTATION,      /* 18 */
+  TOKEN_IMPORT,              /* 19 */
+  TOKEN_IN,                  /* 20 */   /* operator */
+  TOKEN_LOOP,                /* 21 */
+  TOKEN_MOD,                 /* 22 */   /* operator */
+  TOKEN_MODULE,              /* 23 */
+  TOKEN_NEW,                 /* 24 */
+  TOKEN_NOP,                 /* 25 */
+  TOKEN_NOT,                 /* 26 */   /* operator */
+  TOKEN_OCTETSEQ,            /* 27 */
+  TOKEN_OF,                  /* 28 */
+  TOKEN_OPAQUE,              /* 29 */
+  TOKEN_OR,                  /* 30 */   /* operator */
+  TOKEN_POINTER,             /* 31 */
+  TOKEN_PROCEDURE,           /* 32 */
+  TOKEN_READ,                /* 33 */
+  TOKEN_RECORD,              /* 34 */
+  TOKEN_RELEASE,             /* 35 */
+  TOKEN_REPEAT,              /* 36 */
+  TOKEN_RETAIN,              /* 37 */
+  TOKEN_RETURN,              /* 38 */
+  TOKEN_SET,                 /* 39 */
+  TOKEN_THEN,                /* 40 */
+  TOKEN_TO,                  /* 41 */
+  TOKEN_TYPE,                /* 42 */
+  TOKEN_UNQUALIFIED,         /* 43 */
+  TOKEN_UNTIL,               /* 44 */
+  TOKEN_VAR,                 /* 45 */
+  TOKEN_WHILE,               /* 46 */
+  TOKEN_WRITE,               /* 47 */
   
   /* Identifiers */
   
-  TOKEN_IDENTIFIER,   /* ('_' | Letter) ('_' | Letter | Digit)* */
+  TOKEN_STDIDENT,            /* 48 */
+  TOKEN_PRIMITIVE,           /* 49 */
   
   /* Literals */
   
-  TOKEN_STRING,       /* '"' Character* '"' | "'" Character* "'" */
-  TOKEN_INTEGER,      /* OctDigit (OctDigit* 'B' | Digit* | HexDigit 'H')* */
-  TOKEN_REAL,         /* Digit* '.' (Digit* ('E' ('+'|'-')? Digit*)? )? */
-  TOKEN_CHAR,         /* "'" Character "'" | OctDigit* 'C' */
+  TOKEN_WHOLE_NUMBER,        /* 50 */
+  TOKEN_REAL_NUMBER,         /* 51 */
+  TOKEN_CHAR_CODE,           /* 52 */
+  TOKEN_QUOTED_STRING,       /* 53 */
+
+  /* Punctuation */
   
-  TOKEN_MALFORMED_STRING,    /* string without closing delimiter */
-  TOKEN_MALFORMED_INTEGER,   /* base-16 number without suffix H */
-  TOKEN_MALFORMED_REAL,      /* real number with E but no exponent */
+  TOKEN_COMMA,               /* 54 */
+  TOKEN_COLON,               /* 55 */
+  TOKEN_SEMICOLON,           /* 56 */
+  TOKEN_AT_SIGN,             /* 57 */
+  TOKEN_VERTICAL_BAR,        /* 58 */
+  TOKEN_DOT_DOT,             /* 59 */
+  TOKEN_ASSIGN,              /* 60 */
+  TOKEN_PLUS_PLUS,           /* 61 */
+  TOKEN_MINUS_MINUS,         /* 62 */
+  TOKEN_DOT_STAR,            /* 63 */
+
+  /* Paired Delimiters */
   
-  /* Pragmas */
+  TOKEN_LPAREN,              /* 64 */
+  TOKEN_RPAREN,              /* 65 */
+  TOKEN_LBRACKET,            /* 66 */
+  TOKEN_RPRACKET,            /* 67 */
+  TOKEN_LBRACE,              /* 68 */
+  TOKEN_RBRACE,              /* 69 */
+
+  /* Operators */
+
+  /* Non-Resword Level-1 Operators */
+
+  TOKEN_EQUAL,               /* 70 */   /* also used as punctuation */
+  TOKEN_NOT_EQUAL,           /* 71 */
+  TOKEN_LESS,                /* 72 */
+  TOKEN_LESS_OR_EQ,          /* 73 */
+  TOKEN_GREATER,             /* 74 */
+  TOKEN_GREATER_OR_EQ,       /* 75 */
+  TOKEN_IDENTITY,            /* 76 */
+
+  /* Non-Resword Level-2 Operators */
   
-  TOKEN_PRAGMA,   /* '<*' Character* '*>' */
+  TOKEN_PLUS,                /* 77 */   /* also used as punctuation */
+  TOKEN_MINUS,               /* 78 */
+  TOKEN_CONCAT,              /* 79 */
+  TOKEN_SET_DIFF,            /* 80 */
+
+  /* Non-Resword Level-3 Operators */
+
+  TOKEN_ASTERISK,            /* 81 */   /* also used as punctuation */
+  TOKEN_REAL_DIV,            /* 82 */
+
+  /* Non-Resword Level-4 Operators */
+
+  /* none */
+
+  /* Non-Resword Level-5 Operators */
+
+  TOKEN_TYPE_CONV,           /* 83 */
+
+  /* Non-Resword Level-6 Operators */
+
+  TOKEN_DOT,                 /* 84 */   /* also used as punctuation */
+  TOKEN_DEREF,               /* 85 */
+
+  /* End Of File Marker */
+
+  TOKEN_EOF,                 /* 86 */
   
-  /* Special Symbols */
+  /* Non-Semantic Symbols */
+
+  /* Comments and Pragmas */
   
-  TOKEN_PLUS,                /* '+' */
-  TOKEN_MINUS,               /* '-' */
-  TOKEN_EQUAL,               /* '+' */
-  TOKEN_NOTEQUAL,            /* '#' */
-  TOKEN_LESS,                /* '<' */
-  TOKEN_LESS_EQUAL,          /* '<=' */
-  TOKEN_GREATER,             /* '>' */
-  TOKEN_GREATER_EQUAL,       /* '>=' */
-  TOKEN_ASTERISK,            /* '*' */
-  TOKEN_SOLIDUS,             /* '/' */
-  TOKEN_ASSIGN,              /* ':=' */
-  TOKEN_COMMA,               /* ',' */
-  TOKEN_PERIOD,              /* '.' */
-  TOKEN_COLON,               /* ':' */
-  TOKEN_SEMICOLON,           /* ';' */
-  TOKEN_RANGE,               /* '..' */
-  TOKEN_DEREF,               /* '^' */
-  TOKEN_BAR,                 /* '|' */
-  TOKEN_LEFT_PAREN,          /* '(' */
-  TOKEN_RIGHT_PAREN,         /* ')' */
-  TOKEN_LEFT_BRACKET,        /* '[' */
-  TOKEN_RIGHT_BRACKET,       /* ']' */
-  TOKEN_LEFT_BRACE,          /* '{' */
-  TOKEN_RIGHT_BRACE,         /* '}' */
-  TOKEN_END_OF_FILE,
+  TOKEN_LINE_COMMENT,        /* 87 */
+  TOKEN_BLOCK_COMMENT,       /* 88 */
+  TOKEN_PRAGMA,              /* 89 */
   
-  /* Synonyms */
+  /* Malformed Symbols */
   
-  /*  '&' is a synonym for AND and mapped to TOKEN_AND */
-  /*  '~' is a synonym for NOT and mapped to TOKEN_NOT */
-  /* '<>' is a synonym for '#' and mapped to TOKEN_NOTEQUAL */
+  TOKEN_MALFORMED_STRING,    /* 90 */   /* string without closing delimiter */
+  TOKEN_MALFORMED_INTEGER,   /* 91 */   /* base-16 number without suffix H */
+  TOKEN_MALFORMED_REAL,      /* 92 */   /* real number with E but no exponent */
   
   /* Enumeration Terminator */
   
-  TOKEN_END_MARK /* marks the end of this enumeration */
+  TOKEN_END_MARK             /* 93 */   /* marks the end of the enumeration */
 } m2c_token_t;
 
 
 /* --------------------------------------------------------------------------
- * legacy translations
+ * convenience aliases
  * ----------------------------------------------------------------------- */
 
-#define TOKEN_ADDITION TOKEN_PLUS
-#define TOKEN_SUBTRACTION TOKEN_MINUS
-#define TOKEN_MULTIPLICATION TOKEN_ASTERISK
-#define TOKEN_DIVISION TOKEN_SOLIDUS
-#define TOKEN_LESS_THAN TOKEN_LESS
-#define TOKEN_LESS_THAN_OR_EQUAL TOKEN_LESS_EQUAL
-#define TOKEN_GREATER_THAN TOKEN_GREATER
-#define TOKEN_GREATER_THAN_OR_EQUAL TOKEN_GREATER_EQUAL
-#define TOKEN_ASSIGNMENT TOKEN_ASSIGN
-#define TOKEN_LEFT_PARENTHESIS TOKEN_LEFT_PAREN
-#define TOKEN_RIGHT_PARENTHESIS TOKEN_RIGHT_PAREN
+#define TOKEN_LESS_OR_EQUAL TOKEN_LESS_OR_EQ
+#define TOKEN_GREATER_OR_EQUAL TOKEN_GREATER_OR_EQ
 
 
 /* --------------------------------------------------------------------------
  * first and last reserved word tokens
  * ----------------------------------------------------------------------- */
 
-#define FIRST_RESERVED_WORD_TOKEN TOKEN_AND
-#define LAST_RESERVED_WORD_TOKEN TOKEN_WITH
+#define FIRST_RESERVED_WORD_TOKEN TOKEN_ALIAS
+#define LAST_RESERVED_WORD_TOKEN TOKEN_WRITE
 
 
 /* --------------------------------------------------------------------------
- * first and last special symbol tokens
+ * first and last semantic tokens
  * ----------------------------------------------------------------------- */
 
-#define FIRST_SPECIAL_SYMBOL_TOKEN TOKEN_PLUS
-#define LAST_SPECIAL_SYMBOL_TOKEN TOKEN_RIGHT_BRACE
+#define FIRST_SEMANTIC_TOKEN TOKEN_FIRST_RESERVED_WORD
+#define LAST_SEMANTIC_TOKEN TOKEN_EOF
 
 
 /* --------------------------------------------------------------------------
  * function m2c_is_valid_token(token)
  * --------------------------------------------------------------------------
- * Returns TRUE if token represents a terminal symbol, otherwise FALSE.
+ * Returns true if token represents a terminal symbol, otherwise false.
  * ----------------------------------------------------------------------- */
 
 bool m2c_is_valid_token (m2c_token_t token);
 
 
 /* --------------------------------------------------------------------------
- * function m2c_is_resword_token(token)
+ * function m2c_token_is_resword(token)
  * --------------------------------------------------------------------------
- * Returns TRUE if token represents a reserved word, otherwise FALSE.
+ * Returns true if token represents a reserved word, otherwise true.
  * ----------------------------------------------------------------------- */
 
-bool m2c_is_resword_token (m2c_token_t token);
+bool m2c_token_is_resword (m2c_token_t token);
 
 
 /* --------------------------------------------------------------------------
- * function m2c_is_literal_token(token)
+ * function m2c_token_is_identifier(token)
  * --------------------------------------------------------------------------
- * Returns TRUE if token represents a literal, otherwise FALSE.
+ * Returns true if token represents an identifier, otherwise true.
  * ----------------------------------------------------------------------- */
 
-bool m2c_is_literal_token (m2c_token_t token);
+bool m2c_token_is_identifier (m2c_token_t token);
 
 
 /* --------------------------------------------------------------------------
- * function m2c_is_malformed_literal_token(token)
+ * function m2c_token_is_number(token)
  * --------------------------------------------------------------------------
- * Returns TRUE if token represents a malformed literal, otherwise FALSE.
+ * Returns true if token represents a number literal, otherwise false.
  * ----------------------------------------------------------------------- */
 
-bool m2c_is_malformed_literal_token (m2c_token_t token);
+bool m2c_token_is_number (m2c_token_t token);
 
 
 /* --------------------------------------------------------------------------
- * function m2c_is_special_symbol_token(token)
+ * function m2c_token_is_const_expr_literal(token)
  * --------------------------------------------------------------------------
- * Returns TRUE if token represents a special symbol, otherwise FALSE.
+ * Returns true if token represents a const expression literal, else false.
  * ----------------------------------------------------------------------- */
 
-bool m2c_is_special_symbol_token (m2c_token_t token);
+bool m2c_token_is_const_expr_literal (m2c_token_t token);
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_token_is_oper_l1(token)
+ * --------------------------------------------------------------------------
+ * Returns true if token represents a level-1 operator, otherwise false.
+ * ----------------------------------------------------------------------- */
+
+bool m2c_token_is_oper_l1 (m2c_token_t token);
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_token_is_oper_l2(token)
+ * --------------------------------------------------------------------------
+ * Returns true if token represents a level-2 operator, otherwise false.
+ * ----------------------------------------------------------------------- */
+
+bool m2c_token_is_oper_l2 (m2c_token_t token);
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_token_is_oper_l3(token)
+ * --------------------------------------------------------------------------
+ * Returns true if token represents a level-3 operator, otherwise false.
+ * ----------------------------------------------------------------------- */
+
+bool m2c_token_is_oper_l3 (m2c_token_t token);
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_token_is_comment(token)
+ * --------------------------------------------------------------------------
+ * Returns true if token represents a comment, otherwise false.
+ * ----------------------------------------------------------------------- */
+
+bool m2c_token_is_comment (m2c_token_t token);
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_token_is_pragma(token)
+ * --------------------------------------------------------------------------
+ * Returns true if token represents a pragma, otherwise false.
+ * ----------------------------------------------------------------------- */
+
+bool m2c_token_is_pragma (m2c_token_t token);
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_token_is_malformed_literal(token)
+ * --------------------------------------------------------------------------
+ * Returns true if token represents a malformed literal, otherwise false.
+ * ----------------------------------------------------------------------- */
+
+bool m2c_token_is_malformed_literal (m2c_token_t token);
 
 
 /* --------------------------------------------------------------------------
