@@ -44,7 +44,7 @@
 /* ---------------------------------------------------------------------------
  * type exl_token_t
  * ---------------------------------------------------------------------------
- * Enumerated token values representing command line arguments.
+ * Enumerated token values representing export list terminal symbols.
  * ------------------------------------------------------------------------ */
 
 typedef enum {
