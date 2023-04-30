@@ -38,7 +38,7 @@
 #ifndef M2C_TOKEN_H
 #define M2C_TOKEN_H
 
-#include "m2-common.h"
+#include "m2c-common.h"
 
 #include <stdbool.h>
 
