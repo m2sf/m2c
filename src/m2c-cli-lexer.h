@@ -17,7 +17,7 @@
  *
  * @file
  *
- * m2c-cli-lexer.c
+ * m2c-cli-lexer.h
  *
  * Public interface of M2C command line lexer module.
  *
