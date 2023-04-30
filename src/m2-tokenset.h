@@ -1,36 +1,38 @@
 /* M2C Modula-2 Compiler & Translator
- * Copyright (c) 2015 Benjamin Kowarsch
+ *
+ * Copyright (c) 2015-2023 Benjamin Kowarsch
  *
  * @synopsis
  *
- * M2C is a compiler and translator for the classic Modula-2 programming
- * language as described in the 3rd and 4th editions of Niklaus Wirth's
- * book "Programming in Modula-2" (PIM) published by Springer Verlag.
+ * M2C  is a  Modula-2 to C translator  and  via-C compiler  for the bootstrap
+ * subset of the revised Modula-2 language described in
  *
- * In compiler mode, M2C compiles Modula-2 source via C to object files or
- * executables using the host system's resident C compiler and linker.
- * In translator mode, it translates Modula-2 source to C source.
+ * https://github.com/m2sf/PDFs/blob/master/M2BSK%20Language%20Description.pdf
  *
- * Further information at http://savannah.nongnu.org/projects/m2c/
+ * In compiler mode,  M2C compiles Modula-2 source files via C to object files
+ * or executables  using the host system's resident C compiler and linker.  In
+ * translator mode, it translates Modula-2 source files to C source files.
+ *
+ * Further information at https://github.com/m2sf/m2c/wiki
  *
  * @file
  *
- * m2-tokenset.h
+ * m2c-tokenset.h
  *
- * Public interface for M2C tokenset type.
+ * Public interface of M2C tokenset type.
  *
  * @license
  *
- * M2C is free software: you can redistribute and/or modify it under the
- * terms of the GNU Lesser General Public License (LGPL) either version 2.1
- * or at your choice version 3 as published by the Free Software Foundation.
+ * M2C is free software:  You can redistribute  and modify it  under the terms
+ * of the  GNU Lesser General Public License (LGPL)  either version 2.1  or at
+ * your choice version 3, both as published by the Free Software Foundation.
  *
- * M2C is distributed in the hope that it will be useful,  but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  Read the license for more details.
+ * M2C  is distributed  in the hope  that it will be useful,  but  WITHOUT ANY
+ * WARRANTY;  without even  the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR ANY PARTICULAR PURPOSE.  Read the license for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with m2c.  If not, see <https://www.gnu.org/copyleft/lesser.html>.
+ * You should have  received  a copy of the  GNU Lesser General Public License
+ * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.
  */
 
 #ifndef M2C_TOKENSET_H
