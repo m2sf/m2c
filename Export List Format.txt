@@ -1,0 +1,85 @@
+Simple Format for Export List Files
+
+
+Purpose
+
+Upon processing a definition module, a list of all exported identifiers and
+their kind is written into an export list file.
+
+
+File Format (EBNF)
+
+exportList :=
+  header section* EOF
+  ;
+
+header :=
+  exporter importers?
+  ;
+
+exporter :=
+  'X:' Ident ';'
+  ;
+
+importers :=
+  'I:' ( '*' | identlist) ';'
+  ;
+
+identlist :=
+  ident (',' ident)* ';'
+  ;
+
+section :=
+  typeSection | constSection | varSection | funcSection | procSection
+  ;
+
+typeSection :=
+  'T:' identlist ';'
+  ;
+
+constSection :=
+  'C:' qualident (',' qualident )* ';'
+  ;
+
+qualident :=
+  Ident ('.' Ident)
+  ;
+
+varSection :=
+  'V:' identlist ';'
+  ;
+
+funcSection :=
+  'F:' identlist ';'
+  ;
+
+procSection :=
+  'P:' identList ';'
+  ;
+
+Ident :=
+  Letter (Letter | Digit)*
+  ;
+
+/* with option --lowline-identifiers */
+
+Ident :=
+  Letter ('_' (Letter | Digit))*
+  ;
+
+
+Example
+
+X:FooLib; I:*;
+T:Foo, Bar, Baz;
+C:bam, boo;
+V:foo, bar;
+F:fooBar, bazBam;
+P:FooBar, BazBam;
+
+
+File Extension
+
+The file extension is '.exl'.
+
+[END OF DOCUMENT]
