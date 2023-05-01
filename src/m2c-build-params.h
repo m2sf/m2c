@@ -1,4 +1,4 @@
-/* m2-build-params.h -- build parameters for M2C -- public domain file */
+/* m2c-build-params.h -- build parameters for M2C -- public domain file */
 
 #ifndef M2C_BUILD_PARAMS_H
 #define M2C_BUILD_PARAMS_H
