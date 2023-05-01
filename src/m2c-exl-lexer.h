@@ -19,7 +19,7 @@
  *
  * m2c-exl-lexer.h
  *
- * Public interface of M2C export list lexer module.
+ * Public interface of M2C export list file lexer module.
  *
  * @license
  *

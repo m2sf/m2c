@@ -19,7 +19,7 @@
  *
  * m2c-exl-parser.h
  *
- * Public interface of M2C export list parser module.
+ * Public interface of M2C export list file parser module.
  *
  * @license
  *
