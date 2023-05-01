@@ -19,7 +19,7 @@
  *
  * m2c-fifo.h
  *
- * Implementation of M2C generic queue module.
+ * Public interface of M2C generic queue module.
  *
  * @license
  *
