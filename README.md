@@ -4,9 +4,11 @@ Welcome to the M2C Modula-2 to C Translator and Compiler Project
 
 ### Objective ###
 
-The objective of this project is to develop a via-C bootstrap compiler for the revised Modula-2 language described in
+The objective of the project is to develop a via-C bootstrap compiler for the revised Modula-2 language described in
 
-[*Modula-2 Revision 2010, Language Report for the Bootstrap Kernel Subset (BSK)*, by Kowarsch and Sutcliffe, July 2020](https://github.com/m2sf/PDFs/blob/master/M2BSK%20Language%20Description.pdf).
+[*Modula-2 Revision 2010, Language Report for the Bootstrap Kernel Subset (BSK)*](https://github.com/m2sf/PDFs/blob/master/M2BSK%20Language%20Description.pdf),
+
+by Kowarsch & Sutcliffe, revised July 2020.
 
 
 ### Grammar ###
