@@ -25,7 +25,7 @@ https://github.com/m2sf/PDFs/blob/master/M2BSK%20Language%20Description.pdf
 
 For a PIM Modula-2 translator see the [M2T project](https://github.com/trijezdci/m2t).
 
-For an ISO Moulda-2 compiler that generates C sources, see [XDS-C](https://github.com/excelsior-oss/xds#xds-c).
+For an ISO Modula-2 compiler that generates C sources, see [XDS-C](https://github.com/excelsior-oss/xds#xds-c).
 
 
 ### Grammar ###
