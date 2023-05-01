@@ -11,7 +11,7 @@ The objective of this project is to develop a via-C bootstrap compiler for the r
 
 The grammar of the translator's command line interface is in the project repository
 
-https://github.com/m2sf/m2bsk/blob/master/grammar/m2cli-grammar.gll
+https://github.com/m2sf/m2c/blob/main/grammar/cli-grammar.gll
 
 The grammar of the compiler's input language is in the project repository
 
@@ -40,7 +40,7 @@ For a list of facilities that have been omitted in the subset, see [Omissions](h
 
 ### Targets ###
 
-The translator will generate C99 sources that can be compiled with any C compiler that supports the C99 standard.
+The translator will generate C99 sources compileable with any C compiler that supports the C99 standard.
 
 ### License ###
 
