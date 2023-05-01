@@ -124,16 +124,16 @@ Examples
 Procedure Identifiers
 
 The C representations of all Modula-2 procedure identifiers are marked with the procedure
-prefix void_.
+prefix do_.
 
 To obtain the C representation of a procedure identifier, the identifier is converted to
 snake_case and the procedure prefix is prepended.
 
 Examples
 
-* A non-local non-exported Modula-2 procedure identifier FooBar is mapped to void_foo_bar.
-* A Modula-2 procedure identifier BazBam exported by module FooBar is mapped to foo_bar__void_baz_bam.
-* A local Modula-2 procedure identifier BazBam in procedure FooBar is mapped to void_baz_bam_0XXXXX
+* A non-local non-exported Modula-2 procedure identifier FooBar is mapped to do_foo_bar.
+* A Modula-2 procedure identifier BazBam exported by module FooBar is mapped to foo_bar__do_baz_bam.
+* A local Modula-2 procedure identifier BazBam in procedure FooBar is mapped to do_baz_bam_0XXXXX
   where XXXXX is the base-36 hash value of FooBar.
 
 
@@ -142,9 +142,10 @@ Identifiers whose Mapping coincides with Reserved Words of C
 Where the final C representation of a Modula-2 identifier coincides with a reserved word of C,
 its first letter is capitalised.
 
-Example
+Examples
 
 * A local Modula-2 variable switch is mapped to Switch.
+* A non-exported Modula-2 function float is mapped to Float.
 
 
 Naming Convention
@@ -154,9 +155,6 @@ This mapping scheme was designed with the common Modula-2 naming convention in m
 * Module, type and procedure identifiers are in TitleCase,
 * Math constant, variable and function identifiers are in camelCase,
 * Other constant identifiers are consistently either in camelCase or TitleCase.
-
-The scheme should also work when using other naming conventions, but care must then be taken by
-the programmer to avoid name collisions between C translations of Modula-2 identifiers.
 
 
 [END OF DOCUMENT]
