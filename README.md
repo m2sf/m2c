@@ -4,11 +4,26 @@ Welcome to the M2C Modula-2 to C Translator and Compiler Project
 
 ### Objective ###
 
-The project's objective is to develop a via-C bootstrap compiler for the revised Modula-2 language described in
+The objective of this project is to develop a highly portable, reliable, readable
+and maintainable Modula-2 to C translator and via-C compiler that generates
+authentic and readable C source code.
 
-[*Modula-2 Revision 2010, Language Report for the Bootstrap Kernel Subset (BSK)*](https://github.com/m2sf/PDFs/blob/master/M2BSK%20Language%20Description.pdf),
 
-by Kowarsch & Sutcliffe, revised July 2020.
+### Language ###
+
+M2C supports the bootstrap kernel (BSK) subset of Modula-2 R10 (M2R10).
+
+An online version of the language specification is here:
+
+https://github.com/m2sf/m2bsk/wiki/Language-Specification
+
+The authoritative language specification (PDF) is available for download:
+
+https://github.com/m2sf/PDFs/blob/master/M2BSK%20Language%20Description.pdf
+
+**M2C does not support the earlier PIM or ISO dialects.**
+
+For a PIM Modula-2 translator see the [M2T project](https://github.com/trijezdci/m2t).
 
 
 ### Grammar ###
@@ -17,35 +32,12 @@ The grammar of M2C's command line interface is in the project repository
 
 https://github.com/m2sf/m2c/blob/main/grammar/cli-grammar.gll
 
-The grammar of M2C's input language is in the project repository
+The grammar of Modula-2 R10 is in the project repository
 
 https://github.com/m2sf/m2c/blob/main/grammar/m2c-grammar.gll
 
 For a graphical representation of the grammar, see section
 [Syntax Diagrams](https://github.com/m2sf/m2bsk/wiki/Language-Specification-(D)-:-Syntax-Diagrams).
-
-
-### Language Specification ###
-
-An online version of the language specification is here:
-
-https://github.com/m2sf/m2bsk/wiki/Language-Specification
-
-
-The authoritative language specification (PDF) is available for download:
-
-https://github.com/m2sf/PDFs/blob/master/M2BSK%20Language%20Description.pdf
-
-
-### Scope ###
-
-M2C supports the Bootstrap Kernel (BSK) **subset** of Modula-2 R10.
-
-For a list of facilities that have been omitted in the subset, see [Omissions](https://github.com/m2sf/m2bsk/wiki/Omissions).
-
-**M2C does not support the earlier PIM or ISO dialects.**
-
-For a PIM Modula-2 translator see the [M2T project](https://github.com/trijezdci/m2t).
 
 
 ### Targets ###
@@ -67,7 +59,11 @@ M2C is written in a subset of the C99 standard of C.
 
 ### OS support ###
 
-M2C will run on any operating system with target support by the host-compiler.
+M2C will compile and run on any target system supported by the host-compiler.
+
+However, M2C's file system acces and pathname parsing libraries are system dependent.
+Library versions for AmigaOS, DOS/Windows, POSIX/Unix and OpenVMS are provided. For
+any other systems, these libraries may have to be adapted.
 
 
 ### Development Languages ###
