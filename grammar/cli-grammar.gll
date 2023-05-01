@@ -1,0 +1,136 @@
+/* M2C Modula-2 Compiler & Translator
+ *
+ * Copyright (c) 2015-2023 Benjamin Kowarsch
+ *
+ * @synopsis
+ *
+ * M2C  is a  Modula-2 to C translator  and  via-C compiler  for the bootstrap
+ * subset of the revised Modula-2 language described in
+ *
+ * https://github.com/m2sf/PDFs/blob/master/M2BSK%20Language%20Description.pdf
+ *
+ * In compiler mode,  M2C compiles Modula-2 source files via C to object files
+ * or executables  using the host system's resident C compiler and linker.  In
+ * translator mode, it translates Modula-2 source files to C source files.
+ *
+ * Further information at https://github.com/m2sf/m2c/wiki
+ *
+ * @file
+ *
+ * cli-grammar.gll
+ *
+ * Grammar of M2C command line interface.
+ *
+ * @license
+ *
+ * M2C is free software:  You can redistribute  and modify it  under the terms
+ * of the  GNU Lesser General Public License (LGPL)  either version 2.1  or at
+ * your choice version 3, both as published by the Free Software Foundation.
+ *
+ * M2C  is distributed  in the hope  that it will be useful,  but  WITHOUT ANY
+ * WARRANTY;  without even  the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR ANY PARTICULAR PURPOSE.  Read the license for more details.
+ *
+ * You should have  received  a copy of the  GNU Lesser General Public License
+ * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.
+ */
+
+grammar m2cli;
+
+/* * *   R e s e r v e d   W o r d s   * * */
+
+/* to do */
+
+
+/* * *   N o n - T e r m i n a l   S y m b o l s   * * */
+
+args :=
+  infoRequest | compilationRequest
+  ;
+
+infoRequest :=
+  --help | -h | --version | -V | --license
+  ;
+  
+compilationRequest :=
+  products? capabilities? sourceFile diagnostics?
+  ;
+
+products :=
+  ( singleProduct | multipleProducts ) commentOption?
+  ;
+
+singleProduct :=
+  --syntax-only | --ast-only | --graph-only | --xlat-only | --obj-only
+  ;
+
+multipleProducts :=
+  ( ast | graph | xlat | obj )+
+  ;
+
+ast :=
+  --ast | --no-ast
+  ;
+
+graph :=
+  --graph | --no-graph
+  ;
+
+xlat :=
+  --xlat | --no-xlat
+  ;
+
+obj :=
+  --obj | --no-obj
+  ;
+
+commentOption :=
+  --preserve-comments | --strip-comments
+  ;
+
+capabilities :=
+  ( dollarIdentifiers | lowlineIdentifiers )+
+  ;
+
+sourceFile :=
+  <platform dependent path/filename>
+  ;
+
+diagnostics :=
+  ( --verbose | -v | --lexer-debug | --parser-debug | --print-settings |
+    --errant-semicolons )+
+  ;
+
+
+/* * *   T e r m i n a l   S y m b o l s   * * */
+
+
+QuotedLiteral :=
+  SingleQuotedString | DoubleQuotedString
+  ;
+
+.SingleQuotedString :=
+  "'" ( QuotableCharacter | '"' )* "'"
+  ;
+
+.DoubleQuotedString :=
+  '"' ( QuotableCharacter | "'" )* '"'
+  ;
+
+.QuotableCharacter :=
+  Digit | Letter | Space | NonAlphanumQuotable
+  ;
+  
+.Digit := '0' .. '9' ;
+
+.Letter := 'a' .. 'z' | 'A' .. 'Z' ;
+
+.Space := 0u20 ;
+
+.NonAlphaNumQuotable :=
+  '!' | '#' | '$' | '%' | '&' | '(' | ')' | '*' | '+' | ',' |
+  '-' | '.' | '/' | ':' | ';' | '<' | '=' | '>' | '?' | '@' |
+  '[' | '\' | ']' | '^' | '_' | '`' | '{' | '|' | '}' | '~'
+  ;
+
+endg m2cli.
