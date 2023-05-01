@@ -1,0 +1,160 @@
+/* M2C Modula-2 Compiler & Translator
+ *
+ * Copyright (c) 2015-2023 Benjamin Kowarsch
+ *
+ * @synopsis
+ *
+ * M2C  is a  Modula-2 to C translator  and  via-C compiler  for the bootstrap
+ * subset of the revised Modula-2 language described in
+ *
+ * https://github.com/m2sf/PDFs/blob/master/M2BSK%20Language%20Description.pdf
+ *
+ * In compiler mode,  M2C compiles Modula-2 source files via C to object files
+ * or executables  using the host system's resident C compiler and linker.  In
+ * translator mode, it translates Modula-2 source files to C source files.
+ *
+ * Further information at https://github.com/m2sf/m2c/wiki
+ *
+ * @file
+ *
+ * exl-grammar.gll
+ *
+ * Grammar of M2C export list files.
+ *
+ * @license
+ *
+ * M2C is free software:  You can redistribute  and modify it  under the terms
+ * of the  GNU Lesser General Public License (LGPL)  either version 2.1  or at
+ * your choice version 3, both as published by the Free Software Foundation.
+ *
+ * M2C  is distributed  in the hope  that it will be useful,  but  WITHOUT ANY
+ * WARRANTY;  without even  the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR ANY PARTICULAR PURPOSE.  Read the license for more details.
+ *
+ * You should have  received  a copy of the  GNU Lesser General Public License
+ * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.
+ */
+
+grammar exl;
+
+/*** Non-Terminal Symbols ***/
+
+/* Export List */
+
+exportList :=
+  header section* EOF
+  ;
+
+/* List Header */
+
+header :=
+  exporter importers?
+  ;
+
+/* Exporter */
+
+exporter :=
+  'X:' Ident ';'
+  ;
+
+/* Importers */
+
+importers :=
+  'I:' ( '*' | identlist) ';'
+  ;
+
+/* Identifier List */
+
+identlist :=
+  Ident (',' Ident)* ';'
+  ;
+
+/* Sections */
+
+section :=
+  typeSection | constSection | varSection | funcSection | procSection
+  ;
+
+/* Type Section */
+
+typeSection :=
+  'T:' identlist ';'
+  ;
+
+/* Constant Section */
+
+constSection :=
+  'C:' qualident (',' qualident )* ';'
+  ;
+
+/* Qualified Identifier */
+
+qualident :=
+  Ident ('.' Ident)
+  ;
+
+/* Variable Section */
+
+varSection :=
+  'V:' identlist ';'
+  ;
+
+/* Function Section */
+
+funcSection :=
+  'F:' identlist ';'
+  ;
+
+/* Procedure Section */
+
+procSection :=
+  'P:' identList ';'
+  ;
+
+
+/*** Terminal Symbols ***/
+
+/* Identifier (default) */
+
+Ident :=
+  Letter (Letter | Digit)*
+  ;
+
+/* Identifier (with option --lowline-identifiers) */
+
+Ident :=
+  Letter ('_' (Letter | Digit))*
+  ;
+
+/* Letter */
+
+.Letter := 'A'..'Z' | 'a'..'z' ;
+
+/* Digit */
+
+.Digit := '0'..'9' ;
+
+
+/*** Ignore Symbols ***/
+
+/* Whitespace */
+
+Whitespace :=
+  Space | Tabulator
+  ;
+
+.Space := 0u20 ;
+
+.Tabulator := 0u9 ;
+
+/* New Line */
+
+NewLine :=
+  LF | CR LF?
+  ;
+
+.LF := 0uA ;
+
+.CR := 0uD ;
+
+endg exl.
