@@ -17,9 +17,9 @@
  *
  * @file
  *
- * tabulator.h
+ * newline.h
  *
- * Public interface of tabulator management.
+ * Public interface of newline mode management.
  *
  * @license
  *
@@ -35,34 +35,46 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.
  */
 
-#ifndef TABULATOR_H
-#define TABULATOR_H
+#ifndef NEWLINE_H
+#define NEWLINE_H
+
 
 /* --------------------------------------------------------------------------
- * Default and maximum tabulator settings
+ * Default newline mode
  * ----------------------------------------------------------------------- */
 
-#define TAB_DEFAULT 0
-#define TAB_MAX_WIDTH 8
+typedef enum {
+    NEWLINE_LF,
+    NEWLINE_CR,
+    NEWLINE_CRLF
+} newline_mode_t;
 
 
 /* --------------------------------------------------------------------------
- * procedure tab_set_width(value)
+ * Default newline mode
+ * ----------------------------------------------------------------------- */
+
+#define NEWLINE_DEFAULT NEWLINE_LF
+
+
+/* --------------------------------------------------------------------------
+ * procedure newline_set_mode(value)
  * --------------------------------------------------------------------------
- * Sets the tab width to the given value. Zero leaves setting unchanged.
+ * Sets the newline mode. Undefined values leave setting unchanged.
  * ----------------------------------------------------------------------- */
 
-void tab_set_width (uint_t value);
+void newline_set_mode (newline_mode_t mode);
 
 
 /* --------------------------------------------------------------------------
- * function tab_width()
+ * function newline_mode()
  * --------------------------------------------------------------------------
- * Returns the tab width.
+ * Returns the newline mode.
  * ----------------------------------------------------------------------- */
 
-uint_t tab_width (void);
+newline_mode_t newline_mode (void);
 
-#endif /* TABULATOR_H */
+
+#endif /* NEWLINE_H */
 
 /* END OF FILE */
