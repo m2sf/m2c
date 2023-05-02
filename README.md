@@ -66,7 +66,7 @@ M2C will compile and run on any target system supported by the host-compiler.
 However, the [file system acces](https://github.com/m2sf/m2c/tree/main/src/lib/filesys)
 and [pathname parsing](https://github.com/m2sf/m2c/tree/main/src/lib/pathnames) libraries
 are platform dependent. Implementations for AmigaOS, DOS/Windows, POSIX/Unix
-and OpenVMS are provided. They may have to be adapted for other systems.
+and OpenVMS are provided and may need adaptation for other platforms.
 
 
 ### Development Languages ###
