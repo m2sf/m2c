@@ -19,7 +19,7 @@
   *                                                                           *
   * @file                                                                     *
   *                                                                           *
-  * m2c.c.                                                                    *
+  * m2c.c                                                                     *
   *                                                                           *
   * Main program.                                                             *
   *                                                                           *
