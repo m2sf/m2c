@@ -1,31 +1,46 @@
-/* C Reserved Word Matching Library
- * Copyright (c) 2015 Benjamin Kowarsch
- *
- * @file
- *
- * c_reswords.h
- *
- * Public interface of C reserved word matching library.
- *
- * @license
- *
- * This library is free software: you can redistribute and/or modify it under
- * the terms of the GNU Lesser General Public License (LGPL) either ver 2.1
- * or at your choice ver 3 as published by the Free Software Foundation.
- *
- * It is distributed in the hope that it will be useful,  but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  Read the license for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * with the library.  If not, see <https://www.gnu.org/copyleft/lesser.html>.
- */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * M2C Modula-2 Compiler & Translator                                        *
+ *                                                                           *
+ * Copyright (c) 2015-2023 Benjamin Kowarsch                                 *
+ *                                                                           *
+ * @synopsis                                                                 *
+ *                                                                           *
+ * M2C is a portable  Modula-2 to C translator  and  via-C compiler  for the *
+ * bootstrap subset of the revised Modula-2 language described in            *
+ *                                                                           *
+ * https://github.com/m2sf/m2bsk/wiki/Language-Specification                 *
+ *                                                                           *
+ * In translator mode,  M2C translates Modula-2 source files to semantically *
+ * equivalent C source files.  In compiler mode,  it translates the Modula-2 *
+ * source files  to C,  then compiles the resulting C sources  to object and *
+ * executable files using the host system's resident C compiler and linker.  *
+ *                                                                           *
+ * Further information at https://github.com/m2sf/m2c/wiki                   *
+ *                                                                           *
+ * @file                                                                     *
+ *                                                                           *
+ * c-resword.h                                                               *
+ *                                                                           *
+ * Public interface of C reserved word matching module.                      *
+ *                                                                           *
+ * @license                                                                  *
+ *                                                                           *
+ * M2C is free software:  You can redistribute and modify it under the terms *
+ * of the GNU Lesser General Public License (LGPL)  either version 2.1 or at *
+ * your choice version 3, both published by the Free Software Foundation.    *
+ *                                                                           *
+ * M2C is distributed in the hope it may be useful, but strictly WITHOUT ANY *
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS *
+ * FOR ANY PARTICULAR PURPOSE.  Read the license for more details.           *
+ *                                                                           *
+ * You should have received  a copy of the GNU Lesser General Public License *
+ * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #ifndef C_RESWORDS_H
 #define C_RESWORDS_H
 
 #include <stdbool.h>
-
 
 /* --------------------------------------------------------------------------
  * compile time parameter C_RESWORDS_INCLUDE_PSEUDO_RESWORDS

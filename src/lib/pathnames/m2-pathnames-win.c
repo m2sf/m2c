@@ -1,44 +1,47 @@
-/* M2C Modula-2 Compiler & Translator
- * Copyright (c) 2015-2016 Benjamin Kowarsch
- *
- * @synopsis
- *
- * M2C is a compiler and translator for the classic Modula-2 programming
- * language as described in the 3rd and 4th editions of Niklaus Wirth's
- * book "Programming in Modula-2" (PIM) published by Springer Verlag.
- *
- * In compiler mode, M2C compiles Modula-2 source via C to object files or
- * executables using the host system's resident C compiler and linker.
- * In translator mode, it translates Modula-2 source to C source.
- *
- * Further information at http://savannah.nongnu.org/projects/m2c/
- *
- * @file
- *
- * m2-pathnames-win.c
- *
- * Implementation of Windows/MS-DOS pathname and filename parsing.
- *
- * @license
- *
- * M2C is free software: you can redistribute and/or modify it under the
- * terms of the GNU Lesser General Public License (LGPL) either version 2.1
- * or at your choice version 3 as published by the Free Software Foundation.
- *
- * M2C is distributed in the hope that it will be useful,  but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  Read the license for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with m2c.  If not, see <https://www.gnu.org/copyleft/lesser.html>.
- */
+ /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+  * M2C Modula-2 Compiler & Translator                                        *
+  *                                                                           *
+  * Copyright (c) 2015-2023 Benjamin Kowarsch                                 *
+  *                                                                           *
+  * @synopsis                                                                 *
+  *                                                                           *
+  * M2C is a portable  Modula-2 to C translator  and  via-C compiler  for the *
+  * bootstrap subset of the revised Modula-2 language described in            *
+  *                                                                           *
+  * https://github.com/m2sf/m2bsk/wiki/Language-Specification                 *
+  *                                                                           *
+  * In translator mode,  M2C translates Modula-2 source files to semantically *
+  * equivalent C source files.  In compiler mode,  it translates the Modula-2 *
+  * source files  to C,  then compiles the resulting C sources  to object and *
+  * executable files using the host system's resident C compiler and linker.  *
+  *                                                                           *
+  * Further information at https://github.com/m2sf/m2c/wiki                   *
+  *                                                                           *
+  * @file                                                                     *
+  *                                                                           *
+  * m2c-pathnames-win.c                                                       *
+  *                                                                           *
+  * Implementation of Windows/MS-DOS pathname and filename parsing.           *
+  *                                                                           *
+  * @license                                                                  *
+  *                                                                           *
+  * M2C is free software:  You can redistribute and modify it under the terms *
+  * of the GNU Lesser General Public License (LGPL)  either version 2.1 or at *
+  * your choice version 3, both published by the Free Software Foundation.    *
+  *                                                                           *
+  * M2C is distributed in the hope it may be useful, but strictly WITHOUT ANY *
+  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS *
+  * FOR ANY PARTICULAR PURPOSE.  Read the license for more details.           *
+  *                                                                           *
+  * You should have received  a copy of the GNU Lesser General Public License *
+  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
+  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "m2-pathnames.h"
 #include "m2-pathname-policy.h"
 
 #include "cstring.h"
 #include <stddef.h>
-
 
 /* --------------------------------------------------------------------------
  * directory separator
