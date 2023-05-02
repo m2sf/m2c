@@ -39,7 +39,7 @@
 #define INFILE_H
 
 
-#include "file-io.h"
+#include "fileio-status.h"
 #include "interned-strings.h"
 #include "m2c-build-params.h"
 

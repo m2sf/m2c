@@ -39,7 +39,7 @@
 #define OUTFILE_H
 
 
-#include "file-io.h"
+#include "fileio-status.h"
 #include "interned-strings.h"
 
 
