@@ -12,8 +12,8 @@
  *                                                                           *
  * In translator mode,  M2C translates Modula-2 source files to semantically *
  * equivalent C source files.  In compiler mode,  it translates the Modula-2 *
- * source files to C,  then compiles the resulting C source files  to object *
- * and executable files using the host system's resident C compiler.         *
+ * source files  to C,  then compiles the resulting C sources  to object and *
+ * executable files using the host system's resident C compiler and linker.  *
  *                                                                           *
  * Further information at https://github.com/m2sf/m2c/wiki                   *
  *                                                                           *
@@ -36,7 +36,7 @@
  * You should have received  a copy of the GNU Lesser General Public License *
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
+ 
 #ifndef FILEIO_H
 #define FILEIO_H
 
