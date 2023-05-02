@@ -44,6 +44,13 @@
 
 
 /* --------------------------------------------------------------------------
+ * type outfile_status_t
+ * ----------------------------------------------------------------------- */
+
+typedef file_io_status_t outfile_status_t;
+
+
+/* --------------------------------------------------------------------------
  * opaque type outfile_t
  * --------------------------------------------------------------------------
  * Opaque pointer type representing an output file.
@@ -59,7 +66,7 @@ typedef struct outfile_struct_t *outfile_t;
  * object back in out-parameter outfile. Passes NULL on failure.
  * ----------------------------------------------------------------------- */
 
-void outfile_open (outfile_t *outfile, cstr_t *path, outfile_status_t *status);
+void outfile_open (outfile_t *outfile, char *path, outfile_status_t *status);
 
 
 /* --------------------------------------------------------------------------
@@ -83,7 +90,7 @@ void outfile_write_char (outfile_t *outfile, char ch);
 /* --------------------------------------------------------------------------
  * procedure outfile_write_chars(outfile, chars)
  * --------------------------------------------------------------------------
- * Writes characters in chars to outfile.
+ * Writes a NUL terminated char pointer to outfile.
  * ----------------------------------------------------------------------- */
 
 void outfile_write_chars (outfile_t *outfile, const char *chars);
@@ -92,7 +99,7 @@ void outfile_write_chars (outfile_t *outfile, const char *chars);
 /* --------------------------------------------------------------------------
  * procedure outfile_write_string(outfile, string)
  * --------------------------------------------------------------------------
- * Writes string to outfile.
+ * Writes an interned string to outfile.
  * ----------------------------------------------------------------------- */
 
 void outfile_write_string (outfile_t *outfile, intstr_t *string);

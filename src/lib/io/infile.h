@@ -54,6 +54,13 @@
 
 
 /* --------------------------------------------------------------------------
+ * type infile_status_t
+ * ----------------------------------------------------------------------- */
+
+typedef file_io_status_t infile_status_t;
+
+
+/* --------------------------------------------------------------------------
  * opaque type infile_t
  * --------------------------------------------------------------------------
  * Opaque pointer type representing an input file.
@@ -69,7 +76,7 @@ typedef struct infile_struct_t *infile_t;
  * object back in out-parameter infile. Passes NULL on failure.
  * ----------------------------------------------------------------------- */
 
-void infile_open (infile_t *infile, cstr_t *path, infile_status_t *status);
+void infile_open (infile_t *infile, char *path, infile_status_t *status);
 
 
 /* --------------------------------------------------------------------------
