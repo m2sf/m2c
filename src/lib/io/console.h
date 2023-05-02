@@ -109,7 +109,7 @@ void console_write_chars_and_string (const char *chars, intstr_t *string);
  * Writes newline to the console.
  * ----------------------------------------------------------------------- */
 
-void outfile_write_newline (void);
+void console_write_newline (void);
 
 
 #endif /* CONSOLE_H */
