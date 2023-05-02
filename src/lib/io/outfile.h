@@ -17,9 +17,9 @@
  *
  * @file
  *
- * infile.h
+ * outfile.h
  *
- * Public interface of input file reader.
+ * Public interface of output file writer.
  *
  * @license
  *
@@ -35,135 +35,114 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.
  */
 
-#ifndef INFILE_H
-#define INFILE_H
+#ifndef OUTFILE_H
+#define OUTFILE_H
 
 
 #include "file-io.h"
 #include "interned-strings.h"
-#include "m2c-build-params.h"
-
-#include <stdbool>
 
 
 /* --------------------------------------------------------------------------
- * Maximum line length
- * ----------------------------------------------------------------------- */
-
-#define INFILE_MAX_LINE_LENGTH M2C_MAX_INFILE_COLUMNS
-
-
-/* --------------------------------------------------------------------------
- * opaque type infile_t
+ * opaque type outfile_t
  * --------------------------------------------------------------------------
- * Opaque pointer type representing an input file.
+ * Opaque pointer type representing an output file.
  * ----------------------------------------------------------------------- */
 
-typedef struct infile_struct_t *infile_t;
+typedef struct outfile_struct_t *outfile_t;
 
 
 /* --------------------------------------------------------------------------
- * procedure infile_open(infile, path, status)
+ * procedure outfile_open(infile, path, status)
  * --------------------------------------------------------------------------
- * Opens the file at path and passes a newly allocated and initialised infile
- * object back in out-parameter infile. Passes NULL on failure.
+ * Opens file at path and passes a newly allocated and initialised outfile
+ * object back in out-parameter outfile. Passes NULL on failure.
  * ----------------------------------------------------------------------- */
 
-void infile_open (infile_t *infile, cstr_t *path, infile_status_t *status);
+void outfile_open (outfile_t *outfile, cstr_t *path, outfile_status_t *status);
 
 
 /* --------------------------------------------------------------------------
- * procedure infile_close(infile)
+ * procedure outfile_close(infile)
  * --------------------------------------------------------------------------
- * Closes the file associated with infile and passes NULL in infile.
+ * Closes the file associated with outfile and passes NULL in outfile.
  * ----------------------------------------------------------------------- */
 
-void infile_close (infile_t *infile);
+void outfile_close (outfile_t *outfile);
 
 
 /* --------------------------------------------------------------------------
- * function infile_consume_char(infile)
+ * procedure outfile_write_char(outfile, ch)
  * --------------------------------------------------------------------------
- * Consumes the current lookahead character in infile. Returns the resulting
- * new lookahead character without consuming it.
+ * Writes character ch to outfile.
  * ----------------------------------------------------------------------- */
 
-char infile_consume_char (infile_t *infile);
+void outfile_write_char (outfile_t *outfile, char ch);
 
 
 /* --------------------------------------------------------------------------
- * function infile_lookahead_char(infile)
+ * procedure outfile_write_chars(outfile, chars)
  * --------------------------------------------------------------------------
- * Returns the current lookahead char in infile without consuming any char.
+ * Writes characters in chars to outfile.
  * ----------------------------------------------------------------------- */
 
-char infile_lookahead_char (infile_t *infile);
+void outfile_write_chars (outfile_t *outfile, const char *chars);
 
 
 /* --------------------------------------------------------------------------
- * function infile_la2_char(infile)
+ * procedure outfile_write_string(outfile, string)
  * --------------------------------------------------------------------------
- * Returns the 2nd lookahead char in infile without consuming any char.
+ * Writes string to outfile.
  * ----------------------------------------------------------------------- */
 
-char infile_la2_char (infile_t *infile);
+void outfile_write_string (outfile_t *outfile, intstr_t *string);
 
 
 /* --------------------------------------------------------------------------
- * function infile_status(infile)
+ * procedure outfile_write_tab(outfile)
+ * --------------------------------------------------------------------------
+ * Writes tab to outfile. Expands tabs to spaces if tabwidth > 0.
+ * ----------------------------------------------------------------------- */
+
+void outfile_write_tab (outfile_t *outfile);
+
+
+/* --------------------------------------------------------------------------
+ * procedure outfile_write_newline(outfile)
+ * --------------------------------------------------------------------------
+ * Writes newline to outfile.
+ * ----------------------------------------------------------------------- */
+
+void outfile_write_newline (outfile_t *outfile);
+
+
+/* --------------------------------------------------------------------------
+ * function outfile_status(outfile)
  * --------------------------------------------------------------------------
  * Returns status of the last operation.
  * ----------------------------------------------------------------------- */
 
-char infile_status (infile_t *infile);
+outfile_status_t outfile_status (outfile_t *outfile);
 
 
 /* --------------------------------------------------------------------------
- * function infile_eof(infile)
+ * function outfile_line(outfile)
  * --------------------------------------------------------------------------
- * Returns true if infile has reached the end of the file, else false.
+ * Returns the line number of the current writing position of outfile.
  * ----------------------------------------------------------------------- */
 
-bool infile_eof (infile_t *infile);
+uint_t outfile_line (outfile_t *outfile);
 
 
 /* --------------------------------------------------------------------------
- * function infile_line(infile)
+ * function outfile_column(outfile)
  * --------------------------------------------------------------------------
- * Returns the line number of the current reading position of infile.
+ * Returns the column number of the current writing position of outfile.
  * ----------------------------------------------------------------------- */
 
-uint_t infile_line (infile_t *infile);
+uint_t outfile_column (outfile_t *outfile);
 
 
-/* --------------------------------------------------------------------------
- * function infile_column(infile)
- * --------------------------------------------------------------------------
- * Returns the column number of the current reading position of infile.
- * ----------------------------------------------------------------------- */
-
-uint_t infile_column (infile_t *infile);
-
-
-/* --------------------------------------------------------------------------
- * procedure infile_mark_lexeme(infile)
- * --------------------------------------------------------------------------
- * Marks the current lookahead character as the start of a lexeme.
- * ----------------------------------------------------------------------- */
-
-void infile_mark_lexeme (infile_t *infile);
-
-
-/* --------------------------------------------------------------------------
- * function infile_lexeme(infile)
- * --------------------------------------------------------------------------
- * Returns the current lexeme.  Returns NULL if no lexeme has been marked, or
- * if no chars have been consumed since infile_mark_lexeme() has been called.
- * ----------------------------------------------------------------------- */
-
-intstr_t *infile_lexeme (infile_t *infile);
-
-
-#endif /* INFILE_H */
+#endif /* OUTFILE_H */
 
 /* END OF FILE */
