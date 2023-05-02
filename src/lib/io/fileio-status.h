@@ -46,11 +46,11 @@
  * ----------------------------------------------------------------------- */
 
 typedef enum {
-  M2C_FILEIO_STATUS_SUCCESS,
-  M2C_FILEIO_INVALID_FILENAME,
-  M2C_FILEIO_FILE_NOT_FOUND,
-  M2C_FILEIO_ACCESS_DENIED,
-  M2C_FILEIO_DEVICE_ERROR,
+  FILEIO_STATUS_SUCCESS,
+  FILEIO_INVALID_FILENAME,
+  FILEIO_FILE_NOT_FOUND,
+  FILEIO_ACCESS_DENIED,
+  FILEIO_DEVICE_ERROR,
   /* ... */
 } fileio_status_t;
 
