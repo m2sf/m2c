@@ -19,7 +19,7 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * m2c-lexer.h.                                                              *
+ * m2c-lexer.c                                                               *
  *                                                                           *
  * Public interface of Modula-2 lexer module.                                *
  *                                                                           *
@@ -103,8 +103,7 @@ struct m2c_lexer_struct_t {
   /* lookahead */ m2c_symbol_struct_t lookahead;
   /* status */ m2c_lexer_status_t status;
   /* error_count */ uint_t error_count;
-  /* get_number_literal */ m2c_number_literal_lexer_f get_number_literal;
-};
+}; /* m2c_lexer_struct_t */
 
 typedef struct m2c_lexer_struct_t m2c_lexer_struct_t;
 
@@ -129,10 +128,7 @@ static char get_ident_or_resword (m2c_lexer_t lexer, m2c_token_t *token);
 
 static char get_string_literal (m2c_lexer_t lexer, m2c_token_t *token);
 
-static char get_prefixed_number_literal
-  (m2c_lexer_t lexer, m2c_token_t *token);
-
-static char get_suffixed_number_literal
+static char get_number_literal
   (m2c_lexer_t lexer, m2c_token_t *token);
   
 static char get_number_literal_fractional_part
@@ -285,7 +281,7 @@ m2c_token_t m2c_consume_sym (m2c_lexer_t lexer) {
   lexer->current = lexer->lookahead;
   
   /* read new lookahead symbol and return it */
-  get_new_lookahead_sym(lexer);
+  get_lookahead_sym(lexer);
   return lexer->lookahead.token;
   
 } /* end m2c_consume_sym */
@@ -299,7 +295,7 @@ m2c_token_t m2c_consume_sym (m2c_lexer_t lexer) {
 
 m2c_string_t m2c_lexer_filename (m2c_lexer_t lexer) {
   
-  return m2c_infile_filename(lexer->infile);
+  return infile_filename(lexer->infile);
   
 } /* end m2c_lexer_filename */
 
@@ -408,6 +404,12 @@ uint_t m2c_lexer_current_column (m2c_lexer_t lexer) {
 
 void m2c_print_line_and_mark_column
   (m2c_lexer_t lexer, uint_t line, uint_t column) {
+
+
+
+#if 0 /* old version */
+void m2c_print_line_and_mark_column
+  (m2c_lexer_t lexer, uint_t line, uint_t column) {
   
   m2c_string_t source;
   uint_t n;
@@ -426,6 +428,7 @@ void m2c_print_line_and_mark_column
   
   return;
 } /* end m2c_print_line_and_mark_column */
+#endif
 
 
 /* --------------------------------------------------------------------------

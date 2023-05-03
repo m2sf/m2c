@@ -173,6 +173,46 @@ void infile_mark_lexeme (infile_t *infile);
 intstr_t *infile_lexeme (infile_t *infile);
 
 
+/* --------------------------------------------------------------------------
+ * type print_handler_t
+ * --------------------------------------------------------------------------
+ * Function pointer to print char function used by infile_print_line.
+ * ----------------------------------------------------------------------- */
+
+typedef void (*print_handler_t) (char ch);
+
+
+/* --------------------------------------------------------------------------
+ * function infile_print_handler_installed()
+ * --------------------------------------------------------------------------
+ * Returns true if a print handler has been installed, else false.
+ * ----------------------------------------------------------------------- */
+
+bool infile_print_handler_installed (void);
+
+
+/* --------------------------------------------------------------------------
+ * procedure infile_install_print_handler(infile, handler)
+ * --------------------------------------------------------------------------
+ * Installs a  print handler  for use by procedure inline_print_line.  A call
+ * infile_install_print_handler(&console_write_char) will  install  procedure
+ * console_write_char as print handler used by inline_print_line.
+ * ----------------------------------------------------------------------- */
+
+void infile_install_print_handler (print_handler_t handler);
+
+
+/* --------------------------------------------------------------------------
+ * procedure infile_print_line(infile, line_no)
+ * --------------------------------------------------------------------------
+ * Prints the line with the given line number  within infile  using the print
+ * handler installed by procedure  infile_install_print_handler.  Will return
+ * without action if no print handler has been installed prior to the call. 
+ * ----------------------------------------------------------------------- */
+
+void infile_print_line (infile_t *infile, uint_t line_no);
+
+
 #endif /* INFILE_H */
 
 /* END OF FILE */
