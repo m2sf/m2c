@@ -19,7 +19,7 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * m2c-lexer.h.                                                              *
+ * m2c-lexer.h                                                               *
  *                                                                           *
  * Public interface of Modula-2 lexer module.                                *
  *                                                                           *

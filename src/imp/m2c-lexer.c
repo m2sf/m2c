@@ -404,31 +404,24 @@ uint_t m2c_lexer_current_column (m2c_lexer_t lexer) {
 
 void m2c_print_line_and_mark_column
   (m2c_lexer_t lexer, uint_t line, uint_t column) {
-
-
-
-#if 0 /* old version */
-void m2c_print_line_and_mark_column
-  (m2c_lexer_t lexer, uint_t line, uint_t column) {
   
-  m2c_string_t source;
   uint_t n;
   
-  source = m2c_infile_source_for_line (lexer->infile, line);
-  printf("\n%s\n", m2c_string_char_ptr(source));
+  /* print the line */
+  infile_print_line(lexer->infile, line);
   
+  /* advance to column */
   n = 1;
   while (n < column) {
-    printf(" ");
+    console_write_char(" ");
     n++;
-  }
-  printf("^\n\n");
+  } /* end while */
   
-  m2c_string_release(source);
+  /* mark the column with a caret */
+  console_write_chars("^\n\n");
   
   return;
 } /* end m2c_print_line_and_mark_column */
-#endif
 
 
 /* --------------------------------------------------------------------------
@@ -1293,11 +1286,10 @@ static char get_string_literal(m2c_lexer_t lexer, m2c_token_t *token) {
 
 
 /* --------------------------------------------------------------------------
- * private function get_prefixed_number_literal(lexer, token)
+ * private function get_number_literal(lexer, token)
  * ----------------------------------------------------------------------- */
 
-static char get_prefixed_number_literal
-  (m2c_lexer_t lexer, m2c_token_t *token) {
+static char get_number_literal (m2c_lexer_t lexer, m2c_token_t *token) {
   
   m2c_token_t intermediate_token;
   char next_char, la2_char;
@@ -1352,84 +1344,7 @@ static char get_prefixed_number_literal
   *token = intermediate_token;
   
   return next_char;
-} /* end get_prefixed_number_literal */
-
-
-/* --------------------------------------------------------------------------
- * private function get_suffixed_number_literal(lexer, token)
- * ----------------------------------------------------------------------- */
-
-static char get_suffixed_number_literal
-  (m2c_lexer_t lexer, m2c_token_t *token) {
-  
-  m2c_token_t intermediate_token;
-  uint_t char_count_0_to_7 = 0;
-  uint_t char_count_8_to_9 = 0;
-  uint_t char_count_A_to_F = 0;
-  char next_char, last_char;
-  
-  m2c_mark_lexeme(lexer->infile);
-  next_char = m2c_next_char(lexer->infile);
-  
-  /* consume any characters '0' to '9' and 'A' to 'F' */
-  while (IS_DIGIT(next_char) || IS_A_TO_F(next_char)) {
-    
-    if ((next_char >= '0') && (next_char <= '7')) {
-      char_count_0_to_7++;
-    }
-    else if ((next_char == '8') || (next_char == '9')) {
-      char_count_8_to_9++;
-    }
-    else {
-      char_count_A_to_F++;
-    } /* end if */
-    
-    last_char = next_char;
-    next_char = m2c_consume_char(lexer->infile);
-  } /* end while */
-  
-  if /* base-16 integer found */ (next_char == 'H') {
-    
-    next_char = m2c_consume_char(lexer->infile);
-    intermediate_token = TOKEN_INTEGER;
-  }
-  else if /* base-10 integer or real number found */
-    (char_count_A_to_F == 0) {
-    
-    if /* real number literal found */ 
-      ((next_char == '.') && (m2c_la2_char(lexer->infile) != '.')) {
-      
-      next_char =
-        get_number_literal_fractional_part(lexer, &intermediate_token);
-    }
-    else /* decimal integer found */ {
-      intermediate_token = TOKEN_INTEGER;
-    } /* end if */
-  }
-  else if /* base-8 integer found */
-    (m2c_option_octal_literals() &&
-     (char_count_8_to_9 == 0) && (char_count_A_to_F == 1) && 
-     ((last_char == 'B') || (last_char == 'C'))) {
-    
-    if (last_char == 'B') {
-      intermediate_token = TOKEN_INTEGER;
-    }
-    else /* last_char == 'C' */ {
-      intermediate_token = TOKEN_CHAR;
-    } /* end if */    
-  }
-  else /* malformed base-16 integer */ {
-    intermediate_token = TOKEN_MALFORMED_INTEGER;
-  } /* end if */
-  
-  /* get lexeme */
-  lexer->lookahead.lexeme = m2c_read_marked_lexeme(lexer->infile);
-  
-  /* pass back token */
-  *token = intermediate_token;
-  
-  return next_char;
-} /* end get_suffixed_number_literal */
+} /* end get_number_literal */
 
 
 /* --------------------------------------------------------------------------

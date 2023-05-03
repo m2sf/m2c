@@ -196,7 +196,7 @@ bool infile_print_handler_installed (void);
  * --------------------------------------------------------------------------
  * Installs a  print handler  for use by procedure inline_print_line.  A call
  * infile_install_print_handler(&console_write_char) will  install  procedure
- * console_write_char as print handler used by inline_print_line.
+ * console_write_char as print handler to be used by inline_print_line.
  * ----------------------------------------------------------------------- */
 
 void infile_install_print_handler (print_handler_t handler);
