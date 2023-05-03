@@ -76,10 +76,12 @@ and VMS are provided and may need adaptation for other platforms.
 * Build configuration scripts are written in the prevalent shell language of the hosting platform
 
 
-### Collaboration ###
+### Contact ###
 
-If you would like to contribute to the project, please get in touch by email
+If you have questions or would like to contribute to the project, get in touch via
 
-trijezdci (gmail)
+* [Modula2 Telegram group](https://t.me/+hTKSWC2mWoM1OGVl) chat
+
+* [email](mailto:REMOVE+REVERSE.com.gmail@trijezdci) to the project maintainer
 
 +++
