@@ -63,8 +63,11 @@ typedef struct m2c_lexer_struct_t *m2c_lexer_t;
 typedef enum {
   M2C_LEXER_STATUS_SUCCESS,
   M2C_LEXER_STATUS_INVALID_REFERENCE,
-  M2C_LEXER_STATUS_ALLOCATION_FAILED,
-  /* TO DO : add status codes for all error scenarios */
+  M2C_LEXER_STATUS_INVALID_FILENAME,
+  M2C_LEXER_STATUS_FILE_NOT_FOUND,
+  M2C_LEXER_STATUS_FILE_ACCESS_DENIED,
+  M2C_LEXER_STATUS_DEVICE_ERROR,
+  M2C_LEXER_STATUS_ALLOCATION_FAILED
 } m2c_lexer_status_t;
 
 
@@ -94,7 +97,7 @@ typedef enum {
  * ----------------------------------------------------------------------- */
 
 void m2c_new_lexer
-  (m2c_lexer_t *lexer, m2c_string_t filename, m2c_lexer_status_t *status);
+  (m2c_lexer_t *lexer, intstr_t filename, m2c_lexer_status_t *status);
 
 
 /* --------------------------------------------------------------------------
@@ -158,7 +161,7 @@ m2c_token_t m2c_consume_sym (m2c_lexer_t lexer);
  * Returns the filename associated with lexer.
  * ----------------------------------------------------------------------- */
 
-m2c_string_t m2c_lexer_filename (m2c_lexer_t lexer);
+intstr_t m2c_lexer_filename (m2c_lexer_t lexer);
 
 
 /* --------------------------------------------------------------------------

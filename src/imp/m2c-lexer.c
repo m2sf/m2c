@@ -1,39 +1,41 @@
-/* M2C Modula-2 Compiler & Translator
- *
- * Copyright (c) 2015-2023 Benjamin Kowarsch
- *
- * @synopsis
- *
- * M2C  is a  Modula-2 to C translator  and  via-C compiler  for the bootstrap
- * subset of the revised Modula-2 language described in
- *
- * https://github.com/m2sf/PDFs/blob/master/M2BSK%20Language%20Description.pdf
- *
- * In compiler mode,  M2C compiles Modula-2 source files via C to object files
- * or executables  using the host system's resident C compiler and linker.  In
- * translator mode, it translates Modula-2 source files to C source files.
- *
- * Further information at https://github.com/m2sf/m2c/wiki
- *
- * @file
- *
- * m2c-lexer.c
- *
- * Implementation of M2C lexer module.
- *
- * @license
- *
- * M2C is free software:  You can redistribute  and modify it  under the terms
- * of the  GNU Lesser General Public License (LGPL)  either version 2.1  or at
- * your choice version 3, both as published by the Free Software Foundation.
- *
- * M2C  is distributed  in the hope  that it will be useful,  but  WITHOUT ANY
- * WARRANTY;  without even  the implied warranty of MERCHANTABILITY or FITNESS
- * FOR ANY PARTICULAR PURPOSE.  Read the license for more details.
- *
- * You should have  received  a copy of the  GNU Lesser General Public License
- * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.
- */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * M2C Modula-2 Compiler & Translator                                        *
+ *                                                                           *
+ * Copyright (c) 2015-2023 Benjamin Kowarsch                                 *
+ *                                                                           *
+ * @synopsis                                                                 *
+ *                                                                           *
+ * M2C is a portable  Modula-2 to C translator  and  via-C compiler  for the *
+ * bootstrap subset of the revised Modula-2 language described in            *
+ *                                                                           *
+ * https://github.com/m2sf/m2bsk/wiki/Language-Specification                 *
+ *                                                                           *
+ * In translator mode,  M2C translates Modula-2 source files to semantically *
+ * equivalent C source files.  In compiler mode,  it translates the Modula-2 *
+ * source files  to C,  then compiles the resulting C sources  to object and *
+ * executable files using the host system's resident C compiler and linker.  *
+ *                                                                           *
+ * Further information at https://github.com/m2sf/m2c/wiki                   *
+ *                                                                           *
+ * @file                                                                     *
+ *                                                                           *
+ * m2c-lexer.h.                                                              *
+ *                                                                           *
+ * Public interface of Modula-2 lexer module.                                *
+ *                                                                           *
+ * @license                                                                  *
+ *                                                                           *
+ * M2C is free software:  You can redistribute and modify it under the terms *
+ * of the GNU Lesser General Public License (LGPL)  either version 2.1 or at *
+ * your choice version 3, both published by the Free Software Foundation.    *
+ *                                                                           *
+ * M2C is distributed in the hope it may be useful, but strictly WITHOUT ANY *
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS *
+ * FOR ANY PARTICULAR PURPOSE.  Read the license for more details.           *
+ *                                                                           *
+ * You should have received  a copy of the GNU Lesser General Public License *
+ * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "m2c-lexer.h"
 #include "m2c-error.h"
@@ -163,7 +165,7 @@ static char get_number_literal_fractional_part
  * ----------------------------------------------------------------------- */
 
 void m2c_new_lexer
-  (m2c_lexer_t *lexer, m2c_string_t filename, m2c_lexer_status_t *status) {
+  (m2c_lexer_t *lexer, intstr_t filename, m2c_lexer_status_t *status) {
    
    m2c_infile_t infile;
    m2c_lexer_t new_lexer;
@@ -183,29 +185,33 @@ void m2c_new_lexer
    } /* end if */
    
    /* open source file */
-   infile = m2c_open_infile(filename, &infile_status);
+   infile = infile_open(filename, &infile_status);
    
-   if (infile == NULL) {
-     SET_STATUS(status, M2C_LEXER_STATUS_ALLOCATION_FAILED);
-     free(new_lexer);
-     return;
-   } /* end if */
+  if (infile_status != FILEIO_STATUS_SUCCESS) {
+    switch (infile_status) {
+      case FILEIO_INVALID_FILENAME :
+        SET_STATUS(status, M2C_LEXER_STATUS_INVALID_FILENAME);
+        break;
+      case FILEIO_STATUS_FILE_NOT_FOUND :
+        SET_STATUS(status, M2C_LEXER_STATUS_FILE_NOT_FOUND);
+        break;
+      case FILEIO_STATUS_ACCESS_DENIED :
+        SET_STATUS(status, M2C_LEXER_STATUS_FILE_ACCESS_DENIED);
+        break;
+      case FILEIO_STATUS_DEVICE_ERROR :
+        SET_STATUS(status, M2C_LEXER_STATUS_DEVICE_ERROR);
+        break;
+    } /* end switch */
+    free(new_lexer);
+    return;
+  } /* end if */
    
    /* initialise lexer object */
    new_lexer->infile = infile;
    new_lexer->current = null_symbol;
    new_lexer->lookahead = null_symbol;
    new_lexer->error_count = 0;
-   
-   if (m2c_option_prefix_literals()) {
-     /* install function to lex prefix number literals */
-     new_lexer->get_number_literal = get_prefixed_number_literal;
-   }
-   else /* suffix literals */ {
-     /* install function to lex suffix number literals */
-     new_lexer->get_number_literal = get_suffixed_number_literal;
-   } /* end if */
-   
+      
    /* read first symbol */
    get_new_lookahead_sym(new_lexer);
    
