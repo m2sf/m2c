@@ -134,7 +134,8 @@ static uint_t match_titlecase_word (uint_t index, const char *ident) {
  * word. Returns the length of the matched word or zero if there is no match.
  *
  * EBNF:  uppercaseWord :=
- *          UppercaseLetter (UppercaseLetter !LowercaseLetter | Digit)*;
+ *          UppercaseLetter !LowercaseLetter
+ *          (UppercaseLetter !LowercaseLetter | Digit)*;
  *
  * !!! An uppercase letter before a lowercase letter must NOT be consumed !!!
  * !!! because it is the first character of a following titlecase word.   !!!
@@ -149,8 +150,8 @@ static uint_t match_uppercase_word (uint_t index, const char *ident) {
   ch = ident[index];
   len = 0;
   
-  /* UppercaseLetter */
-  if (IS_UPPER(ch)) {
+  /* UppercaseLetter !LowercaseLetter */
+  if (IS_UPPER(ch) && (NOT(IS_LOWER(ident[index+1])))) {
     /* consume lookahead */
     index++; len++;
     /* next lookahead */
@@ -162,7 +163,7 @@ static uint_t match_uppercase_word (uint_t index, const char *ident) {
   }; /* end if */
     
   /* (UppercaseLetter !LowercaseLetter | Digit)* */
-  while (((IS_UPPER(ch) && (NOT(IS_LOWER(ident[index+1])))) || IS_DIGIT(ch))) {
+  while ((IS_UPPER(ch) && (NOT(IS_LOWER(ident[index+1])))) || IS_DIGIT(ch)) {
     /* consume lookahead */
     index++; len++;
     /* next lookahead */
