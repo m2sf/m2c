@@ -210,7 +210,7 @@ static uint_t match_uppercase_word (uint_t index, const char *ident) {
  * Calculates a word map for ident, passes it in map and returns word count.
  * ----------------------------------------------------------------------- */
 
-uint_t void get_word_map_for_ident (const char *ident, word_map_t *map) {
+static uint_t get_word_map_for_ident (const char *ident, word_map_t *map) {
   
   char ch;
   uint8_t pos, index;
