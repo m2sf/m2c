@@ -205,6 +205,53 @@ static uint_t match_uppercase_word (uint_t index, const char *ident) {
 
 
 /* --------------------------------------------------------------------------
+ * procedure get_word_map_for_ident(ident, map)
+ * --------------------------------------------------------------------------
+ * Calculates a word map for ident, passes it in map and returns word count.
+ * ----------------------------------------------------------------------- */
+
+uint_t void get_word_map_for_ident (const char *ident, word_map_t *map) {
+  
+  char ch;
+  uint8_t pos, index;
+
+  pos = 0;
+  index = 0;
+  ch = ident[pos];
+  while (ch != ASCII_NUL) {
+    if (IS_LOWER(ch)) {
+      len = match_lowercase_word(pos, ident);
+    }
+    else if (IS_UPPER(ch)) {
+      if (IS_LOWER(ident[pos+1])) {
+        len = match_titlecase_word(pos, ident);
+      }
+      else {
+        len = match_uppercase_word(pos, ident);
+      }; /* end if */
+    }
+    else {
+      len = 0;
+    }; /* end if */
+
+    if (len != 0) {
+      *map[index].len = len;
+      *map[index].pos = pos;
+      pos = pos + len;
+      ch = ident[pos];
+      index++;
+    }
+    else {
+      break;
+    }; /* end if */
+  }; /* end while */
+  
+  /* word count */
+  return index;
+}; /* end get_word_map_for_ident */
+
+
+/* --------------------------------------------------------------------------
  * function m2c_ident_xlat_import_guard(module_id)
  * --------------------------------------------------------------------------
  * Returns an import guard C macro identifier for module_id. 
