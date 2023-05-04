@@ -42,6 +42,35 @@
 
 
 /* --------------------------------------------------------------------------
+ * Highest possible number of words within an identifier
+ * ----------------------------------------------------------------------- */
+
+#define MAX_IDENT_WORDS ((M2C_MAX_IDENT_LENGTH / 2) + 1)
+
+
+/* --------------------------------------------------------------------------
+ * type word_entry_t
+ * --------------------------------------------------------------------------
+ * Word length and position within an identifier
+ * ----------------------------------------------------------------------- */
+
+typedef struct {
+    uint8_t len;
+    uint8_t pos;
+} word_entry_t;
+
+
+/* --------------------------------------------------------------------------
+ * type word_map_t
+ * --------------------------------------------------------------------------
+ * array type with lengths and positions of words within an identifier
+ * ----------------------------------------------------------------------- */
+
+typedef word_entry_t word_map_t[MAX_IDENT_WORDS];
+
+
+
+/* --------------------------------------------------------------------------
  * function match_lowercase_word (index, ident)
  * --------------------------------------------------------------------------
  * Matches the character sequence in ident  starting at index  to a lowercase
