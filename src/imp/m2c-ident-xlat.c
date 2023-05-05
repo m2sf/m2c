@@ -52,7 +52,7 @@
 /* --------------------------------------------------------------------------
  * type word_entry_t
  * --------------------------------------------------------------------------
- * Word length and position within an identifier
+ * Length and position of a word within an identifier
  * ----------------------------------------------------------------------- */
 
 typedef struct {
@@ -64,11 +64,13 @@ typedef struct {
 /* --------------------------------------------------------------------------
  * type word_map_t
  * --------------------------------------------------------------------------
- * array type with lengths and positions of words within an identifier
+ * Lengths and positions of all words within an identifier
  * ----------------------------------------------------------------------- */
 
-typedef word_entry_t word_map_t[MAX_IDENT_WORDS];
-
+typedef struct {
+  uint8_t word_count;
+  word_entry_t word[MAX_IDENT_WORDS];
+} word_map_t;
 
 
 /* --------------------------------------------------------------------------
@@ -212,7 +214,7 @@ static uint_t match_uppercase_word (uint_t index, const char *ident) {
  * If ident is malformed, passes zero filled map  and returns zero.
  * ----------------------------------------------------------------------- */
 
-static uint_t get_word_map_for_ident (const char *ident, word_map_t *map) {
+static void get_word_map_for_ident (const char *ident, word_map_t *map) {
   
   char ch;
   uint8_t pos, index;
@@ -243,17 +245,18 @@ static uint_t get_word_map_for_ident (const char *ident, word_map_t *map) {
     }
     /* no word match and no lowline */
     else /* malformed identifier */ {
-      /* fill map with zeroes and return zero word count */
+      /* fill map with zeroes and zero word count */
       for (index = 0; index < MAX_IDENT_WORDS; index++) {
-        map[index] = (word_entry_t) { 0, 0 };
+        map->word[index] = (word_entry_t) { 0, 0 };
       }; /* end for */
-      return 0;
+      map->word_count = 0;
+      return;
     }; /* end if */
     
     /* word matched */
     if (len > 0) {
       /* pass length and position in map entry */
-      map[index] = (word_entry_t) { len, pos };
+      map->word[index] = (word_entry_t) { len, pos };
       /* next word */
       pos = pos + len;
       /* next char */
@@ -267,9 +270,63 @@ static uint_t get_word_map_for_ident (const char *ident, word_map_t *map) {
     }; /* end if */
   }; /* end while */
   
-  /* word count */
-  return index;
+  /* pass word count */
+  map->word_count = index;
+  return;
 }; /* end get_word_map_for_ident */
+
+
+/* --------------------------------------------------------------------------
+ * function required_length_for_snake_case(map)
+ * --------------------------------------------------------------------------
+ * Returns the required length for snake case translation from word map.
+ * ----------------------------------------------------------------------- */
+
+static uint8_t required_length_for_snake_case (const word_map_t *map) {
+  
+  uint8_t len, index, word_count;
+  
+  word_count = map->word_count;
+
+  if (word_count == 0) {
+    return 0;
+  }; /* end if */
+  
+  /* add up all the word lengths */
+  len = 0;
+  index = 0;
+  while (index < word_count) {
+    len = len + map->word[index].len;
+    index++;
+  }; /* end for */
+  
+  /* add lowline count */
+  len = len + word_count - 1;
+  
+  return len;
+}; /* end required_length_for_snake_case */
+
+
+/* --------------------------------------------------------------------------
+ * function macro_case_from_ident(ident, map, maxlen)
+ * --------------------------------------------------------------------------
+ * Returns the MACRO_CASE translation for ident using the given word map.  If
+ * the resulting translation exceeds maxlen, it is truncated to maxlen.
+ * ----------------------------------------------------------------------- */
+
+static const char* macro_case_from_ident
+  (const char *ident, const word_map_t *map, uint_t maxlen) {
+  
+  uint_t word_count, index;
+  
+  word_count = map->word_count;
+  
+  for (index = 0; index < word_count; index++) {
+    
+    
+  }; /* end for */
+
+}; /* end macro_case_from_ident */
 
 
 /* --------------------------------------------------------------------------
