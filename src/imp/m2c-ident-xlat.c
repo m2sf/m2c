@@ -476,8 +476,19 @@ static const char* lowline_transform
 static const char* macro_case_from_ident
   (const char *ident, const word_map_t *map, uint8_t maxlen) {
   
-  /* TO DO */
+  get_word_map_for_ident(ident, map);
+  ident_xform = lowline_transform(ident, map, LC_UPPERCASE, maxlen);
+
+  len = required_length_for_snake_case(map) + 2;
+  guard_macro_str = malloc(len * sizeof(char) + 1);
+
+  if (guard_macro_str == NULL) {
+    return NULL;
+  }; /* end if */
   
+  sprintf(guard_macro_str, "%s _H", ident_xform);
+  
+  return guard_macro_str;
 }; /* end m2c_ident_xlat_import_guard */
 
 
