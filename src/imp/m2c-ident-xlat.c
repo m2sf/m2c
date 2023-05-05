@@ -42,6 +42,8 @@
 #include "m2c-common.h"
 #include "m2c-compiler-options.h"
 
+#include <stdlib.h>
+
 /* --------------------------------------------------------------------------
  * Highest possible number of words within an identifier
  * ----------------------------------------------------------------------- */
@@ -298,13 +300,167 @@ static uint8_t required_length_for_snake_case (const word_map_t *map) {
   while (index < word_count) {
     len = len + map->word[index].len;
     index++;
-  }; /* end for */
+  }; /* end while */
   
   /* add lowline count */
   len = len + word_count - 1;
   
   return len;
 }; /* end required_length_for_snake_case */
+
+
+static void copy_nth_word
+  (const char *source, const word_map_t *map, char *target) {
+  
+  si = map->word[n].pos;
+  len = map->word[n].len;
+
+  while (si < len) {
+    target[ti] = source[si];
+    ti++; si++;
+  }; /* end while */
+  
+  return;
+}; /* end copy_nth_word */
+
+
+static void copy_slice
+  (const char *src, uint8_t srcpos, uint8_t len, char *tgt, uint8_t tgtpos) {
+  
+  uint8_t endpos;
+  
+  endpos = srcpos + len;
+  while (srcpos < endpos) {
+    tgt[tgtpos] = src[srcpos];
+    tgtpos++; srcpos++;
+  }; /* end while */
+
+  return;
+}; /* end copy_slice */
+
+
+/* --------------------------------------------------------------------------
+ * private type lettercase_t
+ * --------------------------------------------------------------------------
+ * Enumeration values for lower- and uppercase mode.
+ * ----------------------------------------------------------------------- */
+
+typedef enum {
+    LC_LOWERCASE,
+    LC_UPPERCASE
+} lettercase_t;
+
+
+/* --------------------------------------------------------------------------
+ * private type case_transform_f
+ * --------------------------------------------------------------------------
+ * function pointer type for function to return case transformed character.
+ * ----------------------------------------------------------------------- */
+
+typedef char (case_transform_f) (char);
+
+
+/* --------------------------------------------------------------------------
+ * private function to_lower(ch)
+ * --------------------------------------------------------------------------
+ * If ch is uppercase, returns its lowercase counterpart, else returns ch.
+ * ----------------------------------------------------------------------- */
+
+static char to_lower(char ch) {
+    if IS_UPPER(ch) {
+      return ch + 32;
+    }
+    /* not uppercase */
+    else {
+      return ch;
+    }; /* end if */
+}; /* end to_lower */
+
+
+/* --------------------------------------------------------------------------
+ * private function to_upper(ch)
+ * --------------------------------------------------------------------------
+ * If ch is lowercase, returns its uppercase counterpart, else returns ch.
+ * ----------------------------------------------------------------------- */
+
+static char to_upper(char ch) {
+    if IS_LOWER(ch) {
+      return ch - 32;
+    }
+    /* not lowercase */
+    else {
+      return ch;
+    }; /* end if */
+}; /* end to_lower */
+
+
+/* --------------------------------------------------------------------------
+ * function lowline_transform(ident, map, lettercase, maxlen)
+ * --------------------------------------------------------------------------
+ * Returns the lowline and lettercase translation for ident using the given
+ * word map.  If the result exceeds maxlen, it is truncated to maxlen.
+ * ----------------------------------------------------------------------- */
+
+static const char* lowline_transform
+  (const char *ident, const word_map_t *map,
+   lettercase_t lettercase, uint_t maxlen) {
+  
+  uint8_t word_count, xlat_len, index;
+  case_transform_t case_transform;
+  char *xlat;
+  
+  word_count = map->word_count;
+
+  if (word_count == 0) {
+    return NULL;
+  }; /* end if */
+
+  /* install case transformation handler */
+  if (lettercase == LC_LOWERCASE) {
+    case_transform = to_lower;
+  }
+  else /* LC_UPPERCASE */ {
+    case_transform = to_upper;
+  }; /* end if */
+  
+  xlat_len = required_length_for_snake_case(map);
+  if xlat_len > maxlen {
+    xlat_len = maxlen
+  }; /* end if */
+  xlat = malloc(xlat_len * sizeof(char) + 1);
+
+  /* copy first word */
+  tgt_index = 0;
+  src_index = 0;
+  len = map->word[0].len
+  while ((src_index < len) && (tgt_index < maxlen)) {
+    xlat[tgt_index] = case_transform(ident[src_index]);
+    tgt_index++;
+    src_index++;
+  }; /* end while */
+  
+  word_index = 0;
+  
+  while (word_index < word_count) {
+    /* append lowline */
+    xlat[tgt_index] = '_';
+    tgt_index++;
+    
+    /* copy word at index */
+    len = map->word[word_index].len;
+    src_index = map->word[word_index].pos;
+    while ((src_index < len) && (tgt_index < maxlen)) {
+      xlat[tgt_index] = case_transform(ident[src_index]);
+      tgt_index++;
+      src_index++;
+    }; /* end while */
+    
+    /* next word */
+    word_index++;
+  }; /* end while */
+  
+  return xlat;
+}; /* end lowline_transform */
 
 
 /* --------------------------------------------------------------------------
@@ -315,18 +471,11 @@ static uint8_t required_length_for_snake_case (const word_map_t *map) {
  * ----------------------------------------------------------------------- */
 
 static const char* macro_case_from_ident
-  (const char *ident, const word_map_t *map, uint_t maxlen) {
+  (const char *ident, const word_map_t *map, uint8_t maxlen) {
   
-  uint_t word_count, index;
+  /* TO DO */
   
-  word_count = map->word_count;
-  
-  for (index = 0; index < word_count; index++) {
-    
-    
-  }; /* end for */
-
-}; /* end macro_case_from_ident */
+}; /* end m2c_ident_xlat_import_guard */
 
 
 /* --------------------------------------------------------------------------
