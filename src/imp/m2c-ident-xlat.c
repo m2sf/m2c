@@ -193,14 +193,44 @@ const char* m2c_ident_xlat_for_hidden_name
     /* procedure */
     case M2C_IDENT_XLAT_KIND_PROC  :
       ll_ident = llid_snake_case_for_ident(intstr_char_ptr(ident));
-      len = strlen(ll_ident);
-      xlat = malloc(len * sizeof(char) + 3);
+      len = strlen(ll_ident) + 3;
+      xlat = malloc(len * sizeof(char) + 1);
       sprintf(xlat, "do_%s", ll_ident);
     
   }; /* end switch */
   
   return xlat;
 }; /* end m2c_ident_xlat_for_hidden_name */
+
+
+/* --------------------------------------------------------------------------
+ * private type base36_str_t
+ * --------------------------------------------------------------------------
+ * Short string type for hash strings.
+ * ----------------------------------------------------------------------- */
+
+#define HASH_STR_SIZE 6
+
+typedef char base36_str_t[HASH_STR_SIZE];
+
+void get_base36_hash_str_for_ident
+  (const char *ident, base36_str_t *hash_str) {
+  
+  /* TO DO */
+
+}; /* end get_base36_hash_str_for_ident */
+
+/* --------------------------------------------------------------------------
+ * private function get_base36_hash_str_for_ident(ident, hash_str)
+ * --------------------------------------------------------------------------
+ * Calculates a base-36 hash string from ident, passes it back in hash_str.
+ * ----------------------------------------------------------------------- */
+
+void get_base36_hash_str_for_ident (const char *ident, char *hash_str) {
+  
+  /* TO DO */
+
+}; /* end get_base36_hash_str_for_ident */
 
 
 /* --------------------------------------------------------------------------
@@ -215,8 +245,66 @@ const char* m2c_ident_xlat_for_local_name
    intstr_t enum_id,   /* may be NULL */
    intstr_t ident)    /* required */ {
   
-  /* TO DO */
+  char *ll_enum_id, *ll_ident, *xlat;
+  base36_str_t suffix;
   
+  get_base36_hash_str_for_ident(intstr_char_ptr(ident), &suffix);
+
+  switch (kind) {
+
+    case M2C_IDENT_XLAT_KIND_CONST :
+
+    /* enumerated value */
+      if (enum_id != NULL) {
+        ll_enum_id = llid_macro_case_for_ident(intstr_char_ptr(enum_id));
+        ll_ident = llid_macro_case_for_ident(intstr_char_ptr(ident));
+        len = strlen(ll_enum_id) + strlen(ll_ident) + strlen(suffix) + 3;
+        xlat = malloc(len * sizeof(char) + 1);
+        sprintf(xlat, "%s_%s_0%s", ll_enum_id, ll_ident, suffix);
+      }
+    /* other constant */
+      else {
+        ll_ident = llid_macro_case_for_ident(intstr_char_ptr(ident));
+        len = strlen(ll_ident) + strlen(suffix) + 2;
+        xlat = malloc(len * sizeof(char) + 1);
+        sprintf(xlat, "%s_0%s", ll_ident, suffix);
+      }; /* end if */
+      break;
+
+    /* type */
+    case M2C_IDENT_XLAT_KIND_TYPE  :
+      ll_ident = llid_snake_case_for_ident(intstr_char_ptr(ident));
+      len = strlen(ll_ident) + strlen(suffix) + 2;
+      xlat = malloc(len * sizeof(char) + 1);
+      sprintf(xlat, "%s_t_0%s", ll_ident, suffix);
+      break;
+
+    /* variable */
+    case M2C_IDENT_XLAT_KIND_VAR   :
+      ll_ident = llid_snake_case_for_ident(intstr_char_ptr(ident));
+      len = strlen(ll_ident);
+      xlat = malloc(len * sizeof(char) + 1);
+      sprintf(xlat, "%s", ll_ident);
+      break;
+    
+    /* function */
+    case M2C_IDENT_XLAT_KIND_FUNC  :
+      ll_ident = llid_snake_case_for_ident(intstr_char_ptr(ident));
+      len = strlen(ll_ident) + strlen(suffix) + 2;
+      xlat = malloc(len * sizeof(char) + 1);
+      sprintf(xlat, "%s_0%s", ll_ident, suffix);
+      break;
+      
+    /* procedure */
+    case M2C_IDENT_XLAT_KIND_PROC  :
+      ll_ident = llid_snake_case_for_ident(intstr_char_ptr(ident));
+      len = strlen(ll_ident) + strlen(suffix) + 5;
+      xlat = malloc(len * sizeof(char) + 1);
+      sprintf(xlat, "do_%s_0%s", ll_ident, suffix);
+    
+  }; /* end switch */
+  
+  return xlat;  
 }; /* end m2c_ident_xlat_for_local_name */
 
 
