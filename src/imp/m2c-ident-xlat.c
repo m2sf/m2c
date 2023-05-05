@@ -206,7 +206,7 @@ static uint_t match_uppercase_word (uint_t index, const char *ident) {
 
 
 /* --------------------------------------------------------------------------
- * procedure get_word_map_for_ident(ident, map)
+ * function get_word_map_for_ident(ident, map)
  * --------------------------------------------------------------------------
  * Calculates a word map for ident, passes it in map  and returns word count.
  * If ident is malformed, passes zero filled map  and returns zero.
