@@ -38,8 +38,9 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "m2c-ident-xlat.h"
-#include "m2c-common.h"
 
+#include "m2c-common.h"
+#include "m2c-compiler-options.h"
 
 /* --------------------------------------------------------------------------
  * Highest possible number of words within an identifier
@@ -207,40 +208,60 @@ static uint_t match_uppercase_word (uint_t index, const char *ident) {
 /* --------------------------------------------------------------------------
  * procedure get_word_map_for_ident(ident, map)
  * --------------------------------------------------------------------------
- * Calculates a word map for ident, passes it in map and returns word count.
+ * Calculates a word map for ident, passes it in map  and returns word count.
+ * If ident is malformed, passes zero filled map  and returns zero.
  * ----------------------------------------------------------------------- */
 
 static uint_t get_word_map_for_ident (const char *ident, word_map_t *map) {
   
   char ch;
   uint8_t pos, index;
-
+  
   pos = 0;
   index = 0;
   ch = ident[pos];
   while (ch != ASCII_NUL) {
+    /* lowercase word */
     if (IS_LOWER(ch)) {
       len = match_lowercase_word(pos, ident);
     }
     else if (IS_UPPER(ch)) {
+      /* titlecase word */
       if (IS_LOWER(ident[pos+1])) {
         len = match_titlecase_word(pos, ident);
       }
+      /* uppercase word */
       else {
         len = match_uppercase_word(pos, ident);
       }; /* end if */
     }
-    else {
-      len = 0;
+    /* lowline in identifier */
+    else if (m2c_compiler_option_lowline_identifiers() && (ch == '_')) {
+      /* skip lowline */
+      pos++;
+      continue;
+    }
+    /* no word match and no lowline */
+    else /* malformed identifier */ {
+      /* fill map with zeroes and return zero word count */
+      for (index = 0; index < MAX_IDENT_WORDS; index++) {
+        map[index] = (word_entry_t) { 0, 0 };
+      }; /* end for */
+      return 0;
     }; /* end if */
-
-    if (len != 0) {
-      *map[index].len = len;
-      *map[index].pos = pos;
+    
+    /* word matched */
+    if (len > 0) {
+      /* pass length and position in map entry */
+      map[index] = (word_entry_t) { len, pos };
+      /* next word */
       pos = pos + len;
+      /* next char */
       ch = ident[pos];
+      /* next index */
       index++;
     }
+    /* no match */
     else {
       break;
     }; /* end if */
