@@ -458,6 +458,9 @@ static const char* lowline_transform
     /* next word */
     word_index++;
   }; /* end while */
+
+  /* terminate string */
+  xlat[tgt_index] = ASCII_NUL;
   
   return xlat;
 }; /* end lowline_transform */
