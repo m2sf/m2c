@@ -455,6 +455,7 @@ typedef struct llid_dict_s *llid_dict_t;
 typedef struct {
   uint_t entry_count;
   uint_t bucket_count;
+  llid_status_t last_status;
   llid_dict_entry_t bucket[];
 } llid_dict_s;
 
@@ -535,13 +536,12 @@ const char* llid_snake_case_for_ident (const char* ident) {
   
   /* check dictionary */
   if (dictionary == NULL) {
-    SET_STATUS(status, LLID_STATUS_NOT_INITIALIZED);
     return NULL;
   } /* end if */
   
   /* check ident */
   if (ident == NULL) {
-    SET_STATUS(status, LLID_STATUS_INVALID_REFERENCE);
+    dictionary->last_status = LLID_STATUS_INVALID_REFERENCE;
     return NULL;
   } /* end if */
   
@@ -577,7 +577,7 @@ const char* llid_snake_case_for_ident (const char* ident) {
     dictionary->entry_count++;
     
     /* set status and return string object */
-    SET_STATUS(status, LLID_STATUS_SUCCESS);
+    dictionary->last_status = LLID_STATUS_SUCCESS;
     return new_ident->snake_case->ident;
   }
   else /* bucket not empty */ {
@@ -596,7 +596,7 @@ const char* llid_snake_case_for_ident (const char* ident) {
         llid_retain(this_ident);
         
         /* set status and return string object */
-        SET_STATUS(status, LLID_STATUS_SUCCESS);
+        dictionary->last_status = LLID_STATUS_SUCCESS;
         return this_ident->snake_case->ident;
       }
       else if /* last entry reached without match */
@@ -615,7 +615,7 @@ const char* llid_snake_case_for_ident (const char* ident) {
         dictionary->entry_count++;
         
         /* set status and return string object */
-        SET_STATUS(status, LLID_STATUS_SUCCESS);
+        dictionary->last_status = LLID_STATUS_SUCCESS;
         return new_ident->snake_case->ident;
       }
       else /* not last entry yet, move to next entry */ {
@@ -691,7 +691,12 @@ void llid_release_entry (const char *ident) {
 
 llid_status_t llid_last_status (void) {
   
-  /* TO DO */
+  if (dictionary == NULL) {
+    return LLID_STATUS_NOT_INITIALIZED;
+  }
+  else {
+    return dictionary->last_status;
+  } /* end if */
   
 }; /* end llid_last_status */
 
