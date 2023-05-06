@@ -104,7 +104,7 @@ void intstr_init_repo (uint_t size, intstr_status_t *status);
 
 
 /* --------------------------------------------------------------------------
- * function intstr_get_string(str, status)
+ * function intstr_for_cstr(str, status)
  * --------------------------------------------------------------------------
  * Returns an interned string object for str which must be a pointer to a NUL
  * terminated character string.  
@@ -128,11 +128,11 @@ void intstr_init_repo (uint_t size, intstr_status_t *status);
  *    passed back in status unless status is NULL
  * ----------------------------------------------------------------------- */
 
-intstr_t intstr_get_string (char *str, intstr_status_t *status);
+intstr_t intstr_for_cstr (const char *str, intstr_status_t *status);
 
 
 /* --------------------------------------------------------------------------
- * function intstr_get_string_for_slice(str, offset, length, status)
+ * function intstr_for_slice(str, offset, length, status)
  * --------------------------------------------------------------------------
  * Returns an interned string object for a given slice of str.  Parameter str
  * must be a pointer to a NUL terminated character string.  The position of
@@ -164,12 +164,12 @@ intstr_t intstr_get_string (char *str, intstr_status_t *status);
  *    passed back in status unless status is NULL
  * ----------------------------------------------------------------------- */
 
-intstr_t intstr_get_string_for_slice
-  (char *str, uint_t offset, uint_t length, intstr_status_t *status);
+intstr_t intstr_for_slice
+  (const char *str, uint_t offset, uint_t length, intstr_status_t *status);
 
 
 /* --------------------------------------------------------------------------
- * function intstr_get_string_for_concatenation(str, append_str, status)
+ * function intstr_for_concatenation(str, append_str, status)
  * --------------------------------------------------------------------------
  * Returns an interned string object for the character string  resulting from
  * concatenation of str  and  append_str.  Parameters str and append_str must
@@ -197,8 +197,8 @@ intstr_t intstr_get_string_for_slice
  *    unless NULL
  * ----------------------------------------------------------------------- */
 
-intstr_t intstr_get_string_for_concatenation
-  (char *str, char *append_str, m2c_string_status_t *status);
+intstr_t intstr_for_concatenation
+  (const char *str, const char *append_str, intstr_status_t *status);
 
 
 /* --------------------------------------------------------------------------
