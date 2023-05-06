@@ -428,6 +428,25 @@ typedef struct {
   llid_xlat_t macro_case;
 } llid_ident_s;
 
+static llid_ident_entry_t new_ident_entry (char *ident, uint_t length) {
+
+  llid_dict_entry_t new_ident;
+  llid_xlat_t snake_case;
+
+  new_ident = malloc(sizeof(llid_ident_s));
+
+  new_ident->ref_count = 1;
+  new_ident->length = length;
+  new_ident->ident = ident;
+  
+  snake_case = new_snake_case(ident);
+
+  new_ident->snake_case = snake_case;
+  new_ident->macro_case = NULL;
+
+  return new_ident;
+} /* end new_ident_entry */
+
 
 /* --------------------------------------------------------------------------
  * private type llid_dict_entry_t
@@ -439,9 +458,23 @@ typedef struct llid_dict_entry_s *llid_dict_entry_t;
 
 typedef struct {
   llid_hash_t key;
-  llid_str_t ident;
+  llid_ident_t ident;
   llid_dict_entry_t next;
 } llid_dict_entry_s;
+
+static llid_dict_entry_t new_dict_entry
+  (llid_ident_t ident, llid_hash_t key) {
+
+  llid_dict_entry_t new_entry;
+
+  new_entry = malloc(sizeof(llid_dict_entry_s));
+
+  new_entry->key = key;
+  new_entry->ident = ident;
+  new_entry->next = NULL;
+
+  return new_entry;
+} /* end new_dict_entry */
 
 
 /* --------------------------------------------------------------------------
