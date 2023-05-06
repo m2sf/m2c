@@ -399,6 +399,76 @@ static const char* lowline_transform
 
 
 /* --------------------------------------------------------------------------
+ * private type llid_xlat_t
+ * --------------------------------------------------------------------------
+ * pointer to record representing a translation.
+ * ----------------------------------------------------------------------- */
+
+typedef llid_xlat_s *llid_xlat_t;
+
+typdef struct {
+  uint_t length;
+  char ident[];
+} llid_xlat_s;
+
+
+/* --------------------------------------------------------------------------
+ * private type llid_ident_t
+ * --------------------------------------------------------------------------
+ * pointer to record representing an identifier object.
+ * ----------------------------------------------------------------------- */
+
+typedef llid_ident_s *llid_ident_t;
+
+typedef struct {
+  uint_t ref_count;
+  uint_t length;
+  char *ident;
+  llid_xlat_t snake_case;
+  llid_xlat_t macro_case;
+} llid_ident_s;
+
+
+/* --------------------------------------------------------------------------
+ * private type llid_dict_entry_t
+ * --------------------------------------------------------------------------
+ * pointer to record representing a dictionary entry.
+ * ----------------------------------------------------------------------- */
+
+typedef struct llid_dict_entry_s *llid_dict_entry_t;
+
+typedef struct {
+  llid_hash_t key;
+  llid_str_t ident;
+  llid_dict_entry_t next;
+} llid_dict_entry_s;
+
+
+/* --------------------------------------------------------------------------
+ * private type llid_dict_t
+ * --------------------------------------------------------------------------
+ * pointer to record representing the dictionary.
+ * ----------------------------------------------------------------------- */
+
+typedef struct llid_dict_s *llid_dict_t;
+
+typedef struct {
+  uint_t entry_count;
+  uint_t bucket_count;
+  llid_dict_entry_t bucket[];
+} llid_dict_s;
+
+
+/* --------------------------------------------------------------------------
+ * private variable dictionary
+ * --------------------------------------------------------------------------
+ * pointer to global dictionary.
+ * ----------------------------------------------------------------------- */
+
+static llid_dict_t dictionary = NULL;
+
+
+/* --------------------------------------------------------------------------
  * procedure llid_init_dictionary()
  * --------------------------------------------------------------------------
  * Allocates and initialises the lowline representation dictionary. 
