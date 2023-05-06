@@ -647,7 +647,11 @@ const char* llid_macro_case_for_ident (const char* ident) {
 
 uint_t llid_entry_count (void) {
   
-  /* TO DO */
+  if (dictionary == NULL) {
+    return 0;
+  } /* end if */
+  
+  return dictionary->entry_count;
   
 }; /* end llid_entry_count */
 
