@@ -578,7 +578,7 @@ const char* llid_snake_case_for_ident (const char* ident) {
     
     /* set status and return string object */
     SET_STATUS(status, LLID_STATUS_SUCCESS);
-    return new_ident>snake_case->ident;
+    return new_ident->snake_case->ident;
   }
   else /* bucket not empty */ {
     
@@ -597,7 +597,7 @@ const char* llid_snake_case_for_ident (const char* ident) {
         
         /* set status and return string object */
         SET_STATUS(status, LLID_STATUS_SUCCESS);
-        return this_ident>snake_case->ident;
+        return this_ident->snake_case->ident;
       }
       else if /* last entry reached without match */
         (this_entry->next == NULL) {
