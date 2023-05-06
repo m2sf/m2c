@@ -476,8 +476,46 @@ static llid_dict_t dictionary = NULL;
 
 void llid_init_dictionary (unsigned size, llid_status_t *status) {
   
-  /* TO DO */
+  uint_t index, bucket_count, allocation_size;
   
+  /* check pre-conditions */
+  if (dictionary != NULL) {
+    SET_STATUS(status, LLID_STATUS_ALREADY_INITIALIZED);
+    return;
+  } /* end if */
+  
+  /* determine bucket count */
+  if (size == 0) {
+    bucket_count = LLID_DICT_DEFAULT_BUCKET_COUNT;
+  }
+  else /* size != 0 */ {
+    bucket_count = size;
+  } /* end if */
+  
+  /* allocate dictionary */
+  allocation_size = sizeof(llid_dict_s) +
+    bucket_count * sizeofllid_dict_entry_t);
+  dictionary = malloc(allocation_size);
+  
+  /* bail out if allocation failed */
+  if (dictionary == NULL) {
+    SET_STATUS(status, LLID_STATUS_ALLOCATION_FAILED);
+    return;
+  } /* end if */
+  
+  /* set entry and bucket count */
+  dictionary->entry_count = 0;
+  dictionary->bucket_count = bucket_count;
+  
+  /* initialise buckets */
+  index = 0;
+  while (index < bucket_count) {
+    dictionary->bucket[index] = NULL;
+    index++;
+  } /* end while */
+
+  SET_STATUS(status, LLID_STATUS_SUCCESS);
+  return;
 }; /* end llid_init_dictionary */
 
 
@@ -489,8 +527,102 @@ void llid_init_dictionary (unsigned size, llid_status_t *status) {
 
 const char* llid_snake_case_for_ident (const char* ident) {
   
-  /* TO DO */
+  llid_dict_entry_t new_entry, this_entry;
+  char *new_string, this_string;
+  uint_t index, length;
+  llid_hash_t key;
+  char ch;
   
+  /* check dictionary */
+  if (dictionary == NULL) {
+    SET_STATUS(status, LLID_STATUS_NOT_INITIALIZED);
+    return NULL;
+  } /* end if */
+  
+  /* check ident */
+  if (ident == NULL) {
+    SET_STATUS(status, LLID_STATUS_INVALID_REFERENCE);
+    return NULL;
+  } /* end if */
+  
+  /* determine length and key */
+  index = 0;
+  ch = ident[index];
+  key = HASH_INITIAL;
+  while (ch != ASCII_NUL) {
+    key = HASH_NEXT_CHAR(key, ch);
+    index++;
+    ch = ident[index];
+  } /* end while */
+  
+  length = index + 1;
+  key = HASH_FINAL(key);
+  
+  /* determine bucket index */
+  index = key % dictionary->bucket_count;
+  
+  /* check if ident is already in dictionary */
+  if /* bucket empty */ (dictionary->bucket[index] == NULL) {
+    
+    /* create a new identifier object */
+    new_ident = new_ident_entry(ident, length);
+    
+    /* create a new dictionary entry */
+    new_entry = new_dict_entry(new_ident, key);
+    
+    /* link the bucket to the new entry */
+    dictionary->bucket[index] = new_entry;
+    
+    /* update the entry counter */
+    dictionary->entry_count++;
+    
+    /* set status and return string object */
+    SET_STATUS(status, LLID_STATUS_SUCCESS);
+    return new_ident>snake_case->ident;
+  }
+  else /* bucket not empty */ {
+    
+    /* first entry in bucket is starting point */
+    this_entry = dictionary->bucket[index];
+    
+    /* search bucket for matching string */
+    while (true) {
+      if /* match found in current entry */
+        ((this_entry->key == key) &&
+          matches_ident_and_len(this_entry->ident, ident, length)) {
+        
+        /* get identifier object of matching entry and retain it */
+        this_ident = this_entry->ident;
+        llid_retain(this_ident);
+        
+        /* set status and return string object */
+        SET_STATUS(status, LLID_STATUS_SUCCESS);
+        return this_ident>snake_case->ident;
+      }
+      else if /* last entry reached without match */
+        (this_entry->next == NULL) {
+        
+        /* create a new identifier object */
+        new_ident = new_ident_entry(ident, length);
+        
+        /* create a new repository entry */
+        new_entry = new_dict_entry(new_ident, key);
+        
+        /* link last entry to the new entry */
+        this_entry->next = new_entry;
+        
+        /* update the entry counter */
+        dictionary->entry_count++;
+        
+        /* set status and return string object */
+        SET_STATUS(status, LLID_STATUS_SUCCESS);
+        return new_ident->snake_case->ident;
+      }
+      else /* not last entry yet, move to next entry */ {
+        this_entry = this_entry->next;
+      } /* end if */
+    } /* end while */      
+  } /* end if */    
 }; /* end llid_snake_case_for_ident */
 
 
