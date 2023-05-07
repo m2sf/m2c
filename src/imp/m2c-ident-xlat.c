@@ -39,6 +39,7 @@
 
 #include "m2c-ident-xlat.h"
 #include "snake-case-conv.h"
+#include "c-reswords.h"
 
 #include <stdio.h> /* sprintf */
 #include <stdlib.h> /* NULL, malloc */
@@ -219,6 +220,10 @@ const char* m2c_ident_xlat_for_hidden_name
       len = strlen(ll_ident);
       xlat = malloc(len * sizeof(char) + 1);
       sprintf(xlat, "%s", ll_ident);
+      if (is_c_resword(ll_ident)) {
+        /* convert first char to upper */
+        ll_ident[0] = ll_ident[0] - 32;
+      } /* end if */
       break;
 
     /* procedure */
@@ -319,6 +324,10 @@ const char* m2c_ident_xlat_for_local_name
       len = strlen(ll_ident);
       xlat = malloc(len * sizeof(char) + 1);
       sprintf(xlat, "%s", ll_ident);
+      if (is_c_resword(ll_ident)) {
+        /* convert first char to upper */
+        ll_ident[0] = ll_ident[0] - 32;
+      } /* end if */
       break;
     
     /* function */
