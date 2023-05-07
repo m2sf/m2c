@@ -426,39 +426,6 @@ static llid_xlat_t new_xlat_entry (const char *ident) {
 
 
 /* --------------------------------------------------------------------------
- * private type llid_ident_t
- * --------------------------------------------------------------------------
- * pointer to record representing an identifier object.
- * ----------------------------------------------------------------------- */
-
-typedef llid_ident_s *llid_ident_t;
-
-typedef struct {
-  uint_t ref_count;   /* reference count */
-  uint_t length;      /* length of identifier */
-  llid_xlat_t xlat;   /* translation entry */
-} llid_ident_s;
-
-static llid_ident_entry_t new_ident_entry (char *ident, uint_t length) {
-
-  llid_ident_t new_ident;
-  llid_xlat_t new_xlat;
-
-  new_ident = malloc(sizeof(llid_ident_s));
-
-  new_ident->ref_count = 1;
-  new_ident->length = length;
-  new_ident->ident = ident;
-  
-  new_xlat = new_xlat_entry();
-  
-  new_snake_case(ident);
-  
-  return new_ident;
-} /* end new_ident_entry */
-
-
-/* --------------------------------------------------------------------------
  * private type llid_dict_entry_t
  * --------------------------------------------------------------------------
  * pointer to record representing a dictionary entry.
@@ -471,18 +438,29 @@ typedef struct {
   uint_t length;
   char *ident;
   llid_xlat_t xlat;
+  uint_t ref_count;
   llid_dict_entry_t next;
 } llid_dict_entry_s;
 
+
+/* --------------------------------------------------------------------------
+ * private function new_dict_entry(key, ident, length, xlat)
+ * --------------------------------------------------------------------------
+ * Returns a newly allocated and initialised dictionary entry.
+ * ----------------------------------------------------------------------- */
+
 static llid_dict_entry_t new_dict_entry
-  (llid_ident_t ident, llid_hash_t key) {
-
+  (llid_hash_t key, const char *ident, uint_t length, llid_xlat_t xlat) {
+  
   llid_dict_entry_t new_entry;
-
+  
   new_entry = malloc(sizeof(llid_dict_entry_s));
-
+  
   new_entry->key = key;
+  new_entry->length = length;
   new_entry->ident = ident;
+  new_entry->xlat = xlat;
+  new_entry->ref_count = 1;
   new_entry->next = NULL;
 
   return new_entry;
@@ -581,6 +559,7 @@ const char* llid_snake_case_for_ident (const char* ident) {
   
   /* check dictionary */
   if (dictionary == NULL) {
+    dictionary->last_status = LLID_STATUS_NOT_INITIALIZED;
     return NULL;
   } /* end if */
   
@@ -609,11 +588,11 @@ const char* llid_snake_case_for_ident (const char* ident) {
   /* check if ident is already in dictionary */
   if /* bucket empty */ (dictionary->bucket[index] == NULL) {
     
-    /* create a new identifier object */
-    new_ident = new_ident_entry(ident, length);
+    /* create a new translation entry */
+    new_xlat = new_xlat_entry(ident);
     
     /* create a new dictionary entry */
-    new_entry = new_dict_entry(new_ident, key);
+    new_entry = new_dict_entry(key, ident, length, xlat);
     
     /* link the bucket to the new entry */
     dictionary->bucket[index] = new_entry;
@@ -623,7 +602,8 @@ const char* llid_snake_case_for_ident (const char* ident) {
     
     /* set status and return string object */
     dictionary->last_status = LLID_STATUS_SUCCESS;
-    return new_ident->snake_case->ident;
+    new_entry->ref_count++;
+    return new_entry->xlat->ident;
   }
   else /* bucket not empty */ {
     
@@ -634,24 +614,22 @@ const char* llid_snake_case_for_ident (const char* ident) {
     while (true) {
       if /* match found in current entry */
         ((this_entry->key == key) &&
-          matches_ident_and_len(this_entry->ident, ident, length)) {
+          (this_entry->length == length &&)
+          strings_match(this_entry->ident, ident)) {
         
-        /* get identifier object of matching entry and retain it */
-        this_ident = this_entry->ident;
-        llid_retain(this_ident);
-        
-        /* set status and return string object */
+        /* set status and return translation string */
         dictionary->last_status = LLID_STATUS_SUCCESS;
-        return this_ident->snake_case->ident;
+        this_entry->ref_count++;
+        return this_entry->xlat->ident;
       }
       else if /* last entry reached without match */
         (this_entry->next == NULL) {
         
-        /* create a new identifier object */
-        new_ident = new_ident_entry(ident, length);
+        /* create a new translation entry */
+        new_xlat = new_xlat_entry(ident);
         
         /* create a new dictionary entry */
-        new_entry = new_dict_entry(new_ident, key);
+        new_entry = new_dict_entry(key, ident, length, xlat);
         
         /* link last entry to the new entry */
         this_entry->next = new_entry;
@@ -661,7 +639,8 @@ const char* llid_snake_case_for_ident (const char* ident) {
         
         /* set status and return string object */
         dictionary->last_status = LLID_STATUS_SUCCESS;
-        return new_ident->snake_case->ident;
+        new_entry->ref_count++;
+        return new_entry->xlat->ident;
       }
       else /* not last entry yet, move to next entry */ {
         this_entry = this_entry->next;
@@ -684,8 +663,78 @@ uint_t llid_entry_count (void) {
   } /* end if */
   
   return dictionary->entry_count;
-  
 }; /* end llid_entry_count */
+
+
+static llid_dict_entry_t entry_for_ident
+  (const char* ident, llid_status_t *status) {
+
+  llid_dict_entry_t this_entry;
+  uint_t index, length;
+  llid_hash_t key;
+  char ch;
+  
+  /* check dictionary */
+  if (dictionary == NULL) {
+    SET_STATUS(status, LLID_STATUS_NOT_INITIALIZED);
+    return NULL;
+  } /* end if */
+  
+  /* check ident */
+  if (ident == NULL) {
+    SET_STATUS(status, LLID_STATUS_INVALID_REFERENCE);
+    return NULL;
+  } /* end if */
+  
+  /* determine length and key */
+  index = 0;
+  ch = ident[index];
+  key = HASH_INITIAL;
+  while (ch != ASCII_NUL) {
+    key = HASH_NEXT_CHAR(key, ch);
+    index++;
+    ch = ident[index];
+  } /* end while */
+  
+  length = index + 1;
+  key = HASH_FINAL(key);
+  
+  /* determine bucket index */
+  index = key % dictionary->bucket_count;
+  
+  /* check if ident is already in dictionary */
+  if /* bucket empty */ (dictionary->bucket[index] == NULL) {
+    
+    SET_STATUS(status, LLID_STATUS_INVALID_REFERENCE);
+    return NULL;
+   }
+  else /* bucket not empty */ {
+    
+    /* first entry in bucket is starting point */
+    this_entry = dictionary->bucket[index];
+    
+    /* search bucket for matching string */
+    while (true) {
+      if /* match found in current entry */
+        ((this_entry->key == key) &&
+          (this_entry->length == length &&)
+          strings_match(this_entry->ident, ident)) {
+        
+        SET_STATUS(status, LLID_STATUS_SUCCESS);
+        return this_entry;
+      }
+      else if /* last entry reached without match */
+        (this_entry->next == NULL) {
+        
+        SET_STATUS(status, LLID_STATUS_INVALID_REFERENCE);
+        return NULL;
+      }
+      else /* not last entry yet, move to next entry */ {
+        this_entry = this_entry->next;
+      } /* end if */
+    } /* end while */      
+  } /* end if */    
+} /* end entry_for_ident */
 
 
 /* --------------------------------------------------------------------------
@@ -696,9 +745,28 @@ uint_t llid_entry_count (void) {
 
 void llid_retain_entry (const char *ident) {
   
-  /* TO DO */
+  llid_status_t status;
+
+  this_entry = entry_for_ident(ident, &status);
+  dictionary->last_status = status;
   
+  if (this_entry != NULL) {
+    this_entry->ref_count++;
+  } /* end if */
 }; /* end llid_retain_entry */
+
+
+/* --------------------------------------------------------------------------
+ * private procedure remove_dict_entry(entry)
+ * --------------------------------------------------------------------------
+ * Removes entry from the dictionary and deallocates it. 
+ * ----------------------------------------------------------------------- */
+
+void remove_dict_entry (llid_dict_entry_t entry) {
+
+  /* TO DO */
+
+} /* remove_dict_entry */
 
 
 /* --------------------------------------------------------------------------
@@ -710,8 +778,19 @@ void llid_retain_entry (const char *ident) {
 
 void llid_release_entry (const char *ident) {
   
-  /* TO DO */
+  llid_dict_entry_t this_entry;
+  llid_status_t status;
+
+  this_entry = entry_for_ident(ident, &status);
+  dictionary->last_status = status;
   
+  if (this_entry != NULL) {
+    if (this_entry->ref_count > 1) {}
+      this_entry->ref_count--;
+  }
+  else /* ref_count <= 1 */ {
+    remove_dict_entry(this_entry);
+  } /* end if */
 }; /* end llid_release_entry */
 
 
