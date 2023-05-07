@@ -21,7 +21,7 @@
  *                                                                           *
  * snake-case-conv.h                                                         *
  *                                                                           *
- * Public interface of identifier snake-case translation dictionary.         *
+ * Public interface of identifier to snake-case translation dictionary.      *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -97,7 +97,7 @@ void snake_retain_entry (const char *ident);
  * procedure snake_release_entry()
  * --------------------------------------------------------------------------
  * Cancels an  outstanding retain  for ident,  or if there are no outstanding
- * retains, deallocates the entry for ident.
+ * retains,  deallocates the entry for ident.
  * ----------------------------------------------------------------------- */
 
 void snake_release_entry (const char *ident);

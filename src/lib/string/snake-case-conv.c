@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * lowline-ident-strings.c                                                   *
+ * snake-case-conv.c                                                         *
  *                                                                           *
- * Implementation of identifier lowline translation dictionary.              *
+ * Implementation of identifier to snake-case translation dictionary.        *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -37,21 +37,22 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "lowline-ident-strings.h"
+#include "snake-case-conv.h"
+
+
+/* --------------------------------------------------------------------------
+ * Length limits
+ * ----------------------------------------------------------------------- */
+
+#define IDENT_LENGTH_LIMIT 64
+#define SNAKE_LENGTH_LIMIT 64
 
 
 /* --------------------------------------------------------------------------
  * Highest possible number of words within an identifier
  * ----------------------------------------------------------------------- */
 
-#define XLAT_LENGTH_LIMIT 64
-
-
-/* --------------------------------------------------------------------------
- * Highest possible number of words within an identifier
- * ----------------------------------------------------------------------- */
-
-#define MAX_IDENT_WORDS ((M2C_MAX_IDENT_LENGTH / 2) + 1)
+#define MAX_IDENT_WORDS ((IDENT_LENGTH_LIMIT / 2) + 1)
 
 
 /* --------------------------------------------------------------------------
@@ -323,7 +324,7 @@ static void get_word_map_for_ident (const char *ident, word_map_t *map) {
 /* --------------------------------------------------------------------------
  * private function required_length_for_snake_case(map)
  * --------------------------------------------------------------------------
- * Returns the required length for snake case translation from word map.
+ * Returns the required length for snake-case translation from word map.
  * ----------------------------------------------------------------------- */
 
 static uint8_t required_length_for_snake_case (const word_map_t *map) {
@@ -352,31 +353,31 @@ static uint8_t required_length_for_snake_case (const word_map_t *map) {
 
 
 /* --------------------------------------------------------------------------
- * private type llid_xlat_t
+ * private type snake_xlat_t
  * --------------------------------------------------------------------------
  * pointer to record representing a translation.
  * ----------------------------------------------------------------------- */
 
-typedef llid_xlat_s *llid_xlat_t;
+typedef snake_xlat_s *snake_xlat_t;
 
 typdef struct {
   uint_t length;
   char ident[];
-} llid_xlat_s;
+} snake_xlat_s;
 
 
 /* --------------------------------------------------------------------------
  * private function new_xlat_entry(ident)
  * --------------------------------------------------------------------------
- * Returns a newly allocated translation entry  with the snake_case represen-
+ * Returns a newly allocated translation entry  with the snake-case represen-
  * tation of ident.  The length of the translation string is limited to value
  * XLAT_LENGTH_LIMIT.  Returns NULL, if ident is malformed.
  * ----------------------------------------------------------------------- */
 
-static llid_xlat_t new_xlat_entry (const char *ident) {
+static snake_xlat_t new_xlat_entry (const char *ident) {
   
   uint8_t word_count, word_index, word_delim, xlat_len;
-  llid_xlat_t new_xlat;
+  snake_xlat_t new_xlat;
   word_map_t map;
   
   get_word_map_for_ident(ident, &map);
@@ -391,7 +392,7 @@ static llid_xlat_t new_xlat_entry (const char *ident) {
   if xlat_len > XLAT_LENGTH_LIMIT {
     xlat_len = XLAT_LENGTH_LIMIT
   }; /* end if */
-  new_xlat = malloc(sizeof(llid_xlat_s) + xlat_len + 1);
+  new_xlat = malloc(sizeof(snake_xlat_s) + xlat_len + 1);
 
   new_xlat->length = xlat_len;
 
@@ -433,21 +434,21 @@ static llid_xlat_t new_xlat_entry (const char *ident) {
 
 
 /* --------------------------------------------------------------------------
- * private type llid_dict_entry_t
+ * private type snake_dict_entry_t
  * --------------------------------------------------------------------------
  * pointer to record representing a dictionary entry.
  * ----------------------------------------------------------------------- */
 
-typedef struct llid_dict_entry_s *llid_dict_entry_t;
+typedef struct snake_dict_entry_s *snake_dict_entry_t;
 
 typedef struct {
-  llid_hash_t key;
+  snake_hash_t key;
   uint_t length;
   char *ident;
-  llid_xlat_t xlat;
+  snake_xlat_t xlat;
   uint_t ref_count;
-  llid_dict_entry_t next;
-} llid_dict_entry_s;
+  snake_dict_entry_t next;
+} snake_dict_entry_s;
 
 
 /* --------------------------------------------------------------------------
@@ -456,12 +457,12 @@ typedef struct {
  * Returns a newly allocated and initialised dictionary entry.
  * ----------------------------------------------------------------------- */
 
-static llid_dict_entry_t new_dict_entry
-  (llid_hash_t key, const char *ident, uint_t length, llid_xlat_t xlat) {
+static snake_dict_entry_t new_dict_entry
+  (snake_hash_t key, const char *ident, uint_t length, snake_xlat_t xlat) {
   
-  llid_dict_entry_t new_entry;
+  snake_dict_entry_t new_entry;
   
-  new_entry = malloc(sizeof(llid_dict_entry_s));
+  new_entry = malloc(sizeof(snake_dict_entry_s));
   
   new_entry->key = key;
   new_entry->length = length;
@@ -475,19 +476,19 @@ static llid_dict_entry_t new_dict_entry
 
 
 /* --------------------------------------------------------------------------
- * private type llid_dict_t
+ * private type snake_dict_t
  * --------------------------------------------------------------------------
  * pointer to record representing the dictionary.
  * ----------------------------------------------------------------------- */
 
-typedef struct llid_dict_s *llid_dict_t;
+typedef struct snake_dict_s *snake_dict_t;
 
 typedef struct {
   uint_t entry_count;
   uint_t bucket_count;
-  llid_status_t last_status;
-  llid_dict_entry_t bucket[];
-} llid_dict_s;
+  snake_status_t last_status;
+  snake_dict_entry_t bucket[];
+} snake_dict_s;
 
 
 /* --------------------------------------------------------------------------
@@ -496,41 +497,41 @@ typedef struct {
  * pointer to global dictionary.
  * ----------------------------------------------------------------------- */
 
-static llid_dict_t dictionary = NULL;
+static snake_dict_t dictionary = NULL;
 
 
 /* --------------------------------------------------------------------------
- * procedure llid_init_dictionary()
+ * procedure snake_init_dictionary()
  * --------------------------------------------------------------------------
- * Allocates and initialises the lowline representation dictionary. 
+ * Allocates and initialises the snake-case translation dictionary. 
  * ----------------------------------------------------------------------- */
 
-void llid_init_dictionary (unsigned size, llid_status_t *status) {
+void snake_init_dictionary (unsigned size, snake_status_t *status) {
   
   uint_t index, bucket_count, allocation_size;
   
   /* check pre-conditions */
   if (dictionary != NULL) {
-    SET_STATUS(status, LLID_STATUS_ALREADY_INITIALIZED);
+    SET_STATUS(status, SNAKE_STATUS_ALREADY_INITIALIZED);
     return;
   } /* end if */
   
   /* determine bucket count */
   if (size == 0) {
-    bucket_count = LLID_DICT_DEFAULT_BUCKET_COUNT;
+    bucket_count = SNAKE_DICT_DEFAULT_BUCKET_COUNT;
   }
   else /* size != 0 */ {
     bucket_count = size;
   } /* end if */
   
   /* allocate dictionary */
-  allocation_size = sizeof(llid_dict_s) +
-    bucket_count * sizeofllid_dict_entry_t);
+  allocation_size = sizeof(snake_dict_s) +
+    bucket_count * sizeofsnake_dict_entry_t);
   dictionary = malloc(allocation_size);
   
   /* bail out if allocation failed */
   if (dictionary == NULL) {
-    SET_STATUS(status, LLID_STATUS_ALLOCATION_FAILED);
+    SET_STATUS(status, SNAKE_STATUS_ALLOCATION_FAILED);
     return;
   } /* end if */
   
@@ -545,34 +546,34 @@ void llid_init_dictionary (unsigned size, llid_status_t *status) {
     index++;
   } /* end while */
 
-  SET_STATUS(status, LLID_STATUS_SUCCESS);
+  SET_STATUS(status, SNAKE_STATUS_SUCCESS);
   return;
-}; /* end llid_init_dictionary */
+}; /* end snake_init_dictionary */
 
 
 /* --------------------------------------------------------------------------
- * function llid_snake_case_for_ident(ident)
+ * function snake_case_for_ident(ident)
  * --------------------------------------------------------------------------
- * Returns the snake_case representation of ident,  or NULL if malformed.
+ * Returns the snake-case translation of ident,  or NULL if malformed.
  * ----------------------------------------------------------------------- */
 
-const char* llid_snake_case_for_ident (const char* ident) {
+const char* snake_case_for_ident (const char* ident) {
   
-  llid_dict_entry_t new_entry, this_entry;
+  snake_dict_entry_t new_entry, this_entry;
   char *new_string, this_string;
   uint_t index, length;
-  llid_hash_t key;
+  snake_hash_t key;
   char ch;
   
   /* check dictionary */
   if (dictionary == NULL) {
-    dictionary->last_status = LLID_STATUS_NOT_INITIALIZED;
+    dictionary->last_status = SNAKE_STATUS_NOT_INITIALIZED;
     return NULL;
   } /* end if */
   
   /* check ident */
   if (ident == NULL) {
-    dictionary->last_status = LLID_STATUS_INVALID_REFERENCE;
+    dictionary->last_status = SNAKE_STATUS_INVALID_REFERENCE;
     return NULL;
   } /* end if */
   
@@ -608,7 +609,7 @@ const char* llid_snake_case_for_ident (const char* ident) {
     dictionary->entry_count++;
     
     /* set status and return string object */
-    dictionary->last_status = LLID_STATUS_SUCCESS;
+    dictionary->last_status = SNAKE_STATUS_SUCCESS;
     new_entry->ref_count++;
     return new_entry->xlat->ident;
   }
@@ -625,7 +626,7 @@ const char* llid_snake_case_for_ident (const char* ident) {
           strings_match(this_entry->ident, ident)) {
         
         /* set status and return translation string */
-        dictionary->last_status = LLID_STATUS_SUCCESS;
+        dictionary->last_status = SNAKE_STATUS_SUCCESS;
         this_entry->ref_count++;
         return this_entry->xlat->ident;
       }
@@ -645,7 +646,7 @@ const char* llid_snake_case_for_ident (const char* ident) {
         dictionary->entry_count++;
         
         /* set status and return string object */
-        dictionary->last_status = LLID_STATUS_SUCCESS;
+        dictionary->last_status = SNAKE_STATUS_SUCCESS;
         new_entry->ref_count++;
         return new_entry->xlat->ident;
       }
@@ -654,42 +655,42 @@ const char* llid_snake_case_for_ident (const char* ident) {
       } /* end if */
     } /* end while */      
   } /* end if */    
-}; /* end llid_snake_case_for_ident */
+}; /* end snake_case_for_ident */
 
 
 /* --------------------------------------------------------------------------
- * function llid_entry_count()
+ * function snake_entry_count()
  * --------------------------------------------------------------------------
  * Returns the number of identifiers stored in the dictionary.
  * ----------------------------------------------------------------------- */
 
-uint_t llid_entry_count (void) {
+uint_t snake_entry_count (void) {
   
   if (dictionary == NULL) {
     return 0;
   } /* end if */
   
   return dictionary->entry_count;
-}; /* end llid_entry_count */
+}; /* end snake_entry_count */
 
 
-static llid_dict_entry_t entry_for_ident
-  (const char* ident, llid_status_t *status) {
+static snake_dict_entry_t entry_for_ident
+  (const char* ident, snake_status_t *status) {
 
-  llid_dict_entry_t this_entry;
+  snake_dict_entry_t this_entry;
   uint_t index, length;
-  llid_hash_t key;
+  snake_hash_t key;
   char ch;
   
   /* check dictionary */
   if (dictionary == NULL) {
-    SET_STATUS(status, LLID_STATUS_NOT_INITIALIZED);
+    SET_STATUS(status, SNAKE_STATUS_NOT_INITIALIZED);
     return NULL;
   } /* end if */
   
   /* check ident */
   if (ident == NULL) {
-    SET_STATUS(status, LLID_STATUS_INVALID_REFERENCE);
+    SET_STATUS(status, SNAKE_STATUS_INVALID_REFERENCE);
     return NULL;
   } /* end if */
   
@@ -712,7 +713,7 @@ static llid_dict_entry_t entry_for_ident
   /* check if ident is already in dictionary */
   if /* bucket empty */ (dictionary->bucket[index] == NULL) {
     
-    SET_STATUS(status, LLID_STATUS_INVALID_REFERENCE);
+    SET_STATUS(status, SNAKE_STATUS_INVALID_REFERENCE);
     return NULL;
    }
   else /* bucket not empty */ {
@@ -727,13 +728,13 @@ static llid_dict_entry_t entry_for_ident
           (this_entry->length == length &&)
           strings_match(this_entry->ident, ident)) {
         
-        SET_STATUS(status, LLID_STATUS_SUCCESS);
+        SET_STATUS(status, SNAKE_STATUS_SUCCESS);
         return this_entry;
       }
       else if /* last entry reached without match */
         (this_entry->next == NULL) {
         
-        SET_STATUS(status, LLID_STATUS_INVALID_REFERENCE);
+        SET_STATUS(status, SNAKE_STATUS_INVALID_REFERENCE);
         return NULL;
       }
       else /* not last entry yet, move to next entry */ {
@@ -745,14 +746,14 @@ static llid_dict_entry_t entry_for_ident
 
 
 /* --------------------------------------------------------------------------
- * procedure llid_retain_entry(ident)
+ * procedure snake_retain_entry(ident)
  * --------------------------------------------------------------------------
  * Prevents the dictionary entry for ident from deallocation.
  * ----------------------------------------------------------------------- */
 
-void llid_retain_entry (const char *ident) {
+void snake_retain_entry (const char *ident) {
   
-  llid_status_t status;
+  snake_status_t status;
 
   this_entry = entry_for_ident(ident, &status);
   dictionary->last_status = status;
@@ -760,7 +761,7 @@ void llid_retain_entry (const char *ident) {
   if (this_entry != NULL) {
     this_entry->ref_count++;
   } /* end if */
-}; /* end llid_retain_entry */
+}; /* end snake_retain_entry */
 
 
 /* --------------------------------------------------------------------------
@@ -769,7 +770,7 @@ void llid_retain_entry (const char *ident) {
  * Removes entry from the dictionary and deallocates it. 
  * ----------------------------------------------------------------------- */
 
-void remove_dict_entry (llid_dict_entry_t entry) {
+void remove_dict_entry (snake_dict_entry_t entry) {
 
   /* TO DO */
 
@@ -777,16 +778,16 @@ void remove_dict_entry (llid_dict_entry_t entry) {
 
 
 /* --------------------------------------------------------------------------
- * procedure llid_release_entry()
+ * procedure snake_release_entry()
  * --------------------------------------------------------------------------
  * Cancels an  outstanding retain  for ident,  or if there are no outstanding
- * retains, deallocates the entry for ident.
+ * retains,  deallocates the entry for ident.
  * ----------------------------------------------------------------------- */
 
-void llid_release_entry (const char *ident) {
+void snake_release_entry (const char *ident) {
   
-  llid_dict_entry_t this_entry;
-  llid_status_t status;
+  snake_dict_entry_t this_entry;
+  snake_status_t status;
 
   this_entry = entry_for_ident(ident, &status);
   dictionary->last_status = status;
@@ -798,38 +799,38 @@ void llid_release_entry (const char *ident) {
   else /* ref_count <= 1 */ {
     remove_dict_entry(this_entry);
   } /* end if */
-}; /* end llid_release_entry */
+}; /* end snake_release_entry */
 
 
 /* --------------------------------------------------------------------------
- * function llid_last_status()
+ * function snake_last_status()
  * --------------------------------------------------------------------------
  * Returns the status of the last operation. 
  * ----------------------------------------------------------------------- */
 
-llid_status_t llid_last_status (void) {
+snake_status_t snake_last_status (void) {
   
   if (dictionary == NULL) {
-    return LLID_STATUS_NOT_INITIALIZED;
+    return SNAKE_STATUS_NOT_INITIALIZED;
   }
   else {
     return dictionary->last_status;
   } /* end if */
   
-}; /* end llid_last_status */
+}; /* end snake_last_status */
 
 
 /* --------------------------------------------------------------------------
- * procedure llid_dealloc_dictionary()
+ * procedure snake_dealloc_dictionary()
  * --------------------------------------------------------------------------
  * Deallocates the dictionary. 
  * ----------------------------------------------------------------------- */
 
-void llid_dealloc_dictionary (llid_status_t *status) {
+void snake_dealloc_dictionary (snake_status_t *status) {
   
   /* TO DO */
   
-}; /* end llid_dealloc_dictionary */
+}; /* end snake_dealloc_dictionary */
 
 
 /* END OF FILE */
