@@ -220,7 +220,7 @@ const char* m2c_ident_xlat_for_hidden_name
       len = strlen(ll_ident);
       xlat = malloc(len * sizeof(char) + 1);
       sprintf(xlat, "%s", ll_ident);
-      if (is_c_resword(ll_ident)) {
+      if (is_c_resword(xlat)) {
         /* convert first char to upper */
         xlat[0] = xlat[0] - 32;
       } /* end if */
@@ -324,7 +324,7 @@ const char* m2c_ident_xlat_for_local_name
       len = strlen(ll_ident);
       xlat = malloc(len * sizeof(char) + 1);
       sprintf(xlat, "%s", ll_ident);
-      if (is_c_resword(ll_ident)) {
+      if (is_c_resword(xlat)) {
         /* convert first char to upper */
         xlat[0] = xlat[0] - 32;
       } /* end if */
