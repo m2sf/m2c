@@ -41,27 +41,6 @@
 
 
 /* --------------------------------------------------------------------------
- * private type lettercase_t
- * --------------------------------------------------------------------------
- * Enumeration values for lower- and uppercase mode.
- * ----------------------------------------------------------------------- */
-
-typedef enum {
-    LC_LOWERCASE,
-    LC_UPPERCASE
-} lettercase_t;
-
-
-/* --------------------------------------------------------------------------
- * private type case_transform_f
- * --------------------------------------------------------------------------
- * function pointer type for function to return case transformed character.
- * ----------------------------------------------------------------------- */
-
-typedef char (case_transform_f) (char);
-
-
-/* --------------------------------------------------------------------------
  * Highest possible number of words within an identifier
  * ----------------------------------------------------------------------- */
 
@@ -227,6 +206,38 @@ static uint_t match_uppercase_word (uint_t index, const char *ident) {
 
 
 /* --------------------------------------------------------------------------
+ * private function match_digit_sequence (index, ident)
+ * --------------------------------------------------------------------------
+ * Matches  the  character sequence  in ident  starting at index  to a  digit
+ * sequence.  Returns the length of the matched sequence  or zero if there is
+ * no match.
+ *
+ * EBNF:  digitSequence := Digit+;
+ * ----------------------------------------------------------------------- */
+
+static uint_t match_digit_sequence (uint_t index, const char *ident) {
+  
+  char ch;
+  uint_t len;
+  
+  /* initial lookahead */
+  ch = ident[index];
+  len = 0;
+    
+  /* Digit+ */
+  while (IS_DIGIT(ch)) {
+    /* consume lookahead */
+    index++; len++;
+    /* next lookahead */
+    ch = ident[index];
+  }; /* end while */
+  
+  /* matched sequence length */
+  return len;
+}; /* end match_digit_sequence */
+
+
+/* --------------------------------------------------------------------------
  * private function get_word_map_for_ident(ident, map)
  * --------------------------------------------------------------------------
  * Calculates a word map for ident, passes it in map  and returns word count.
@@ -236,7 +247,7 @@ static uint_t match_uppercase_word (uint_t index, const char *ident) {
 static void get_word_map_for_ident (const char *ident, word_map_t *map) {
   
   char ch;
-  uint8_t pos, index;
+  uint8_t len, pos, index;
   
   pos = 0;
   index = 0;
@@ -254,13 +265,20 @@ static void get_word_map_for_ident (const char *ident, word_map_t *map) {
       /* uppercase word */
       else {
         len = match_uppercase_word(pos, ident);
-      }; /* end if */
+      } /* end if */
     }
     /* lowline in identifier */
     else if (m2c_compiler_option_lowline_identifiers() && (ch == '_')) {
       /* skip lowline */
       pos++;
-      continue;
+      /* digit sequence */
+      if (IS_DIGIT(ident[pos])) {
+        len = match_digit_sequence(pos, ident);
+      }
+      /* not digit sequence */
+      else {
+        continue;
+      } /* end if */
     }
     /* no word match and no lowline */
     else /* malformed identifier */ {
@@ -327,15 +345,14 @@ static uint8_t required_length_for_snake_case (const word_map_t *map) {
 
 
 /* --------------------------------------------------------------------------
- * private function lowline_transform(ident, map, lettercase, maxlen)
+ * private function lowline_transform(ident, map, maxlen)
  * --------------------------------------------------------------------------
  * Returns the lowline and lettercase translation for ident using the given
  * word map.  If the result exceeds maxlen, it is truncated to maxlen.
  * ----------------------------------------------------------------------- */
 
-static const char* lowline_transform
-  (const char *ident, const word_map_t *map,
-   lettercase_t lettercase, uint_t maxlen) {
+static char* new_snake_case
+  (const char *ident, const word_map_t *map, uint_t maxlen) {
   
   uint8_t word_count, xlat_len, index;
   case_transform_t case_transform;
@@ -346,15 +363,7 @@ static const char* lowline_transform
   if (word_count == 0) {
     return NULL;
   }; /* end if */
-
-  /* install case transformation handler */
-  if (lettercase == LC_LOWERCASE) {
-    case_transform = to_lower;
-  }
-  else /* LC_UPPERCASE */ {
-    case_transform = to_upper;
-  }; /* end if */
-  
+    
   xlat_len = required_length_for_snake_case(map);
   if xlat_len > maxlen {
     xlat_len = maxlen
@@ -411,6 +420,16 @@ typdef struct {
   char ident[];
 } llid_xlat_s;
 
+static llid_xlat_t new_xlat_entry (uint_t length) {
+  
+  llid_xlat_t new_xlat;
+  
+  new_xlat = malloc(length * sizeof(char) + 1);
+  new_xlat->length = length;
+
+  return new_xlat;
+} /* new_xlat_entry */
+
 
 /* --------------------------------------------------------------------------
  * private type llid_ident_t
@@ -421,17 +440,15 @@ typdef struct {
 typedef llid_ident_s *llid_ident_t;
 
 typedef struct {
-  uint_t ref_count;
-  uint_t length;
-  char *ident;
-  llid_xlat_t snake_case;
-  llid_xlat_t macro_case;
+  uint_t ref_count;   /* reference count */
+  uint_t length;      /* length of identifier */
+  llid_xlat_t xlat;   /* translation entry */
 } llid_ident_s;
 
 static llid_ident_entry_t new_ident_entry (char *ident, uint_t length) {
 
-  llid_dict_entry_t new_ident;
-  llid_xlat_t snake_case;
+  llid_ident_t new_ident;
+  llid_xlat_t new_xlat;
 
   new_ident = malloc(sizeof(llid_ident_s));
 
@@ -439,11 +456,10 @@ static llid_ident_entry_t new_ident_entry (char *ident, uint_t length) {
   new_ident->length = length;
   new_ident->ident = ident;
   
-  snake_case = new_snake_case(ident);
-
-  new_ident->snake_case = snake_case;
-  new_ident->macro_case = NULL;
-
+  new_xlat = new_xlat_entry();
+  
+  new_snake_case(ident);
+  
   return new_ident;
 } /* end new_ident_entry */
 
@@ -458,7 +474,9 @@ typedef struct llid_dict_entry_s *llid_dict_entry_t;
 
 typedef struct {
   llid_hash_t key;
-  llid_ident_t ident;
+  uint_t length;
+  char *ident;
+  llid_xlat_t xlat;
   llid_dict_entry_t next;
 } llid_dict_entry_s;
 
@@ -638,7 +656,7 @@ const char* llid_snake_case_for_ident (const char* ident) {
         /* create a new identifier object */
         new_ident = new_ident_entry(ident, length);
         
-        /* create a new repository entry */
+        /* create a new dictionary entry */
         new_entry = new_dict_entry(new_ident, key);
         
         /* link last entry to the new entry */
