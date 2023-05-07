@@ -76,15 +76,6 @@ const char* llid_snake_case_for_ident (const char* ident);
 
 
 /* --------------------------------------------------------------------------
- * function llid_macro_case_for_ident(ident)
- * --------------------------------------------------------------------------
- * Returns the MACRO_CASE representation of ident,  or NULL if malformed.
- * ----------------------------------------------------------------------- */
-
-const char* llid_macro_case_for_ident (const char* ident);
-
-
-/* --------------------------------------------------------------------------
  * function llid_entry_count()
  * --------------------------------------------------------------------------
  * Returns the number of identifiers stored in the dictionary.
