@@ -222,7 +222,7 @@ const char* m2c_ident_xlat_for_hidden_name
       sprintf(xlat, "%s", ll_ident);
       if (is_c_resword(ll_ident)) {
         /* convert first char to upper */
-        ll_ident[0] = ll_ident[0] - 32;
+        xlat[0] = xlat[0] - 32;
       } /* end if */
       break;
 
@@ -326,7 +326,7 @@ const char* m2c_ident_xlat_for_local_name
       sprintf(xlat, "%s", ll_ident);
       if (is_c_resword(ll_ident)) {
         /* convert first char to upper */
-        ll_ident[0] = ll_ident[0] - 32;
+        xlat[0] = xlat[0] - 32;
       } /* end if */
       break;
     
