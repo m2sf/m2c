@@ -44,6 +44,13 @@
  * Highest possible number of words within an identifier
  * ----------------------------------------------------------------------- */
 
+#define XLAT_LENGTH_LIMIT 64
+
+
+/* --------------------------------------------------------------------------
+ * Highest possible number of words within an identifier
+ * ----------------------------------------------------------------------- */
+
 #define MAX_IDENT_WORDS ((M2C_MAX_IDENT_LENGTH / 2) + 1)
 
 
@@ -363,7 +370,7 @@ typdef struct {
  * --------------------------------------------------------------------------
  * Returns a newly allocated translation entry  with the snake_case represen-
  * tation of ident.  The length of the translation string is limited to value
- * MAX_XLAT_LENGTH.  Returns NULL, if ident is malformed.
+ * XLAT_LENGTH_LIMIT.  Returns NULL, if ident is malformed.
  * ----------------------------------------------------------------------- */
 
 static llid_xlat_t new_xlat_entry (const char *ident) {
@@ -381,8 +388,8 @@ static llid_xlat_t new_xlat_entry (const char *ident) {
   }; /* end if */
     
   xlat_len = required_length_for_snake_case(&map);
-  if xlat_len > MAX_XLAT_LENGTH {
-    xlat_len = MAX_XLAT_LENGTH
+  if xlat_len > XLAT_LENGTH_LIMIT {
+    xlat_len = XLAT_LENGTH_LIMIT
   }; /* end if */
   new_xlat = malloc(sizeof(llid_xlat_s) + xlat_len + 1);
 
@@ -392,7 +399,7 @@ static llid_xlat_t new_xlat_entry (const char *ident) {
   tgt_index = 0;
   src_index = 0;
   word_delim = map->word[0].len
-  while ((src_index < word_delim) && (tgt_index < MAX_XLAT_LENGTH)) {
+  while ((src_index < word_delim) && (tgt_index < XLAT_LENGTH_LIMIT)) {
     new_xlat->ident[tgt_index] = to_lower(ident[src_index]);
     tgt_index++;
     src_index++;
@@ -408,7 +415,7 @@ static llid_xlat_t new_xlat_entry (const char *ident) {
     /* copy word at index */
     src_index = map->word[word_index].pos;
     word_delim = src_index + map->word[word_index].len;
-    while ((src_index < word_delim) && (tgt_index < MAX_XLAT_LENGTH)) {
+    while ((src_index < word_delim) && (tgt_index < XLAT_LENGTH_LIMIT)) {
       new_xlat[tgt_index] = to_lower(ident[src_index]);
       tgt_index++;
       src_index++;
