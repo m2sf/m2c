@@ -45,6 +45,30 @@
 
 
 /* --------------------------------------------------------------------------
+ * private function convert_to_upper(str)
+ * --------------------------------------------------------------------------
+ * Converts all lowercase characters in str to uppercase in situ. 
+ * ----------------------------------------------------------------------- */
+
+static void convert_to_upper (char *str) {
+  
+  uint_t index;
+  char ch;
+
+  index = 0;
+  ch = str[0];
+
+  while (ch != ASCII_NUL) {
+    if (IS_LOWER(ch)) {
+      str[index] = ch - 32;
+    }
+    index++;
+    ch = str[index];
+  } /* end while*/
+} /* convert_to_upper */
+
+
+/* --------------------------------------------------------------------------
  * function m2c_ident_xlat_import_guard(module_id)
  * --------------------------------------------------------------------------
  * Returns an import guard C macro identifier for module_id. 
@@ -54,7 +78,7 @@ const char* m2c_ident_xlat_import_guard (intstr_t module_id) {
   
   char *ll_module_id, *import_guard;
 
-  ll_module_id = llid_macro_case_for_ident(intstr_char_ptr(module_id));
+  ll_module_id = llid_snake_case_for_ident(intstr_char_ptr(module_id));
   
   len = strlen(ll_module_id) + 2;
   import_guard = malloc(len * sizeof(char) + 1);
@@ -64,6 +88,7 @@ const char* m2c_ident_xlat_import_guard (intstr_t module_id) {
   }; /* end if */
   
   sprintf(import_guard, "%s _H", ll_module_id);
+  convert_to_upper(import_guard);
   
   return import_guard;
 }; /* end m2c_ident_xlat_import_guard */
@@ -89,21 +114,24 @@ const char* m2c_ident_xlat_for_exported_name
 
     /* enumerated value */
       if (enum_id != NULL) {
-        ll_module_id = llid_macro_case_for_ident(intstr_char_ptr(module_id));
-        ll_enum_id = llid_macro_case_for_ident(intstr_char_ptr(enum_id));
-        ll_ident = llid_macro_case_for_ident(intstr_char_ptr(ident));
+        ll_module_id = llid_snake_case_for_ident(intstr_char_ptr(module_id));
+        ll_enum_id = llid_snake_case_for_ident(intstr_char_ptr(enum_id));
+        ll_ident = llid_snake_case_for_ident(intstr_char_ptr(ident));
         len = strlen(ll_module_id)+strlen(ll_enum_id)+strlen(ll_ident)+3;
         xlat = malloc(len * sizeof(char) + 1);
         sprintf(xlat, "%s__%s_%s", ll_module_id, ll_enum_id, ll_ident);
       }
     /* other constant */
       else {
-        ll_module_id = llid_macro_case_for_ident(intstr_char_ptr(module_id));
-        ll_ident = llid_macro_case_for_ident(intstr_char_ptr(ident));
+        ll_module_id = llid_snake_case_for_ident(intstr_char_ptr(module_id));
+        ll_ident = llid_snake_case_for_ident(intstr_char_ptr(ident));
         len = strlen(ll_module_id) + strlen(ll_ident) + 2;
         xlat = malloc(len * sizeof(char) + 1);
         sprintf(xlat, "%s__%s", ll_ident);
       }; /* end if */
+      
+      /* ALL-CAPS */
+      convert_to_upper(xlat);
       break;
 
     /* type */
@@ -158,19 +186,22 @@ const char* m2c_ident_xlat_for_hidden_name
 
     /* enumerated value */
       if (enum_id != NULL) {
-        ll_enum_id = llid_macro_case_for_ident(intstr_char_ptr(enum_id));
-        ll_ident = llid_macro_case_for_ident(intstr_char_ptr(ident));
+        ll_enum_id = llid_snake_case_for_ident(intstr_char_ptr(enum_id));
+        ll_ident = llid_snake_case_for_ident(intstr_char_ptr(ident));
         len = strlen(ll_enum_id) + strlen(ll_ident) + 1;
         xlat = malloc(len * sizeof(char) + 1);
         sprintf(xlat, "%s_%s", ll_enum_id, ll_ident);
       }
     /* other constant */
       else {
-        ll_ident = llid_macro_case_for_ident(intstr_char_ptr(ident));
+        ll_ident = llid_snake_case_for_ident(intstr_char_ptr(ident));
         len = strlen(ll_ident);
         xlat = malloc(len * sizeof(char) + 1);
         sprintf(xlat, "%s", ll_ident);
       }; /* end if */
+
+      /* ALL-CAPS */
+      convert_to_upper(xlat);
       break;
 
     /* type */
@@ -243,7 +274,7 @@ const char* m2c_ident_xlat_for_local_name
   (m2c_ident_xlat_kind_t kind,
    intstr_t proc_id,   /* required */
    intstr_t enum_id,   /* may be NULL */
-   intstr_t ident)    /* required */ {
+   intstr_t ident)     /* required */ {
   
   char *ll_enum_id, *ll_ident, *xlat;
   base36_str_t suffix;
@@ -256,27 +287,30 @@ const char* m2c_ident_xlat_for_local_name
 
     /* enumerated value */
       if (enum_id != NULL) {
-        ll_enum_id = llid_macro_case_for_ident(intstr_char_ptr(enum_id));
-        ll_ident = llid_macro_case_for_ident(intstr_char_ptr(ident));
-        len = strlen(ll_enum_id) + strlen(ll_ident) + strlen(suffix) + 3;
+        ll_enum_id = llid_snake_case_for_ident(intstr_char_ptr(enum_id));
+        ll_ident = llid_snake_case_for_ident(intstr_char_ptr(ident));
+        len = strlen(ll_enum_id) + strlen(ll_ident) + strlen(suffix) + 4;
         xlat = malloc(len * sizeof(char) + 1);
-        sprintf(xlat, "%s_%s_0%s", ll_enum_id, ll_ident, suffix);
+        sprintf(xlat, "%s_%s__0%s", ll_enum_id, ll_ident, suffix);
       }
     /* other constant */
       else {
-        ll_ident = llid_macro_case_for_ident(intstr_char_ptr(ident));
-        len = strlen(ll_ident) + strlen(suffix) + 2;
+        ll_ident = llid_snake_case_for_ident(intstr_char_ptr(ident));
+        len = strlen(ll_ident) + strlen(suffix) + 3;
         xlat = malloc(len * sizeof(char) + 1);
-        sprintf(xlat, "%s_0%s", ll_ident, suffix);
+        sprintf(xlat, "%s__0%s", ll_ident, suffix);
       }; /* end if */
+
+      /* ALL-CAPS */
+      convert_to_upper(xlat);
       break;
 
     /* type */
     case M2C_IDENT_XLAT_KIND_TYPE  :
       ll_ident = llid_snake_case_for_ident(intstr_char_ptr(ident));
-      len = strlen(ll_ident) + strlen(suffix) + 2;
+      len = strlen(ll_ident) + strlen(suffix) + 5;
       xlat = malloc(len * sizeof(char) + 1);
-      sprintf(xlat, "%s_t_0%s", ll_ident, suffix);
+      sprintf(xlat, "%s_t__0%s", ll_ident, suffix);
       break;
 
     /* variable */
@@ -290,17 +324,17 @@ const char* m2c_ident_xlat_for_local_name
     /* function */
     case M2C_IDENT_XLAT_KIND_FUNC  :
       ll_ident = llid_snake_case_for_ident(intstr_char_ptr(ident));
-      len = strlen(ll_ident) + strlen(suffix) + 2;
+      len = strlen(ll_ident) + strlen(suffix) + 3;
       xlat = malloc(len * sizeof(char) + 1);
-      sprintf(xlat, "%s_0%s", ll_ident, suffix);
+      sprintf(xlat, "%s__0%s", ll_ident, suffix);
       break;
       
     /* procedure */
     case M2C_IDENT_XLAT_KIND_PROC  :
       ll_ident = llid_snake_case_for_ident(intstr_char_ptr(ident));
-      len = strlen(ll_ident) + strlen(suffix) + 5;
+      len = strlen(ll_ident) + strlen(suffix) + 6;
       xlat = malloc(len * sizeof(char) + 1);
-      sprintf(xlat, "do_%s_0%s", ll_ident, suffix);
+      sprintf(xlat, "do_%s__0%s", ll_ident, suffix);
     
   }; /* end switch */
   
