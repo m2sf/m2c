@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * lowline-ident-strings.h                                                   *
+ * snake-case-conv.h                                                         *
  *                                                                           *
- * Public interface of identifier lowline translation dictionary.            *
+ * Public interface of identifier snake-case translation dictionary.         *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -37,90 +37,90 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef LOWLINE_IDENT_STRINGS_H
-#define LOWLINE_IDENT_STRINGS_H
+#ifndef SNAKE_CASE_CONV_H
+#define SNAKE_CASE_CONV_H
 
 
 /* --------------------------------------------------------------------------
- * type llid_status_t
+ * type snake_status_t
  * --------------------------------------------------------------------------
- * Status codes for lowline translation dictionary operations.
+ * Status codes for snake-case translation dictionary operations.
  * ----------------------------------------------------------------------- */
 
 typedef enum {
-  LLID_STATUS_SUCCESS,
-  LLID_STATUS_NOT_INITIALIZED,
-  LLID_STATUS_ALREADY_INITIALIZED,
-  LLID_STATUS_INVALID_REFERENCE,
-  LLID_STATUS_ALLOCATION_FAILED,
-  LLID_STATUS_SIZE_LIMIT_EXCEEDED,
-} llid_status_t;
+  SNAKE_STATUS_SUCCESS,
+  SNAKE_STATUS_NOT_INITIALIZED,
+  SNAKE_STATUS_ALREADY_INITIALIZED,
+  SNAKE_STATUS_INVALID_REFERENCE,
+  SNAKE_STATUS_ALLOCATION_FAILED,
+  SNAKE_STATUS_SIZE_LIMIT_EXCEEDED
+} snake_status_t;
 
 
 /* --------------------------------------------------------------------------
- * procedure llid_init_dictionary()
+ * procedure snake_init_dictionary()
  * --------------------------------------------------------------------------
- * Allocates and initialises the lowline representation dictionary. 
+ * Allocates and initialises the snake-case translation dictionary. 
  * ----------------------------------------------------------------------- */
 
-void llid_init_dictionary (unsigned size, llid_status_t *status);
+void snake_init_dictionary (unsigned size, snake_status_t *status);
 
 
 /* --------------------------------------------------------------------------
- * function llid_snake_case_for_ident(ident)
+ * function snake_case_for_ident(ident)
  * --------------------------------------------------------------------------
- * Returns the snake_case representation of ident,  or NULL if malformed.
+ * Returns the snake-case translation of ident,  or NULL if malformed.
  * ----------------------------------------------------------------------- */
 
-const char* llid_snake_case_for_ident (const char* ident);
+const char* snake_case_for_ident (const char* ident);
 
 
 /* --------------------------------------------------------------------------
- * function llid_entry_count()
+ * function snake_entry_count()
  * --------------------------------------------------------------------------
  * Returns the number of identifiers stored in the dictionary.
  * ----------------------------------------------------------------------- */
 
-uint_t llid_entry_count (void);
+uint_t snake_entry_count (void);
 
 
 /* --------------------------------------------------------------------------
- * procedure llid_retain_entry(ident)
+ * procedure snake_retain_entry(ident)
  * --------------------------------------------------------------------------
  * Prevents the dictionary entry for ident from deallocation.
  * ----------------------------------------------------------------------- */
 
-void llid_retain_entry (const char *ident);
+void snake_retain_entry (const char *ident);
 
 
 /* --------------------------------------------------------------------------
- * procedure llid_release_entry()
+ * procedure snake_release_entry()
  * --------------------------------------------------------------------------
  * Cancels an  outstanding retain  for ident,  or if there are no outstanding
  * retains, deallocates the entry for ident.
  * ----------------------------------------------------------------------- */
 
-void llid_release_entry (const char *ident);
+void snake_release_entry (const char *ident);
 
 
 /* --------------------------------------------------------------------------
- * function llid_last_status()
+ * function snake_last_status()
  * --------------------------------------------------------------------------
  * Returns the status of the last operation. 
  * ----------------------------------------------------------------------- */
 
-llid_status_t llid_last_status (void);
+snake_status_t snake_last_status (void);
 
 
 /* --------------------------------------------------------------------------
- * procedure llid_dealloc_dictionary()
+ * procedure snake_dealloc_dictionary()
  * --------------------------------------------------------------------------
  * Deallocates the dictionary. 
  * ----------------------------------------------------------------------- */
 
-void llid_dealloc_dictionary (llid_status_t *status);
+void snake_dealloc_dictionary (snake_status_t *status);
 
 
-#endif /* LOWLINE_IDENT_STRINGS_H */
+#endif /* SNAKE_CASE_CONV_H */
 
 /* END OF FILE */
