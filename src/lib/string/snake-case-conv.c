@@ -40,6 +40,8 @@
 #include "snake-case-conv.h"
 #include "compiler-options.h"
 
+#include <stdlib.h> /* NULL, malloc */
+
 
 /* --------------------------------------------------------------------------
  * Length limits

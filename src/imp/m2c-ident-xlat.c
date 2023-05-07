@@ -38,7 +38,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "m2c-ident-xlat.h"
-#include "lowline-ident-strings.h"
+#include "snake-case-conv.h"
 
 #include <stdio.h> /* sprintf */
 #include <stdlib.h> /* NULL, malloc */
