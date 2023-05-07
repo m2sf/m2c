@@ -238,10 +238,10 @@ static uint_t match_digit_sequence (uint_t index, const char *ident) {
 
 
 /* --------------------------------------------------------------------------
- * private function get_word_map_for_ident(ident, map)
+ * private procedure get_word_map_for_ident(ident, map)
  * --------------------------------------------------------------------------
- * Calculates a word map for ident, passes it in map  and returns word count.
- * If ident is malformed, passes zero filled map  and returns zero.
+ * Calculates a  word map  for ident  and passes it back in map.  If ident is
+ * malformed,  it passes zero filled map with word count zero.
  * ----------------------------------------------------------------------- */
 
 static void get_word_map_for_ident (const char *ident, word_map_t *map) {
@@ -322,7 +322,7 @@ static void get_word_map_for_ident (const char *ident, word_map_t *map) {
 static uint8_t required_length_for_snake_case (const word_map_t *map) {
   
   uint8_t len, index, word_count;
-  
+    
   word_count = map->word_count;
 
   if (word_count == 0) {
@@ -345,69 +345,6 @@ static uint8_t required_length_for_snake_case (const word_map_t *map) {
 
 
 /* --------------------------------------------------------------------------
- * private function lowline_transform(ident, map, maxlen)
- * --------------------------------------------------------------------------
- * Returns the lowline and lettercase translation for ident using the given
- * word map.  If the result exceeds maxlen, it is truncated to maxlen.
- * ----------------------------------------------------------------------- */
-
-static char* new_snake_case
-  (const char *ident, const word_map_t *map, uint_t maxlen) {
-  
-  uint8_t word_count, xlat_len, index;
-  case_transform_t case_transform;
-  char *xlat;
-  
-  word_count = map->word_count;
-
-  if (word_count == 0) {
-    return NULL;
-  }; /* end if */
-    
-  xlat_len = required_length_for_snake_case(map);
-  if xlat_len > maxlen {
-    xlat_len = maxlen
-  }; /* end if */
-  xlat = malloc(xlat_len * sizeof(char) + 1);
-
-  /* copy first word */
-  tgt_index = 0;
-  src_index = 0;
-  len = map->word[0].len
-  while ((src_index < len) && (tgt_index < maxlen)) {
-    xlat[tgt_index] = case_transform(ident[src_index]);
-    tgt_index++;
-    src_index++;
-  }; /* end while */
-  
-  word_index = 0;
-  
-  while (word_index < word_count) {
-    /* append lowline */
-    xlat[tgt_index] = '_';
-    tgt_index++;
-    
-    /* copy word at index */
-    len = map->word[word_index].len;
-    src_index = map->word[word_index].pos;
-    while ((src_index < len) && (tgt_index < maxlen)) {
-      xlat[tgt_index] = case_transform(ident[src_index]);
-      tgt_index++;
-      src_index++;
-    }; /* end while */
-    
-    /* next word */
-    word_index++;
-  }; /* end while */
-
-  /* terminate string */
-  xlat[tgt_index] = ASCII_NUL;
-  
-  return xlat;
-}; /* end lowline_transform */
-
-
-/* --------------------------------------------------------------------------
  * private type llid_xlat_t
  * --------------------------------------------------------------------------
  * pointer to record representing a translation.
@@ -420,15 +357,72 @@ typdef struct {
   char ident[];
 } llid_xlat_s;
 
-static llid_xlat_t new_xlat_entry (uint_t length) {
-  
-  llid_xlat_t new_xlat;
-  
-  new_xlat = malloc(length * sizeof(char) + 1);
-  new_xlat->length = length;
 
+/* --------------------------------------------------------------------------
+ * private function new_xlat_entry(ident)
+ * --------------------------------------------------------------------------
+ * Returns a newly allocated translation entry  with the snake_case represen-
+ * tation of ident.  The length of the translation string is limited to value
+ * MAX_XLAT_LENGTH.  Returns NULL, if ident is malformed.
+ * ----------------------------------------------------------------------- */
+
+static llid_xlat_t new_xlat_entry (const char *ident) {
+  
+  uint8_t word_count, word_index, word_delim, xlat_len;
+  llid_xlat_t new_xlat;
+  word_map_t map;
+  
+  get_word_map_for_ident(ident, &map);
+
+  word_count = map->word_count;
+
+  if (word_count == 0) {
+    return NULL;
+  }; /* end if */
+    
+  xlat_len = required_length_for_snake_case(&map);
+  if xlat_len > MAX_XLAT_LENGTH {
+    xlat_len = MAX_XLAT_LENGTH
+  }; /* end if */
+  new_xlat = malloc(sizeof(llid_xlat_s) + xlat_len + 1);
+
+  new_xlat->length = xlat_len;
+
+  /* copy first word */
+  tgt_index = 0;
+  src_index = 0;
+  word_delim = map->word[0].len
+  while ((src_index < word_delim) && (tgt_index < MAX_XLAT_LENGTH)) {
+    new_xlat->ident[tgt_index] = to_lower(ident[src_index]);
+    tgt_index++;
+    src_index++;
+  }; /* end while */
+  
+  word_index = 0;
+  
+  while (word_index < word_count) {
+    /* append lowline */
+    new_xlat->ident[tgt_index] = '_';
+    tgt_index++;
+    
+    /* copy word at index */
+    src_index = map->word[word_index].pos;
+    word_delim = src_index + map->word[word_index].len;
+    while ((src_index < word_delim) && (tgt_index < MAX_XLAT_LENGTH)) {
+      new_xlat[tgt_index] = to_lower(ident[src_index]);
+      tgt_index++;
+      src_index++;
+    }; /* end while */
+    
+    /* next word */
+    word_index++;
+  }; /* end while */
+
+  /* terminate string */
+  new_xlat->ident[tgt_index] = ASCII_NUL;
+  
   return new_xlat;
-} /* new_xlat_entry */
+}; /* end new_xlat_entry */
 
 
 /* --------------------------------------------------------------------------
