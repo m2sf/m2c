@@ -243,47 +243,6 @@ const char* m2c_ident_xlat_for_hidden_name
 
 
 /* --------------------------------------------------------------------------
- * private type base36_str_t
- * --------------------------------------------------------------------------
- * Short string type for hash strings.
- * ----------------------------------------------------------------------- */
-
-#define HASH_STR_SIZE 6
-
-typedef char base36_str_t[HASH_STR_SIZE];
-
-#define MAX_BASE36_DIGITS (HASH_STR_SIZE - 1)
-
-static void get_base36_for_base16_number
-  (uint32_t value, base36_str_t *hash_str) {
-  
-  uint32_t n, weight, digit;
-
-  /* reduce value to 25 bits */
-  value = value & 0x1ffffff;
-  
-  weight = MAX_BASE36_DIGITS;
-  n = MAX_BASE36_DIGITS;
-  for (n < MAX_BASE36_DIGITS) {
-    digit = value / weight;
-    if (digit <= 10) {
-      hash_str[MAX_BASE36_DIGITS-n] = digit + 48;
-    }
-    else /* A .. Z */ {
-      hash_str[MAX_BASE36_DIGITS-n] = digit + 55;
-    } /* end if */
-    value = value & weight;
-    weight = weight / 36;
-    n--;
-  } /* end for */
-  
-  /* terminate string */
-  hash_str[MAX_BASE36_DIGITS+1] = ASCII_NUL;
-  return;
-}; /* end get_base36_hash_str_for_ident */
-
-
-/* --------------------------------------------------------------------------
  * private function get_base36_hash_str_for_ident(ident, hash_str)
  * --------------------------------------------------------------------------
  * Calculates a base-36 hash string from ident, passes it back in hash_str.

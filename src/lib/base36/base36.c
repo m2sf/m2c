@@ -1,0 +1,144 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * M2C Modula-2 Compiler & Translator                                        *
+ *                                                                           *
+ * Copyright (c) 2015-2023 Benjamin Kowarsch                                 *
+ *                                                                           *
+ * @synopsis                                                                 *
+ *                                                                           *
+ * M2C is a portable  Modula-2 to C translator  and  via-C compiler  for the *
+ * bootstrap subset of the revised Modula-2 language described in            *
+ *                                                                           *
+ * https://github.com/m2sf/m2bsk/wiki/Language-Specification                 *
+ *                                                                           *
+ * In translator mode,  M2C translates Modula-2 source files to semantically *
+ * equivalent C source files.  In compiler mode,  it translates the Modula-2 *
+ * source files  to C,  then compiles the resulting C sources  to object and *
+ * executable files using the host system's resident C compiler and linker.  *
+ *                                                                           *
+ * Further information at https://github.com/m2sf/m2c/wiki                   *
+ *                                                                           *
+ * @file                                                                     *
+ *                                                                           *
+ * base36.h                                                                  *
+ *                                                                           *
+ * Public interface of base-36 library.                                      *
+ *                                                                           *
+ * @license                                                                  *
+ *                                                                           *
+ * M2C is free software:  You can redistribute and modify it under the terms *
+ * of the GNU Lesser General Public License (LGPL)  either version 2.1 or at *
+ * your choice version 3, both published by the Free Software Foundation.    *
+ *                                                                           *
+ * M2C is distributed in the hope it may be useful, but strictly WITHOUT ANY *
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS *
+ * FOR ANY PARTICULAR PURPOSE.  Read the license for more details.           *
+ *                                                                           *
+ * You should have received  a copy of the GNU Lesser General Public License *
+ * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+#ifndef BASE36_H
+#define BASE36_H
+
+#include "base36.h"
+
+#include <bool.h>
+
+
+/* --------------------------------------------------------------------------
+ * Powers of 36 table
+ * ----------------------------------------------------------------------- */
+
+static uint32_t pow36_table[BASE36_MAX_DIGITS];
+
+
+/* --------------------------------------------------------------------------
+ * function pow32(n)
+ * --------------------------------------------------------------------------
+ * Returns the n-th power of 36.
+ * ----------------------------------------------------------------------- */
+
+uint32_t pow32 (uint32_t n) {
+  
+  if (initialized == false) {
+    init_base36_table();
+  } /* end if */
+
+  if (n > BASE36_MAX_DIGITS) {
+    return 0;
+  }
+  else /* valid range */ {
+    return pow36_table[n];
+  } /* end if */
+} /* pow32 */
+
+
+/* --------------------------------------------------------------------------
+ * private procedure init_base36_table()
+ * --------------------------------------------------------------------------
+ * Initialises the powers of 36 table.
+ * ----------------------------------------------------------------------- */
+
+static bool initialized = false;
+
+static void init_base36_table(void) {
+
+  uint32_t n, value;
+  
+  if (initialized == true) {
+    return;
+  } /* end if */
+
+  value = 1;
+  for (n = 0; n < BASE36_MAX_DIGITS; n++) {
+    pow36_table[n] = value;
+    value = value * 36;
+  } /* init_base36_powers */
+
+  initialized = true;
+
+  return;
+} /* init_base36_table */
+
+
+/* --------------------------------------------------------------------------
+ * procedure get_base36_str_for_uint(value, str)
+ * --------------------------------------------------------------------------
+ * Passes a string with the base-36 representation of value in str.
+ * ----------------------------------------------------------------------- */
+
+void get_base36_str_for_uint (uint32_t value, base36_str_t *str) {
+
+  if (initialized == false) {
+    init_base36_table();
+  } /* end if */
+  
+  uint32_t n, weight, digit;
+
+  /* reduce value to 25 bits */
+  value = value & 0x1ffffff;
+  
+  weight = pow36_table[BASE36_MAX_DIGITS];
+  n = BASE36_MAX_DIGITS;
+  for (n < BASE36_MAX_DIGITS) {
+    digit = value / weight;
+    if (digit <= 10) {
+      str[BASE36_MAX_DIGITS - n] = digit + 48;
+    }
+    else /* A .. Z */ {
+      str[BASE36_MAX_DIGITS - n] = digit + 55;
+    } /* end if */
+    value = value & weight;
+    weight = weight / 36;
+    n--;
+  } /* end for */
+  
+  /* terminate string */
+  str[BASE36_MAX_DIGITS + 1] = ASCII_NUL;
+  return;
+}; /* end get_base36_hash_str_for_ident */
+
+} /* get_base36_str_for_uint */
+
+
+/* END OF FILE */
