@@ -43,8 +43,8 @@ identifiers are qualified with a local suffix, derived from the base-36 represen
 value computed from the identifier of the surrounding function or procedure.
 
 To obtain the C representation of the fully qualified identifier, the derived local suffix is
-appended to the C representation of the unqualified identifier while two lowlines followed by
-digit zero __0 are inserted between them.
+appended to the C representation of the unqualified identifier while two lowlines __ are
+inserted between them. The suffix always starts with a decimal digit. 
 
 
 Constant Identifiers
@@ -56,8 +56,8 @@ Examples
 
 * A non-local non-exported Modula-2 constant FooBar is mapped to FOO_BAR.
 * A Modula-2 constant BazBam exported by module FooBar is mapped to FOO_BAR__BAZ_BAM.
-* A local Modula-2 constant BazBam in procedure FooBar is mapped to BAZ_BAM__0XXXXX
-  where XXXXX is the base-36 hash value of FooBar.
+* A local Modula-2 constant BazBam in procedure FooBar is mapped to BAZ_BAM__DXXXXX
+  where DXXXXX is the base-36 hash value of FooBar.
 
 
 Enumerated Value Identifiers
@@ -76,8 +76,8 @@ Given the enumeration type declaration TYPE Color = ( Red, Green, Blue );
 
 * If type Color is non-local and non-exported, Red is mapped to COLOR_RED.
 * If type Color is exported by module Graphics, Red is mapped to GRAPHICS__COLOR_RED.
-* If type Color is declared local in procedure Draw, Red is mapped to COLOR_RED__0XXXXX
-  where XXXXX is the base-36 hash value of Draw.
+* If type Color is declared local in procedure Draw, Red is mapped to COLOR_RED__DXXXXX
+  where DXXXXX is the base-36 hash value of Draw.
 
 
 Type Identifiers
@@ -91,8 +91,8 @@ Examples
 
 * A non-local non-exported Modula-2 type identifier FooBar is mapped to foo_bar_t.
 * A Modula-2 type identifier BazBam exported by module FooBar is mapped to foo_bar__baz_bam_t.
-* A local Modula-2 type identifier BazBam in procedure FooBar is mapped to baz_bam_t__0XXXXX
-  where XXXXX is the base-36 hash value of FooBar.
+* A local Modula-2 type identifier BazBam in procedure FooBar is mapped to baz_bam_t__DXXXXX
+  where DXXXXX is the base-36 hash value of FooBar.
 
 
 Variable Identifiers
@@ -117,8 +117,8 @@ Examples
 
 * A non-local non-exported Modula-2 function identifier fooBar is mapped to foo_bar.
 * A Modula-2 function identifier bazBam exported by module FooBar is mapped to foo_bar__baz_bam.
-* A local Modula-2 function identifier bazBam in procedure FooBar is mapped to baz_bam__0XXXXX
-  where XXXXX is the base-36 hash value of FooBar.
+* A local Modula-2 function identifier bazBam in procedure FooBar is mapped to baz_bam__DXXXXX
+  where DXXXXX is the base-36 hash value of FooBar.
 
 
 Procedure Identifiers
@@ -133,8 +133,8 @@ Examples
 
 * A non-local non-exported Modula-2 procedure identifier FooBar is mapped to do_foo_bar.
 * A Modula-2 procedure identifier BazBam exported by module FooBar is mapped to foo_bar__do_baz_bam.
-* A local Modula-2 procedure identifier BazBam in procedure FooBar is mapped to do_baz_bam__0XXXXX
-  where XXXXX is the base-36 hash value of FooBar.
+* A local Modula-2 procedure identifier BazBam in procedure FooBar is mapped to do_baz_bam__DXXXXX
+  where DXXXXX is the base-36 hash value of FooBar.
 
 
 Identifiers whose Mapping coincides with Reserved Words of C
@@ -156,5 +156,10 @@ This mapping scheme was designed with the common Modula-2 naming convention in m
 * Math constant, variable and function identifiers are in camelCase,
 * Other constant identifiers are consistently either in camelCase or TitleCase.
 
+
+Legend
+
+In the placeholder DXXXXX, representing a local suffix,
+D represents a decimal digit, X a base-36 digit.
 
 [END OF DOCUMENT]
