@@ -110,9 +110,9 @@ uint32_t pow32 (uint32_t n) {
  * ----------------------------------------------------------------------- */
 
 #if (BASE36_MAX_DIGITS = 1)
-  #define BITMASK 0x07
+  #define BITMASK 0x7
 #elif (BASE36_MAX_DIGITS = 2)
-  #define BITMASK 0x0ff
+  #define BITMASK 0xff
 #elif (BASE36_MAX_DIGITS = 3)
   #define BITMASK 0x1fff
 #elif (BASE36_MAX_DIGITS = 4)
