@@ -53,27 +53,6 @@ static uint32_t pow36_table[BASE36_MAX_DIGITS];
 
 
 /* --------------------------------------------------------------------------
- * function pow32(n)
- * --------------------------------------------------------------------------
- * Returns the n-th power of 36.
- * ----------------------------------------------------------------------- */
-
-uint32_t pow32 (uint32_t n) {
-  
-  if (initialized == false) {
-    init_base36_table();
-  } /* end if */
-
-  if (n > BASE36_MAX_DIGITS) {
-    return 0;
-  }
-  else /* valid range */ {
-    return pow36_table[n];
-  } /* end if */
-} /* pow32 */
-
-
-/* --------------------------------------------------------------------------
  * private procedure init_base36_table()
  * --------------------------------------------------------------------------
  * Initialises the powers of 36 table.
@@ -99,6 +78,27 @@ static void init_base36_table(void) {
 
   return;
 } /* init_base36_table */
+
+
+/* --------------------------------------------------------------------------
+ * function pow32(n)
+ * --------------------------------------------------------------------------
+ * Returns the n-th power of 36.
+ * ----------------------------------------------------------------------- */
+
+uint32_t pow32 (uint32_t n) {
+  
+  if (initialized == false) {
+    init_base36_table();
+  } /* end if */
+
+  if (n > BASE36_MAX_DIGITS) {
+    return 0;
+  }
+  else /* valid range */ {
+    return pow36_table[n];
+  } /* end if */
+} /* pow32 */
 
 
 /* --------------------------------------------------------------------------
