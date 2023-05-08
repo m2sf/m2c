@@ -19,7 +19,7 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * base36.h                                                                  *
+ * base36.c                                                                  *
  *                                                                           *
  * Public interface of base-36 library.                                      *
  *                                                                           *
