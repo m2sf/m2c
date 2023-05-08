@@ -114,6 +114,8 @@ void get_base36_str_for_uint (uint32_t value, base36_str_t *str) {
   } /* end if */
   
   uint32_t n, weight, digit;
+  
+  /* TO DO : determine max bitwidth from max digits */
 
   /* reduce value to 25 bits */
   value = value & 0x1ffffff;
