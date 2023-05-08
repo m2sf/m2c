@@ -252,12 +252,36 @@ const char* m2c_ident_xlat_for_hidden_name
 
 typedef char base36_str_t[HASH_STR_SIZE];
 
-void get_base36_hash_str_for_ident
-  (const char *ident, base36_str_t *hash_str) {
-  
-  /* TO DO */
+#define MAX_BASE36_DIGITS (HASH_STR_SIZE - 1)
 
+static void get_base36_for_base16_number
+  (uint32_t value, base36_str_t *hash_str) {
+  
+  uint32_t n, weight, digit;
+
+  /* reduce value to 25 bits */
+  value = value & 0x1ffffff;
+  
+  weight = MAX_BASE36_DIGITS;
+  n = MAX_BASE36_DIGITS;
+  for (n < MAX_BASE36_DIGITS) {
+    digit = value / weight;
+    if (digit <= 10) {
+      hash_str[MAX_BASE36_DIGITS-n] = digit + 48;
+    }
+    else /* A .. Z */ {
+      hash_str[MAX_BASE36_DIGITS-n] = digit + 55;
+    } /* end if */
+    value = value & weight;
+    weight = weight / 36;
+    n--;
+  } /* end for */
+  
+  /* terminate string */
+  hash_str[MAX_BASE36_DIGITS+1] = ASCII_NUL;
+  return;
 }; /* end get_base36_hash_str_for_ident */
+
 
 /* --------------------------------------------------------------------------
  * private function get_base36_hash_str_for_ident(ident, hash_str)
