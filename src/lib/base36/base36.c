@@ -21,7 +21,7 @@
  *                                                                           *
  * base36.c                                                                  *
  *                                                                           *
- * Public interface of base-36 library.                                      *
+ * Implementation of base-36 library.                                        *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
