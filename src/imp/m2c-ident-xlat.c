@@ -251,7 +251,12 @@ const char* m2c_ident_xlat_for_hidden_name
 
 void get_base36_hash_str_for_ident (const char *ident, char *hash_str) {
   
-  /* TO DO */
+  uint32_t hash, value;
+  
+  /* TO DO: calculate hash value from string */
+
+  value = truncate_for_n_base36_digits(hash);
+  get_base36_str_for_uint(value, &str);
 
 }; /* end get_base36_hash_str_for_ident */
 
@@ -284,14 +289,14 @@ const char* m2c_ident_xlat_for_local_name
         ll_ident = snake_case_for_ident(intstr_char_ptr(ident));
         len = strlen(ll_enum_id) + strlen(ll_ident) + strlen(suffix) + 4;
         xlat = malloc(len * sizeof(char) + 1);
-        sprintf(xlat, "%s_%s__0%s", ll_enum_id, ll_ident, suffix);
+        sprintf(xlat, "%s_%s__%s", ll_enum_id, ll_ident, suffix);
       }
     /* other constant */
       else {
         ll_ident = snake_case_for_ident(intstr_char_ptr(ident));
         len = strlen(ll_ident) + strlen(suffix) + 3;
         xlat = malloc(len * sizeof(char) + 1);
-        sprintf(xlat, "%s__0%s", ll_ident, suffix);
+        sprintf(xlat, "%s__%s", ll_ident, suffix);
       }; /* end if */
 
       /* ALL-CAPS */
@@ -303,7 +308,7 @@ const char* m2c_ident_xlat_for_local_name
       ll_ident = snake_case_for_ident(intstr_char_ptr(ident));
       len = strlen(ll_ident) + strlen(suffix) + 5;
       xlat = malloc(len * sizeof(char) + 1);
-      sprintf(xlat, "%s_t__0%s", ll_ident, suffix);
+      sprintf(xlat, "%s_t__%s", ll_ident, suffix);
       break;
 
     /* variable */
@@ -323,7 +328,7 @@ const char* m2c_ident_xlat_for_local_name
       ll_ident = snake_case_for_ident(intstr_char_ptr(ident));
       len = strlen(ll_ident) + strlen(suffix) + 3;
       xlat = malloc(len * sizeof(char) + 1);
-      sprintf(xlat, "%s__0%s", ll_ident, suffix);
+      sprintf(xlat, "%s__%s", ll_ident, suffix);
       break;
       
     /* procedure */
@@ -331,7 +336,7 @@ const char* m2c_ident_xlat_for_local_name
       ll_ident = snake_case_for_ident(intstr_char_ptr(ident));
       len = strlen(ll_ident) + strlen(suffix) + 6;
       xlat = malloc(len * sizeof(char) + 1);
-      sprintf(xlat, "do_%s__0%s", ll_ident, suffix);
+      sprintf(xlat, "do_%s__%s", ll_ident, suffix);
     
   }; /* end switch */
   
