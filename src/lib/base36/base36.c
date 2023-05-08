@@ -102,6 +102,41 @@ uint32_t pow32 (uint32_t n) {
 
 
 /* --------------------------------------------------------------------------
+ * function truncate_for_n_base36_digits(value)
+ * --------------------------------------------------------------------------
+ * Truncates 32-bit unsigned integer value to the largest possible value that
+ * can be represented as a base-36 value with the number of digits defined by
+ * constant BASE36_MAX_DIGITS and whose leading digit is a decimal digit.
+ * ----------------------------------------------------------------------- */
+
+#if (BASE36_MAX_DIGITS = 1)
+  #define BITMASK 0x07
+#elif (BASE36_MAX_DIGITS = 2)
+  #define BITMASK 0x0ff
+#elif (BASE36_MAX_DIGITS = 3)
+  #define BITMASK 0x1fff
+#elif (BASE36_MAX_DIGITS = 4)
+  #define BITMASK 0x3ffff
+#elif (BASE36_MAX_DIGITS = 5)
+  #define BITMASK 0xffffff
+#elif (BASE36_MAX_DIGITS = 6)
+  #define BITMASK 0x1fffffff
+#elif (BASE36_MAX_DIGITS = 7)
+  #define BITMASK 0x3ffffffff
+#elif (BASE36_MAX_DIGITS = 8)
+  #define BITMASK 0xfffffffff
+#else
+  #error "the value of BASE36_MAX_DIGITS must be within range 1 to 8"
+#endif
+
+uint32_t truncate_for_n_base36_digits (uint32_t value) {
+
+  return value & BITMASK;
+
+} /* truncate_for_n_base36_digits */
+
+
+/* --------------------------------------------------------------------------
  * procedure get_base36_str_for_uint(value, str)
  * --------------------------------------------------------------------------
  * Passes a string with the base-36 representation of value in str.
@@ -115,10 +150,11 @@ void get_base36_str_for_uint (uint32_t value, base36_str_t *str) {
   
   uint32_t n, weight, digit;
   
-  /* TO DO : determine max bitwidth from max digits */
-
-  /* reduce value to 25 bits */
-  value = value & 0x1ffffff;
+  /* check for base-36 overflow */
+  if (value > BITMASK) {
+    str[0] = ASCII_NUL;
+    return;
+  } /* end if */
   
   weight = pow36_table[BASE36_MAX_DIGITS];
   n = BASE36_MAX_DIGITS;

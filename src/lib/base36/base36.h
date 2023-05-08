@@ -66,6 +66,17 @@ uint32_t pow32 (uint32_t n);
 
 
 /* --------------------------------------------------------------------------
+ * function truncate_for_n_base36_digits(value)
+ * --------------------------------------------------------------------------
+ * Truncates 32-bit unsigned integer value to the largest possible value that
+ * can be represented as a base-36 value with the number of digits defined by
+ * constant BASE36_MAX_DIGITS and whose leading digit is a decimal digit.
+ * ----------------------------------------------------------------------- */
+
+uint32_t truncate_for_n_base36_digits (uint32_t value);
+
+
+/* --------------------------------------------------------------------------
  * procedure get_base36_str_for_uint(value, str)
  * --------------------------------------------------------------------------
  * Passes a string with the base-36 representation of value in str.
