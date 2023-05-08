@@ -40,7 +40,7 @@ Local Suffixes
 
 With the exception of local variable identifiers, the C representation of all other local
 identifiers are qualified with a local suffix, derived from the base-36 representation of a hash
-value computed from the identifier of the surrounding function or procedure.
+value computed from the identifier of the surrounding procedure.
 
 To obtain the C representation of the fully qualified identifier, the derived local suffix is
 appended to the C representation of the unqualified identifier while two lowlines __ are
