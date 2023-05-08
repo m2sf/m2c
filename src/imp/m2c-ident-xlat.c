@@ -40,6 +40,7 @@
 #include "m2c-ident-xlat.h"
 #include "snake-case-conv.h"
 #include "c-reswords.h"
+#include "base36.h"
 
 #include <stdio.h> /* sprintf */
 #include <stdlib.h> /* NULL, malloc */
