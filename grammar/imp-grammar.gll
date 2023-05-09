@@ -1,0 +1,180 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * M2C Modula-2 Compiler & Translator                                        *
+ *                                                                           *
+ * Copyright (c) 2015-2023 Benjamin Kowarsch                                 *
+ *                                                                           *
+ * @synopsis                                                                 *
+ *                                                                           *
+ * M2C is a portable  Modula-2 to C translator  and  via-C compiler  for the *
+ * bootstrap subset of the revised Modula-2 language described in            *
+ *                                                                           *
+ * https://github.com/m2sf/m2bsk/wiki/Language-Specification                 *
+ *                                                                           *
+ * In translator mode,  M2C translates Modula-2 source files to semantically *
+ * equivalent C source files.  In compiler mode,  it translates the Modula-2 *
+ * source files  to C,  then compiles the resulting C sources  to object and *
+ * executable files using the host system's resident C compiler and linker.  *
+ *                                                                           *
+ * Further information at https://github.com/m2sf/m2c/wiki                   *
+ *                                                                           *
+ * @file                                                                     *
+ *                                                                           *
+ * imp-grammar.gll                                                           *
+ *                                                                           *
+ * EBNF grammar of Modula-2 module header and import section.                *
+ *                                                                           *
+ * @license                                                                  *
+ *                                                                           *
+ * M2C is free software:  You can redistribute and modify it under the terms *
+ * of the GNU Lesser General Public License (LGPL)  either version 2.1 or at *
+ * your choice version 3, both published by the Free Software Foundation.    *
+ *                                                                           *
+ * M2C is distributed in the hope it may be useful, but strictly WITHOUT ANY *
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS *
+ * FOR ANY PARTICULAR PURPOSE.  Read the license for more details.           *
+ *                                                                           *
+ * You should have received  a copy of the GNU Lesser General Public License *
+ * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+grammar m2import;
+
+/* * *   R e s e r v e d   W o r d s   * * */
+
+reserved
+  BEGIN, CONST, DEFINITION, END, IMPLEMENTATION, IMPORT, MODULE, PROCEDURE,
+  TO, TYPE, VAR;
+
+
+/* * *   N o n - T e r m i n a l   S y m b o l s   * * */
+
+/* Module Header and Import */
+
+moduleHeaderAndImport :=
+  defModHdrAndImport | impOrPgmModHdrAndImport
+  ;
+
+/* Definition Module Header and Import */
+
+defModHdrAndImport :=
+  DEFINITION MODULE moduleIdent ';'
+  import* endOfDefModImport;
+  ;
+
+alias moduleIdent = Ident ;
+
+
+/* Import */
+
+import :=
+  IMPORT libIdent reExport? ( ',' libIdent reExport? )* ';'
+  ;
+
+alias libIdent = Ident ;
+
+alias reExport = '+' ;
+
+
+/* Implementation or Program Module Header and Import */
+
+impOrPgmModHdrAndImport :=
+  IMPLEMENTATION? MODULE moduleIdent ';'
+  privateImport* endOfImpAndPgmModImport;
+  ;
+
+
+/* Private Import */
+
+privateImport :=
+  IMPORT moduleList
+  ;
+
+alias moduleList = identList;
+
+
+/* Identifier List */
+
+identList :=
+  Ident ( ',' Ident )*
+  ;
+
+
+/* End of Definition Module Import */
+
+endOfDefModImport :=
+  CONST | TYPE | VAR | PROCEDURE | TO | EndOfFile
+  ;
+
+
+/* End of Implementation and Program Module Import */
+
+endOfImpAndPgmModImport :=
+  BEGIN | endOfDefModImport
+  ;
+
+
+/* * *   T e r m i n a l   S y m b o l s   * * */
+
+/* Identifier */
+
+Ident :=
+  Letter ( Letter | Digit )*
+  ;
+
+
+/* * *   I g n o r e   S y m b o l s   * * */
+
+/* Whitespace */
+
+Whitespace :=
+  Space | Tabulator
+  ;
+
+.Tabulator := 0u9 ;
+
+
+/* Line Comment */
+
+LineComment :=
+  '!' AnyPrintable* EndOfLine
+  ;
+
+.AnyPrintable := 0u20 .. 0u7E ; /* greedy */
+
+
+/* Block Comment */
+
+BlockComment :=
+  '(*' ( AnyPrintable | BlockComment | EndOfLine )* '*)'
+  ;
+
+
+/* Pragma */
+
+Pragma :=
+  '<*' ( AnyPrintable | EndOfLine )* '*>'
+  ;
+
+
+/* Disabled Code Section */
+
+DisabledCodeSection :=
+  '?<' /* strictly in first column of a line */
+  ( AnyPrintable | BlockComment | EndOfLine )*
+  '>?' /* strictly in first column of a line */
+  ;
+
+
+/* End of Line Marker */
+
+EndOfLine :=
+  LF | CR ( LF )?
+  ;
+
+.LF := 0uA ;
+
+.CR := 0uD ;
+
+endg m2import.
+
+/* END OF FILE */
