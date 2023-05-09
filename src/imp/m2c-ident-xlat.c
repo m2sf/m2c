@@ -244,20 +244,35 @@ const char* m2c_ident_xlat_for_hidden_name
 
 
 /* --------------------------------------------------------------------------
- * private function get_base36_hash_str_for_ident(ident, hash_str)
+ * private procedure get_base36_hash_str_for_ident(ident, hash_str)
  * --------------------------------------------------------------------------
  * Calculates a base-36 hash string from ident, passes it back in hash_str.
  * ----------------------------------------------------------------------- */
 
-void get_base36_hash_str_for_ident (const char *ident, char *hash_str) {
+static void get_base36_hash_str_for_ident
+  (const char *ident, char *hash_str) {
   
-  uint32_t hash, value;
+  uint32_t index, value;
+  char ch;
   
-  /* TO DO: calculate hash value from string */
+  /* calculate hash */
+  index = 0;
+  ch = ident[index];
+  hash = HASH_INITIAL;
+  while (ch != ASCII_NUL) {
+    value = HASH_NEXT_CHAR(value, ch);
+    index++;
+    ch = ident[index];
+  } /* end while */
+  value = HASH_FINAL(value);
+  
+  /* truncate to prevent overflow */
+  value = truncate_for_n_base36_digits(value);
 
-  value = truncate_for_n_base36_digits(hash);
+  /* pass back base-36 representation */
   get_base36_str_for_uint(value, &str);
 
+  return;
 }; /* end get_base36_hash_str_for_ident */
 
 

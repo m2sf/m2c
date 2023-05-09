@@ -536,7 +536,7 @@ void snake_init_dictionary (unsigned size, snake_status_t *status) {
   
   /* allocate dictionary */
   allocation_size = sizeof(snake_dict_s) +
-    bucket_count * sizeofsnake_dict_entry_t);
+    bucket_count * sizeof(snake_dict_entry_t);
   dictionary = malloc(allocation_size);
   
   /* bail out if allocation failed */
