@@ -37,6 +37,10 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+/* --------------------------------------------------------------------------
+ * Imports
+ * ----------------------------------------------------------------------- */
+
 #include "snake-case-conv.h"
 #include "compiler-options.h"
 #include "hash.h"
