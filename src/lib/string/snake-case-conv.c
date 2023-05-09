@@ -39,6 +39,7 @@
 
 #include "snake-case-conv.h"
 #include "compiler-options.h"
+#include "hash.h"
 
 #include <stdlib.h> /* NULL, malloc */
 
