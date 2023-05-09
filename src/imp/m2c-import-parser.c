@@ -21,7 +21,7 @@
  *                                                                           *
  * m2c-import-parser.c                                                       *
  *                                                                           *
- * Implementation of identifier to snake-case translation dictionary.        *
+ * Implementation of import section parser for dependency graph.             *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
