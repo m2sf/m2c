@@ -229,13 +229,13 @@ static m2c_token_t imp_or_pgm_mod_hdr_and_import () {
     lookahead = m2c_consume_sym();
     
     /* moduleIdent */
-    if (match_token(TOKEN_IDENTIFIER, RESYNC(IMPORT_OR_DEFINITION_OR_END))) {
+    if (match_token(TOKEN_IDENTIFIER, RESYNC(IMPORT_OR_DECLARATION_OR_END))) {
       lookahead = m2c_consume_sym();
 
       module_id = m2c_lexer_current_lexeme();
       
       /* ';' */
-      if (match_token(TOKEN_SEMICOLON, RESYNC(IMPORT_DEFINITION_OR_END))) {
+      if (match_token(TOKEN_SEMICOLON, RESYNC(IMPORT_OR_DECLARATION_OR_END))) {
         lookahead = m2c_consume_sym();
       }
       else /* resync */ {
@@ -271,36 +271,60 @@ static m2c_token_t imp_or_pgm_mod_hdr_and_import () {
  * private function private_import()
  * --------------------------------------------------------------------------
  * privateImport :=
- *   IMPORT moduleList
+ *   IMPORT moduleList ';'
  *   ;
  *
  * alias moduleList = identList;
- * ----------------------------------------------------------------------- */
-
-static m2c_token_t private_import () {
-  m2c_token_t lookahead;
-  
-
-
-  return lookahead;
-} /* end private_import */
-
-
-/* --------------------------------------------------------------------------
- * private function ident_list()
- * --------------------------------------------------------------------------
+ *
  * identList :=
  *   Ident ( ',' Ident )*
  *   ;
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t ident_list () {
+static m2c_token_t private_import () {
   m2c_token_t lookahead;
   
+  /* IMPORT */
+  lookahead = m2c_consume_sym();
+  
+  /* moduleList */
 
+  /* Ident */
+  if (match_token(TOKEN_IDENTIFIER, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
+    lookahead = m2c_consume_sym();
+    
+    library_id = m2c_lexer_current_lexeme();
+    m2c_fifo_enqueue(import_list, library_id);
+  }
+  else /* resync */ {
+    lookahead = m2c_next_sym();
+  } /* end if */
 
+  /* ( ',' Ident )* */
+  while (lookahead == TOKEN_COMMA) {
+    lookahead = m2c_consume_sym();
+
+    /* libIdent */
+    if (match_token(TOKEN_IDENTIFIER, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
+      lookahead = m2c_consume_sym();
+      
+      library_id = m2c_lexer_current_lexeme();
+      m2c_fifo_enqueue(import_list, library_id);
+   }
+    else /* resync */ {
+      lookahead = m2c_next_sym();
+    } /* end if */
+  } /* end while */
+
+  /* ';' */
+  if (match_token(TOKEN_SEMICOLON, RESYNC(IMPORT_OR_DEFINITION_OR_END))) {
+    lookahead = m2c_consume_sym();
+  }
+  else /* resync */ {
+    lookahead = m2c_next_sym();
+  } /* end if */
+  
   return lookahead;
-} /* end ident_list */
-
+} /* end private_import */
 
 /* END OF FILE */
