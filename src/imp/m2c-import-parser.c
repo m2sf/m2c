@@ -217,8 +217,52 @@ static m2c_token_t import () {
 static m2c_token_t imp_or_pgm_mod_hdr_and_import () {
   m2c_token_t lookahead;
   
+  lookahead = m2c_lookahead_sym();
+  
+  /* IMPLEMENTATION? */
+  if (lookahead == TOKEN_IMPLEMENTATION) {
+    lookahead = m2c_consume_sym();
+  } /* end if */
+  
+  /* MODULE */
+  if (lookahead == TOKEN_MODULE) {
+    lookahead = m2c_consume_sym();
+    
+    /* moduleIdent */
+    if (match_token(TOKEN_IDENTIFIER, RESYNC(IMPORT_OR_DEFINITION_OR_END))) {
+      lookahead = m2c_consume_sym();
 
+      module_id = m2c_lexer_current_lexeme();
+      
+      /* ';' */
+      if (match_token(TOKEN_SEMICOLON, RESYNC(IMPORT_DEFINITION_OR_END))) {
+        lookahead = m2c_consume_sym();
+      }
+      else /* resync */ {
+        lookahead = m2c_next_sym();
+      } /* end if */
+    }
+    else /* resync */ {
+      lookahead = m2c_next_sym();
+    } /* end if */
+  }
+  else /* resync */ {
+    lookahead = m2c_next_sym();
+  } /* end if */
+  
+  import_list = m2c_fifo_new_queue(NULL);
 
+  /* privateImport* */
+  while (lookahead == TOKEN_IMPORT) {
+    lookahead = private_import();
+    m2c_fifo_enqueue(import_list, imported_id);
+  } /* end while */
+  
+  /* endOfImpAndPgmModImport */
+  if (match_set(FIRST(END_OF_MOD_IMPORT), RESYNC(END_OR_EOF))) {
+    m2c_consume_sym();
+  } /* end if */
+  
   return lookahead;
 } /* end imp_or_pgm_mod_hdr_and_import */
 
