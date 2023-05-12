@@ -37,8 +37,9 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-static void m2c_parse_file ();
+#include "m2c-import-parser.h"
 
+static void m2c_parse_file ();
 static void parse_start_symbol ();
 
 
@@ -326,5 +327,24 @@ static m2c_token_t private_import () {
   
   return lookahead;
 } /* end private_import */
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_parse_imports(srctype, srcpath, list, status)
+ * --------------------------------------------------------------------------
+ * Parses  the import section of the Modula-2 source file located at srcpath,
+ * passes a list of identifiers of imported modules back in list  on success,
+ * or NULL on failure.  Passes the status of the operation back in status.
+ * ----------------------------------------------------------------------- */
+ 
+ void m2c_parse_imports
+   (m2c_sourcetype_t srctype,       /* in */
+    const char *srcpath,            /* in */
+    m2c_import_list_t *list,        /* out */
+    m2c_parser_status_t *status) {  /* out */
+
+  /* TO DO */
+
+} /* end m2c_parse_imports */
 
 /* END OF FILE */

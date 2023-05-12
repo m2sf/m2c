@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * m2c-parser.h                                                              *
+ * m2c-import-parser.h                                                       *
  *                                                                           *
- * Public interface of Modula-2 parser module.                               *
+ * Public interface of import section parser for dependency graph.           *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -37,61 +37,36 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef M2C_PARSER_H
-#define M2C_PARSER_H
+#ifndef M2C_IMPORT_PARSER_H
+#define M2C_IMPORT_PARSER_H
 
-#include "m2c-common.h"
-
-#include "m2c-ast.h"
-#include "m2c-stats.h"
-
+#include "fifo.h"
+#include "m2c-parser-status.h"
 
 /* --------------------------------------------------------------------------
- * type m2c_sourcetype_t
+ * type m2c_import_list_t
  * --------------------------------------------------------------------------
- * Enumeration representing type of input source.
+ * List of identifiers of imported modules.
  * ----------------------------------------------------------------------- */
 
-typedef enum {
-  M2C_ANY_SOURCE,
-  M2C_DEF_SOURCE,
-  M2C_MOD_SOURCE
-} m2c_sourcetype_t;
-
-#define M2C_FIRST_SOURCETYPE M2C_ANY_SOURCE
-#define M2C_LAST_SOURCETYPE M2C_MOD_SOURCE
+typedef m2c_fifo_t m2c_import_list_t;
 
 
 /* --------------------------------------------------------------------------
- * type m2c_parser_status_t
+ * function m2c_parse_imports(srctype, srcpath, ast, stats, status)
  * --------------------------------------------------------------------------
- * Status codes for operations on type m2c_parser_t.
- * ----------------------------------------------------------------------- */
-
-typedef enum {
-  M2C_PARSER_STATUS_SUCCESS,
-  M2C_PARSER_STATUS_INVALID_REFERENCE,
-  M2C_PARSER_STATUS_INVALID_SOURCETYPE,
-  M2C_PARSER_STATUS_ALLOCATION_FAILED,
-  M2C_PARSER_STATUS_SYNTAX_ERRORS_FOUND
-} m2c_parser_status_t;
-
-
-/* --------------------------------------------------------------------------
- * function m2c_parse_file(srctype, srcpath, ast, stats, status)
- * --------------------------------------------------------------------------
- * Parses a Modula-2 source file represented by srcpath and returns status.
- * Builds an abstract syntax tree and passes it back in ast, or NULL upon
- * failure.  Collects simple statistics and passes them back in stats.
+ * Parses  the import section of the Modula-2 source file located at srcpath,
+ * passes a list of identifiers of imported modules back in list  on success,
+ * or NULL on failure.  Passes the status of the operation back in status.
  * ----------------------------------------------------------------------- */
  
- void m2c_parse_file
-   (m2c_sourcetype_t srctype,      /* in */
-    const char *srcpath,           /* in */
-    m2c_ast_t *ast,                /* out */
-    m2c_stats_t *stats,            /* out */
-    m2c_parser_status_t *status);  /* out */
+ void m2c_parse_imports
+   (m2c_sourcetype_t srctype,       /* in */
+    const char *srcpath,            /* in */
+    m2c_import_list_t *list,        /* out */
+    m2c_parser_status_t *status);   /* out */
 
-#endif /* M2C_PARSER_H */
+
+#endif /* M2C_IMPORT_PARSER_H */
 
 /* END OF FILE */
