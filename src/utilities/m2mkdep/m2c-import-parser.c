@@ -60,12 +60,65 @@ typedef parser_context_s *parser_context_t;
 
 
 /* --------------------------------------------------------------------------
+ * function m2c_parse_imports(srcpath, list, status)
+ * --------------------------------------------------------------------------
+ * Parses  the import section of the Modula-2 source file located at srcpath,
+ * passes a list of identifiers of imported modules back in list  on success,
+ * or NULL on failure.  Passes the status of the operation back in status.
+ * ----------------------------------------------------------------------- */
+ 
+ void m2c_parse_imports
+   (const char *srcpath,            /* in */
+    m2c_import_list_t *list,        /* out */
+    m2c_parser_status_t *status) {  /* out */
+
+  import_parser_t parser;
+  import_lexer_t lexer;
+  
+  new_import_lexer(lexer, srcpath, lexer_status);
+
+  if ( /*TO DO : check status for errors */ ) {
+    *list = NULL;
+    /* TO DO : set status */
+    return;
+  } /* end if */
+
+  parser = malloc(sizeof(import_parser_s));
+
+  if (parser == NULL) {
+    *list = NULL;
+    *status = M2C_IMPORT_PARSER_STATUS_ALLOCATION_FAILED;
+    return;
+  } /* end if */
+  
+  parser->lexer = lexer;
+  parser->import_list = NULL;
+  parser->error_count = 0;
+  
+  parse_module_header_and_import(&parser);
+  
+  /* TO DO : status */
+
+  list = parser->import_list;
+  
+  return;
+} /* end m2c_parse_imports */
+
+
+/* *********************************************************************** *
+ * P R I V A T E   F U N C T I O N S                                       *
+ * *********************************************************************** */
+
+/* --------------------------------------------------------------------------
  * private function module_header_and_import(p)
  * --------------------------------------------------------------------------
  * moduleHeaderAndImport :=
  *   defModHdrAndImport | impOrPgmModHdrAndImport
  *   ;
  * ----------------------------------------------------------------------- */
+
+static m2c_token_t def_mod_hdr_and_import (parser_context_t p);
+static m2c_token_t imp_or_pgm_mod_hdr_and_import (parser_context_t p);
 
 static m2c_token_t module_header_and_import (parser_context_t p) {
   m2c_token_t lookahead;
@@ -99,6 +152,8 @@ static m2c_token_t module_header_and_import (parser_context_t p) {
  *
  * endOfDefModImport := CONST | TYPE | VAR | PROCEDURE | TO | EndOfFile ;
  * ----------------------------------------------------------------------- */
+
+static m2c_token_t import (parser_context_t p);
 
 static m2c_token_t def_mod_hdr_and_import (parser_context_t p) {
   m2c_token_t lookahead;
@@ -160,7 +215,7 @@ static m2c_token_t def_mod_hdr_and_import (parser_context_t p) {
  * alias reExport = '+' ;
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t import () {
+static m2c_token_t import (parser_context_t p) {
   m2c_token_t lookahead;
   
   /* IMPORT */
@@ -230,7 +285,9 @@ static m2c_token_t import () {
  * endOfImpAndPgmModImport := BEGIN | endOfDefModImport ;
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t imp_or_pgm_mod_hdr_and_import () {
+static m2c_token_t private_import (parser_context_t p);
+
+static m2c_token_t imp_or_pgm_mod_hdr_and_import (parser_context_t p) {
   m2c_token_t lookahead;
   
   lookahead = m2c_lookahead_sym(p->lexer);
@@ -296,7 +353,7 @@ static m2c_token_t imp_or_pgm_mod_hdr_and_import () {
  *   ;
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t private_import (p->lexer) {
+static m2c_token_t private_import (parser_context_t p) {
   m2c_token_t lookahead;
   
   /* IMPORT */
@@ -341,51 +398,5 @@ static m2c_token_t private_import (p->lexer) {
   
   return lookahead;
 } /* end private_import */
-
-
-/* --------------------------------------------------------------------------
- * function m2c_parse_imports(srcpath, list, status)
- * --------------------------------------------------------------------------
- * Parses  the import section of the Modula-2 source file located at srcpath,
- * passes a list of identifiers of imported modules back in list  on success,
- * or NULL on failure.  Passes the status of the operation back in status.
- * ----------------------------------------------------------------------- */
- 
- void m2c_parse_imports
-   (const char *srcpath,            /* in */
-    m2c_import_list_t *list,        /* out */
-    m2c_parser_status_t *status) {  /* out */
-
-  import_parser_t parser;
-  import_lexer_t lexer;
-  
-  new_import_lexer(lexer, srcpath, lexer_status);
-
-  if ( /*TO DO : check status for errors */ ) {
-    *list = NULL;
-    /* TO DO : set status */
-    return;
-  } /* end if */
-
-  parser = malloc(sizeof(import_parser_s));
-
-  if (parser == NULL) {
-    *list = NULL;
-    *status = M2C_IMPORT_PARSER_STATUS_ALLOCATION_FAILED;
-    return;
-  } /* end if */
-  
-  parser->lexer = lexer;
-  parser->import_list = NULL;
-  parser->error_count = 0;
-  
-  parse_module_header_and_import(&parser);
-  
-  /* TO DO : status */
-
-  list = parser->import_list;
-  
-  return;
-} /* end m2c_parse_imports */
 
 /* END OF FILE */
