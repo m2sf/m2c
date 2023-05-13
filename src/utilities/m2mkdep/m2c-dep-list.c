@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * m2c-dep-list.h                                                            *
+ * m2c-dep-list.c                                                            *
  *                                                                           *
- * Public interface of module dependency list.                               *
+ * Implementation of module dependency list.                                 *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
