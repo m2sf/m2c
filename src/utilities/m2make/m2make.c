@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * M2C Modula-2 Compiler & Translator                                        *
  *                                                                           *
@@ -19,9 +20,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * m2mkdep.c                                                                 *
+ * m2make.c                                                                  *
  *                                                                           *
- * Utility program to create a dependency (.dep) file.                       *
+ * M2C make utility program.                                                 *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -43,12 +44,14 @@
 
 /* get input file */
 
-/* call m2mkdep to generate dependency file for input file */
+/* call m2mkdep to generate dependency file */
 
-/* read dependency file /*
+/* read dependency file */
 
-/* compute module order */
+/* check for cycles /*
 
-/* call m2c on each module in order */
+/* if any cycles are found, report error and terminate */
+
+/* if no cycles are found, call m2c on each file in dependency order */
 
 /* END OF FILE */
