@@ -52,45 +52,57 @@
 
 typedef struct {
   intstr_t module_id;
-  m2c_fifo_t list;
-  m2c_dep_list_status_t last_status;
+  uint entry_count;
+  intstr_t entry[];
 } m2c_dep_list_s;
 
 
-
 /* --------------------------------------------------------------------------
- * procedure m2c_new_dep_list(module_id, list, status)
- * --------------------------------------------------------------------------
- * Creates  a new dependency list for module_id,  and passes it back in list,
- * or NULL on failure.  Passes the status of the operation back in status.
+ * status of last operation
  * ----------------------------------------------------------------------- */
 
-void m2c_new_dep_list
-  (intstr_t module_id, m2c_dep_list_t *list, m2c_dep_list_status_t *status) {
+static m2c_dep_list_status_t last_status;
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_new_dep_list(module_id, item_list)
+ * --------------------------------------------------------------------------
+ * Creates a new dependency list for module_id from item_list and returns it,
+ * or NULL on failure.  The status of the operation is stored in last_status.
+ * ----------------------------------------------------------------------- */
+
+m2c_dep_list_t m2c_new_dep_list (intstr_t module_id, m2c_fifo_t item_list) {
 
   m2c_dep_list_t new_dep_list;
+  uint_t index;
   
   if (module_id == NULL) {
-    *status = M2C_DEP_LIST_STATUS_INVALID_REFERENCE;
-    *list = NULL;
-    return;
+    last_status = M2C_DEP_LIST_STATUS_INVALID_REFERENCE;
+    return NULL;
   } /* end if */
   
-  new_list = malloc(sizeof(m2c_dep_list_s));
+  entry_count = m2c_fifo_entry_count(item_list);
+
+  new_list =
+    malloc(sizeof(m2c_dep_list_s) + entry_count * sizeof(intstr_t));
 
   if (new_list == NULL) {
-    *status = M2C_DEP_LIST_STATUS_ALLOCATION_FAILED;
-    *list = NULL;
-    return;
+    last_status = M2C_DEP_LIST_STATUS_ALLOCATION_FAILED;
+    return NULL;
   } /* end if */
   
-  new_list->last_status = M2C_DEP_LIST_STATUS_SUCCESS;
   new_list->module_id = module_id;
-  new_list->list = NULL;
   
-  *status = M2C_DEP_LIST_STATUS_SUCCESS;
-  *list = new_list;
-  return;
+  index = 0;
+  while (index < entry_count) {
+    new_list->entry[index] = m2c_fifo_dequeue(item_list);
+    index++;
+  } /* end while */
+
+  new_list->entry_count = entry_count;
+  
+  last_status = M2C_DEP_LIST_STATUS_SUCCESS;
+  return new_list;
 } /* end m2c_new_dep_list */
 
 
@@ -104,36 +116,14 @@ void m2c_new_dep_list
 intstr_t m2c_dep_list_module (m2c_dep_list_t dep_list) {
 
   if (dep_list == NULL) {
+    last_status = M2C_DEP_LIST_STATUS_INVALID_REFERENCE;
     return NULL;
-  } /* end if */
-  
-  dep_list->last_status = M2C_DEP_LIST_STATUS_SUCCESS;
-  return dep_list->module_id;
-} /* end m2c_dep_list_module */
-
-
-/* --------------------------------------------------------------------------
- * procedure m2c_dep_list_add_item(dep_list, module_id)
- * --------------------------------------------------------------------------
- * Adds dependency module_id to dependency list dep_list.
- * ----------------------------------------------------------------------- */
-
-void m2c_dep_list_add_item (m2c_dep_list_t dep_list, intstr_t module_id) {
-
-  if (dep_list == NULL) {
-    return;
-  } /* end if */
-  
-  if (dep_list->list == NULL) {
-    dep_list->list = m2c_fifo_new_queue(module_id);
   }
   else {
-    m2c_fifo_enqueue_unique(module_id);
+    last_status = M2C_DEP_LIST_STATUS_SUCCESS;
+    return dep_list->module_id;
   } /* end if */
-
-  dep_list->last_status = M2C_DEP_LIST_STATUS_SUCCESS;
-  return;
-} /* end m2c_dep_list_add_item */
+} /* end m2c_dep_list_module */
 
 
 /* --------------------------------------------------------------------------
@@ -145,16 +135,13 @@ void m2c_dep_list_add_item (m2c_dep_list_t dep_list, intstr_t module_id) {
 uint_t m2c_dep_list_item_count (m2c_dep_list_t dep_list) {
 
   if (dep_list == NULL) {
+    last_status = M2C_DEP_LIST_STATUS_INVALID_REFERENCE;
     return 0;
+  }
+  else {
+    last_status = M2C_DEP_LIST_STATUS_SUCCESS;
+    return dep_list->entry_count;
   } /* end if */
-  
-  dep_list->last_status = M2C_DEP_LIST_STATUS_SUCCESS;
-
-  if (dep_list->list == NULL) {
-    return 0;
-  } /* end if */
-
-  return m2c_fifo_entry_count(dep_list->list);
 } /* end m2c_dep_list_item_count */
 
 
@@ -166,24 +153,30 @@ uint_t m2c_dep_list_item_count (m2c_dep_list_t dep_list) {
 
 intstr_t m2c_dep_list_item_at_index (m2c_dep_list_t dep_list, uint_t index) {
 
-/* TO DO */
-
+  if (dep_list == NULL) {
+    last_status = M2C_DEP_LIST_STATUS_INVALID_REFERENCE;
+    return NULL;
+  }
+  else (index >= dep_list->entry_count) {
+    last_status = M2C_DEP_LIST_STATUS_INVALID_INDEX;
+    return NULL;
+  }
+  else {
+    last_status = M2C_DEP_LIST_STATUS_SUCCESS;
+    return new_list->entry[index];
+  } /* end if */
 } /* end m2c_dep_list_item_at_index */
 
 
 /* --------------------------------------------------------------------------
- * function m2c_dep_list_last_status(dep_list)
+ * function m2c_dep_list_last_status()
  * --------------------------------------------------------------------------
- * Returns the status of the last operation for dep_list.
+ * Returns the status of the last operation.
  * ----------------------------------------------------------------------- */
 
-m2c_dep_list_status_t m2c_dep_list_last_status (m2c_dep_list_t dep_list) {
+m2c_dep_list_status_t m2c_dep_list_last_status (void) {
 
-  if (dep_list == NULL) {
-    return M2C_DEP_LIST_STATUS_INVALID_REFERENCE;
-  } /* end if */
-  
-  return dep_list->last_status;
+  return last_status;
 } /* end m2c_dep_list_last_status */
 
 

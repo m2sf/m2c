@@ -66,20 +66,18 @@ typedef enum {
   M2C_DEP_LIST_STATUS_SUCCESS,
   M2C_DEP_LIST_STATUS_INVALID_REFERENCE,
   M2C_DEP_LIST_STATUS_ALLOCATION_FAILED
-  M2C_DEP_LIST_STATUS_ENTRY_NOT_UNIQUE,
   M2C_DEP_LIST_STATUS_INVALID_INDEX,
 } m2c_dep_list_status_t;
 
 
 /* --------------------------------------------------------------------------
- * procedure m2c_new_dep_list(module_id, list, status)
+ * function m2c_new_dep_list(module_id, item_list)
  * --------------------------------------------------------------------------
- * Creates  a new dependency list for module_id,  and passes it back in list,
- * or NULL on failure.  Passes the status of the operation back in status.
+ * Creates a new dependency list for module_id from item_list and returns it,
+ * or NULL on failure.
  * ----------------------------------------------------------------------- */
 
-void m2c_new_dep_list
-  (intstr_t module_id, m2c_dep_list_t *list, m2c_dep_list_status_t *status);
+m2c_dep_list_t m2c_new_dep_list (intstr_t module_id, m2c_fifo_t item_list);
 
 
 /* --------------------------------------------------------------------------
@@ -90,15 +88,6 @@ void m2c_new_dep_list
  * ----------------------------------------------------------------------- */
 
 intstr_t m2c_dep_list_module (m2c_dep_list_t dep_list);
-
-
-/* --------------------------------------------------------------------------
- * procedure m2c_dep_list_add_item(dep_list, module_id)
- * --------------------------------------------------------------------------
- * Adds dependency module_id to dependency list dep_list.
- * ----------------------------------------------------------------------- */
-
-void m2c_dep_list_add_item (m2c_dep_list_t dep_list, intstr_t module_id);
 
 
 /* --------------------------------------------------------------------------
@@ -120,21 +109,21 @@ intstr_t m2c_dep_list_item_at_index (m2c_dep_list_t dep_list, uint_t index);
 
 
 /* --------------------------------------------------------------------------
- * function m2c_dep_list_last_status(dep_list)
+ * function m2c_dep_list_last_status()
  * --------------------------------------------------------------------------
- * Returns the status of the last operation for dep_list.
+ * Returns the status of the last operation.
  * ----------------------------------------------------------------------- */
 
-m2c_dep_list_status_t m2c_dep_list_last_status (m2c_dep_list_t dep_list);
+m2c_dep_list_status_t m2c_dep_list_last_status (void);
 
 
 /* --------------------------------------------------------------------------
- * procedure m2c_dep_list_release(dep_list)
+ * procedure m2c_dep_list_dispose(dep_list)
  * --------------------------------------------------------------------------
  * Deallocates dep_list and passes NULL in dep_list.
  * ----------------------------------------------------------------------- */
 
-void m2c_dep_list_release (m2c_dep_list_t *dep_list);
+void m2c_dep_list_dispose (m2c_dep_list_t *dep_list);
 
 
 #endif /* M2C_DEP_LIST_H */
