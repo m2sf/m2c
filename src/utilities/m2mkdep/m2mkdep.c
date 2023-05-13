@@ -49,10 +49,8 @@
 
 /* build dependency graph */
 
-/* check for cycles /*
+/* check for cycles, and issue warnings if any are found /*
 
-/* if any cycles are found, report error and terminate */
-
-/* if no cycles are found, write dependency file from dependency graph */
+/* write dependency file from dependency graph */
 
 /* END OF FILE */
