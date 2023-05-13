@@ -100,6 +100,8 @@ typedef parser_context_s *parser_context_t;
   /* TO DO : status */
 
   list = parser->import_list;
+
+  /* TO DO : deallocate lexer and parser contexts */
   
   return;
 } /* end m2c_parse_imports */
