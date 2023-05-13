@@ -45,6 +45,7 @@
  * ----------------------------------------------------------------------- */
 
 #include "fifo.h"
+#include "interned-strings.h"
 #include "m2c-parser-status.h"
 
 
@@ -58,7 +59,7 @@ typedef m2c_fifo_t m2c_import_list_t;
 
 
 /* --------------------------------------------------------------------------
- * function m2c_parse_imports(srctype, srcpath, ast, stats, status)
+ * function m2c_parse_imports(srcpath, list, status)
  * --------------------------------------------------------------------------
  * Parses  the import section of the Modula-2 source file located at srcpath,
  * passes a list of identifiers of imported modules back in list  on success,
@@ -66,7 +67,7 @@ typedef m2c_fifo_t m2c_import_list_t;
  * ----------------------------------------------------------------------- */
  
  void m2c_parse_imports
-   (const char *srcpath,            /* in */
+   (const intstr_t srcpath,         /* in */
     m2c_import_list_t *list,        /* out */
     m2c_parser_status_t *status);   /* out */
 

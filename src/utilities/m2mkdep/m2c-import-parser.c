@@ -43,6 +43,7 @@
 
 #include "m2c-import-parser.h"
 #include "m2c-import-lexer.h"
+#include "interned-strings.h"
 
 
 /* --------------------------------------------------------------------------
@@ -50,7 +51,7 @@
  * ----------------------------------------------------------------------- */
 
 typedef struct {
-  char *srcpath;
+  intstr_t srcpath;
   m2c_import_lexer_t lexer;
   fifo_t import_list;
   uint_t error_count;
@@ -67,8 +68,10 @@ typedef parser_context_s *parser_context_t;
  * or NULL on failure.  Passes the status of the operation back in status.
  * ----------------------------------------------------------------------- */
  
+ static m2c_token_t module_header_and_import (parser_context_t p);
+ 
  void m2c_parse_imports
-   (const char *srcpath,            /* in */
+   (const intstr_t srcpath,         /* in */
     m2c_import_list_t *list,        /* out */
     m2c_parser_status_t *status) {  /* out */
 
