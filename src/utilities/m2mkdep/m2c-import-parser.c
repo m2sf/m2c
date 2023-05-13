@@ -37,19 +37,23 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "m2c-import-parser.h"
+/* --------------------------------------------------------------------------
+ * imports
+ * ----------------------------------------------------------------------- */
 
-static void m2c_parse_file ();
-static void parse_start_symbol ();
+#include "m2c-import-parser.h"
+#include "m2c-import-lexer.h"
+
 
 /* --------------------------------------------------------------------------
- * type parser_context_t
+ * private type parser_context_t
  * ----------------------------------------------------------------------- */
 
 typedef struct {
   char *srcpath;
-  m2c_infile_t infile;
+  m2c_import_lexer_t lexer;
   fifo_t import_list;
+  uint_t error_count;
 } parser_context_s;
 
 typedef parser_context_s *parser_context_t;
@@ -66,7 +70,7 @@ typedef parser_context_s *parser_context_t;
 static m2c_token_t module_header_and_import (parser_context_t p) {
   m2c_token_t lookahead;
 
-  lookahead = m2c_next_sym(p->infile);
+  lookahead = m2c_next_sym(p->lexer);
    
   switch (lookahead) {
     case TOKEN_DEFINITION :
@@ -100,45 +104,44 @@ static m2c_token_t def_mod_hdr_and_import (parser_context_t p) {
   m2c_token_t lookahead;
   
   /* DEFINITION */
-  lookahead = m2c_consume_sym(p->infile);
+  lookahead = m2c_consume_sym(p->lexer);
   
   /* MODULE */
   if (lookahead == TOKEN_MODULE) {
-    lookahead = m2c_consume_sym(p->infile);
+    lookahead = m2c_consume_sym(p->lexer);
     
     /* moduleIdent */
     if (match_token(TOKEN_IDENTIFIER, RESYNC(IMPORT_OR_DEFINITION_OR_END))) {
-      lookahead = m2c_consume_sym();
+      lookahead = m2c_consume_sym(p->lexer);
 
-      module_id = m2c_lexer_current_lexeme();
+      module_id = m2c_lexer_current_lexeme(p->lexer);
       
       /* ';' */
       if (match_token(TOKEN_SEMICOLON, RESYNC(IMPORT_DEFINITION_OR_END))) {
-        lookahead = m2c_consume_sym();
+        lookahead = m2c_consume_sym(p->lexer);
       }
       else /* resync */ {
-        lookahead = m2c_next_sym();
+        lookahead = m2c_next_sym(p->lexer);
       } /* end if */
     }
     else /* resync */ {
-      lookahead = m2c_next_sym();
+      lookahead = m2c_next_sym(p->lexer);
     } /* end if */
   }
   else /* resync */ {
-    lookahead = m2c_next_sym();
+    lookahead = m2c_next_sym(p->lexer);
   } /* end if */
   
-  import_list = m2c_fifo_new_queue(NULL);
+  p->import_list = m2c_fifo_new_queue(NULL);
 
   /* import* */
   while (lookahead == TOKEN_IMPORT) {
-    lookahead = import();
-    m2c_fifo_enqueue(import_list, imported_id);
+    lookahead = import(p->lexer);
   } /* end while */
   
   /* endOfDefModImport */
   if (match_set(FIRST(END_OF_DEF_IMPORT), RESYNC(END_OR_EOF))) {
-    m2c_consume_sym();
+    m2c_consume_sym(p->lexer);
   } /* end if */
   
   return lookahead;
@@ -161,55 +164,55 @@ static m2c_token_t import () {
   m2c_token_t lookahead;
   
   /* IMPORT */
-  lookahead = m2c_consume_sym();
+  lookahead = m2c_consume_sym(p->lexer);
   
   /* libIdent */
   if (match_token(TOKEN_IDENTIFIER, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
-    lookahead = m2c_consume_sym();
+    lookahead = m2c_consume_sym(p->lexer);
     
-    library_id = m2c_lexer_current_lexeme();
-    m2c_fifo_enqueue(import_list, library_id);
+    library_id = m2c_lexer_current_lexeme(p->lexer);
+    m2c_fifo_enqueue(p->import_list, library_id);
 
     /* '+' */
     if (match_token(TOKEN_PLUS, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
-      lookahead = m2c_consume_sym();
+      lookahead = m2c_consume_sym(p->lexer);
     }
     else /* resync */ {
-      lookahead = m2c_next_sym();
+      lookahead = m2c_next_sym(p->lexer);
   }
   else /* resync */ {
-    lookahead = m2c_next_sym();
+    lookahead = m2c_next_sym(p->lexer);
   } /* end if */
 
   /* ( ',' libIdent reExport? )* */
   while (lookahead == TOKEN_COMMA) {
-    lookahead = m2c_consume_sym();
+    lookahead = m2c_consume_sym(p->lexer);
 
     /* libIdent */
     if (match_token(TOKEN_IDENTIFIER, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
-      lookahead = m2c_consume_sym();
+      lookahead = m2c_consume_sym(p->lexer);
       
       library_id = m2c_lexer_current_lexeme();
-      m2c_fifo_enqueue(import_list, library_id);
+      m2c_fifo_enqueue(p->import_list, library_id);
 
       /* '+' */
       if (match_token(TOKEN_PLUS, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
-        lookahead = m2c_consume_sym();
+        lookahead = m2c_consume_sym(p->lexer);
       }
       else /* resync */ {
-        lookahead = m2c_next_sym();
+        lookahead = m2c_next_sym(p->lexer);
     }
     else /* resync */ {
-      lookahead = m2c_next_sym();
+      lookahead = m2c_next_sym(p->lexer);
     } /* end if */
   } /* end while */
 
   /* ';' */
   if (match_token(TOKEN_SEMICOLON, RESYNC(IMPORT_OR_DEFINITION_OR_END))) {
-    lookahead = m2c_consume_sym();
+    lookahead = m2c_consume_sym(p->lexer);
   }
   else /* resync */ {
-    lookahead = m2c_next_sym();
+    lookahead = m2c_next_sym(p->lexer);
   } /* end if */
   
   return lookahead;
@@ -230,50 +233,49 @@ static m2c_token_t import () {
 static m2c_token_t imp_or_pgm_mod_hdr_and_import () {
   m2c_token_t lookahead;
   
-  lookahead = m2c_lookahead_sym();
+  lookahead = m2c_lookahead_sym(p->lexer);
   
   /* IMPLEMENTATION? */
   if (lookahead == TOKEN_IMPLEMENTATION) {
-    lookahead = m2c_consume_sym();
+    lookahead = m2c_consume_sym(p->lexer);
   } /* end if */
   
   /* MODULE */
   if (lookahead == TOKEN_MODULE) {
-    lookahead = m2c_consume_sym();
+    lookahead = m2c_consume_sym(p->lexer);
     
     /* moduleIdent */
     if (match_token(TOKEN_IDENTIFIER, RESYNC(IMPORT_OR_DECLARATION_OR_END))) {
-      lookahead = m2c_consume_sym();
+      lookahead = m2c_consume_sym(p->lexer);
 
-      module_id = m2c_lexer_current_lexeme();
+      module_id = m2c_lexer_current_lexeme(p->lexer);
       
       /* ';' */
       if (match_token(TOKEN_SEMICOLON, RESYNC(IMPORT_OR_DECLARATION_OR_END))) {
-        lookahead = m2c_consume_sym();
+        lookahead = m2c_consume_sym(p->lexer);
       }
       else /* resync */ {
-        lookahead = m2c_next_sym();
+        lookahead = m2c_next_sym(p->lexer);
       } /* end if */
     }
     else /* resync */ {
-      lookahead = m2c_next_sym();
+      lookahead = m2c_next_sym(p->lexer);
     } /* end if */
   }
   else /* resync */ {
-    lookahead = m2c_next_sym();
+    lookahead = m2c_next_sym(p->lexer);
   } /* end if */
   
-  import_list = m2c_fifo_new_queue(NULL);
-
+  p->import_list = m2c_fifo_new_queue(NULL);
+  
   /* privateImport* */
   while (lookahead == TOKEN_IMPORT) {
-    lookahead = private_import();
-    m2c_fifo_enqueue(import_list, imported_id);
+    lookahead = private_import(p->lexer);
   } /* end while */
   
   /* endOfImpAndPgmModImport */
   if (match_set(FIRST(END_OF_MOD_IMPORT), RESYNC(END_OR_EOF))) {
-    m2c_consume_sym();
+    m2c_consume_sym(p->lexer);
   } /* end if */
   
   return lookahead;
@@ -294,47 +296,47 @@ static m2c_token_t imp_or_pgm_mod_hdr_and_import () {
  *   ;
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t private_import () {
+static m2c_token_t private_import (p->lexer) {
   m2c_token_t lookahead;
   
   /* IMPORT */
-  lookahead = m2c_consume_sym();
+  lookahead = m2c_consume_sym(p->lexer);
   
   /* moduleList */
 
   /* Ident */
   if (match_token(TOKEN_IDENTIFIER, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
-    lookahead = m2c_consume_sym();
+    lookahead = m2c_consume_sym(p->lexer);
     
-    library_id = m2c_lexer_current_lexeme();
-    m2c_fifo_enqueue(import_list, library_id);
+    library_id = m2c_lexer_current_lexeme(p->lexer);
+    m2c_fifo_enqueue(p->import_list, library_id);
   }
   else /* resync */ {
-    lookahead = m2c_next_sym();
+    lookahead = m2c_next_sym(p->lexer);
   } /* end if */
 
   /* ( ',' Ident )* */
   while (lookahead == TOKEN_COMMA) {
-    lookahead = m2c_consume_sym();
+    lookahead = m2c_consume_sym(p->lexer);
 
     /* libIdent */
     if (match_token(TOKEN_IDENTIFIER, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
-      lookahead = m2c_consume_sym();
+      lookahead = m2c_consume_sym(p->lexer);
       
-      library_id = m2c_lexer_current_lexeme();
-      m2c_fifo_enqueue(import_list, library_id);
+      library_id = m2c_lexer_current_lexeme(p->lexer);
+      m2c_fifo_enqueue(p->import_list, library_id);
    }
     else /* resync */ {
-      lookahead = m2c_next_sym();
+      lookahead = m2c_next_sym(p->lexer);
     } /* end if */
   } /* end while */
 
   /* ';' */
   if (match_token(TOKEN_SEMICOLON, RESYNC(IMPORT_OR_DEFINITION_OR_END))) {
-    lookahead = m2c_consume_sym();
+    lookahead = m2c_consume_sym(p->lexer);
   }
   else /* resync */ {
-    lookahead = m2c_next_sym();
+    lookahead = m2c_next_sym(p->lexer);
   } /* end if */
   
   return lookahead;
@@ -354,8 +356,36 @@ static m2c_token_t private_import () {
     m2c_import_list_t *list,        /* out */
     m2c_parser_status_t *status) {  /* out */
 
-  /* TO DO */
+  import_parser_t parser;
+  import_lexer_t lexer;
+  
+  new_import_lexer(lexer, srcpath, lexer_status);
 
+  if ( /*TO DO : check status for errors */ ) {
+    *list = NULL;
+    /* TO DO : set status */
+    return;
+  } /* end if */
+
+  parser = malloc(sizeof(import_parser_s));
+
+  if (parser == NULL) {
+    *list = NULL;
+    *status = M2C_IMPORT_PARSER_STATUS_ALLOCATION_FAILED;
+    return;
+  } /* end if */
+  
+  parser->lexer = lexer;
+  parser->import_list = NULL;
+  parser->error_count = 0;
+  
+  parse_module_header_and_import(&parser);
+  
+  /* TO DO : status */
+
+  list = parser->import_list;
+  
+  return;
 } /* end m2c_parse_imports */
 
 /* END OF FILE */
