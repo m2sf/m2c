@@ -61,7 +61,7 @@ typedef struct {
  * status of last operation
  * ----------------------------------------------------------------------- */
 
-static m2c_dep_list_status_t last_status;
+static m2c_dep_list_status_t last_status = M2C_DEP_LIST_STATUS_SUCCESS;
 
 
 /* --------------------------------------------------------------------------
