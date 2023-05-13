@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * m2c-import-parser.h                                                       *
+ * m2c-import-lexer.c                                                        *
  *                                                                           *
- * Public interface of import section parser for dependency graph.           *
+ * Implementation of import section lexer for dependency graph.              *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -37,36 +37,6 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef M2C_IMPORT_PARSER_H
-#define M2C_IMPORT_PARSER_H
-
-#include "fifo.h"
-#include "m2c-parser-status.h"
-
-/* --------------------------------------------------------------------------
- * type m2c_import_list_t
- * --------------------------------------------------------------------------
- * List of identifiers of imported modules.
- * ----------------------------------------------------------------------- */
-
-typedef m2c_fifo_t m2c_import_list_t;
-
-
-/* --------------------------------------------------------------------------
- * function m2c_parse_imports(srctype, srcpath, ast, stats, status)
- * --------------------------------------------------------------------------
- * Parses  the import section of the Modula-2 source file located at srcpath,
- * passes a list of identifiers of imported modules back in list  on success,
- * or NULL on failure.  Passes the status of the operation back in status.
- * ----------------------------------------------------------------------- */
- 
- void m2c_parse_imports
-   (m2c_sourcetype_t srctype,       /* in */
-    const char *srcpath,            /* in */
-    m2c_import_list_t *list,        /* out */
-    m2c_parser_status_t *status);   /* out */
-
-
-#endif /* M2C_IMPORT_PARSER_H */
+/* TO DO */
 
 /* END OF FILE */

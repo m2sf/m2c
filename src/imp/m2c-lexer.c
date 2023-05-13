@@ -21,7 +21,7 @@
  *                                                                           *
  * m2c-lexer.c                                                               *
  *                                                                           *
- * Public interface of Modula-2 lexer module.                                *
+ * Implementation of Modula-2 lexer module.                                  *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -79,16 +79,6 @@ static const m2c_symbol_struct_t null_symbol = {
   /* column */ 0,
   /* lexeme */ NULL
 }; /* null_symbol */
-
-
-/* --------------------------------------------------------------------------
- * private type m2c_number_literal_lexer_f
- * --------------------------------------------------------------------------
- * function pointer type for function to lex a number literal.
- * ----------------------------------------------------------------------- */
-
-typedef char (*m2c_number_literal_lexer_f)
-  (m2c_lexer_t lexer, m2c_token_t *token);
 
 
 /* --------------------------------------------------------------------------

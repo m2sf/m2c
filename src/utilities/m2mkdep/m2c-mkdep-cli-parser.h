@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * cli-parser.h.                                                             *
+ * m2c-mkdep-cli-parser.h                                                    *
  *                                                                           *
- * Public interface of command line parser module.                           *
+ * Public interface of m2mkdep command line interface parser module.         *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -37,54 +37,59 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef M2C_CLI_PARSER_H
-#define M2C_CLI_PARSER_H
+#ifndef M2C_MKDEP_CLI_PARSER_H
+#define M2C_MKDEP_CLI_PARSER_H
+
+/* --------------------------------------------------------------------------
+ * imports
+ * ----------------------------------------------------------------------- */
 
 #include "string.h"
+#include "m2c-common.h"
 
 
 /* ---------------------------------------------------------------------------
- * type cli_parser_status_t
+ * type mkdep_cli_parser_status_t
  * ---------------------------------------------------------------------------
  * Enumerated token values representing m2c CLI parser status codes.
  * ------------------------------------------------------------------------ */
 
 typedef enum {
-    CLI_PARSER_STATUS_SUCCESS,
-    CLI_PARSER_STATUS_HELP_REQUESTED,
-    CLI_PARSER_STATUS_VERSION_REQUESTED,
-    CLI_PARSER_STATUS_LICENSE_REQUESTED,
-    CLI_PARSER_STATUS_ERRORS_ENCOUNTERED  
-} cli_parser_status_t;
+    MKDEP_CLI_PARSER_STATUS_SUCCESS,
+    MKDEP_CLI_PARSER_STATUS_HELP_REQUESTED,
+    MKDEP_CLI_PARSER_STATUS_VERSION_REQUESTED,
+    MKDEP_CLI_PARSER_STATUS_LICENSE_REQUESTED,
+    MKDEP_CLI_PARSER_STATUS_ERRORS_ENCOUNTERED  
+} mkdep_cli_parser_status_t;
 
 
 /* ---------------------------------------------------------------------------
- * function cli_parse_args()
+ * function mkdep_cli_parse_args()
  * ---------------------------------------------------------------------------
- * Parses command line arguments and sets compiler options accordingly.
+ * Parses command line arguments and sets m2mkdep utility options accordingly.
  * ------------------------------------------------------------------------ */
 
-cli_parser_status_t cli_parse_args (void);
+mkdep_cli_parser_status_t mkdep_cli_parse_args (void);
 
 
 /* ---------------------------------------------------------------------------
- * function cli_source_file()
+ * function mkdep_cli_source_file()
  * ---------------------------------------------------------------------------
  * Returns a string with the source file argument.
  * ------------------------------------------------------------------------ */
 
-m2c_string_t cli_source_file (void);
+m2c_string_t mkdep_cli_source_file (void);
 
 
 /* ---------------------------------------------------------------------------
- * function cli_error_count()
+ * function mkdep_cli_error_count()
  * ---------------------------------------------------------------------------
  * Returns the count of errors encountered while parsing the arguments.
  * ------------------------------------------------------------------------ */
 
-uint_t cli_error_count (void);
+uint_t mkdep_cli_error_count (void);
 
 
-#endif /* M2C_CLI_PARSER_H */
+#endif /* M2C_MKDEP_CLI_PARSER_H */
 
 /* END OF FILE */

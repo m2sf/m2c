@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * cli-parser.h.                                                             *
+ * m2c-import-parser.h                                                       *
  *                                                                           *
- * Public interface of command line parser module.                           *
+ * Public interface of import section parser for dependency graph.           *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -37,54 +37,40 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef M2C_CLI_PARSER_H
-#define M2C_CLI_PARSER_H
+#ifndef M2C_IMPORT_PARSER_H
+#define M2C_IMPORT_PARSER_H
 
-#include "string.h"
+/* --------------------------------------------------------------------------
+ * imports
+ * ----------------------------------------------------------------------- */
 
-
-/* ---------------------------------------------------------------------------
- * type cli_parser_status_t
- * ---------------------------------------------------------------------------
- * Enumerated token values representing m2c CLI parser status codes.
- * ------------------------------------------------------------------------ */
-
-typedef enum {
-    CLI_PARSER_STATUS_SUCCESS,
-    CLI_PARSER_STATUS_HELP_REQUESTED,
-    CLI_PARSER_STATUS_VERSION_REQUESTED,
-    CLI_PARSER_STATUS_LICENSE_REQUESTED,
-    CLI_PARSER_STATUS_ERRORS_ENCOUNTERED  
-} cli_parser_status_t;
+#include "fifo.h"
+#include "m2c-parser-status.h"
 
 
-/* ---------------------------------------------------------------------------
- * function cli_parse_args()
- * ---------------------------------------------------------------------------
- * Parses command line arguments and sets compiler options accordingly.
- * ------------------------------------------------------------------------ */
+/* --------------------------------------------------------------------------
+ * type m2c_import_list_t
+ * --------------------------------------------------------------------------
+ * List of identifiers of imported modules.
+ * ----------------------------------------------------------------------- */
 
-cli_parser_status_t cli_parse_args (void);
-
-
-/* ---------------------------------------------------------------------------
- * function cli_source_file()
- * ---------------------------------------------------------------------------
- * Returns a string with the source file argument.
- * ------------------------------------------------------------------------ */
-
-m2c_string_t cli_source_file (void);
+typedef m2c_fifo_t m2c_import_list_t;
 
 
-/* ---------------------------------------------------------------------------
- * function cli_error_count()
- * ---------------------------------------------------------------------------
- * Returns the count of errors encountered while parsing the arguments.
- * ------------------------------------------------------------------------ */
+/* --------------------------------------------------------------------------
+ * function m2c_parse_imports(srctype, srcpath, ast, stats, status)
+ * --------------------------------------------------------------------------
+ * Parses  the import section of the Modula-2 source file located at srcpath,
+ * passes a list of identifiers of imported modules back in list  on success,
+ * or NULL on failure.  Passes the status of the operation back in status.
+ * ----------------------------------------------------------------------- */
+ 
+ void m2c_parse_imports
+   (const char *srcpath,            /* in */
+    m2c_import_list_t *list,        /* out */
+    m2c_parser_status_t *status);   /* out */
 
-uint_t cli_error_count (void);
 
-
-#endif /* M2C_CLI_PARSER_H */
+#endif /* M2C_IMPORT_PARSER_H */
 
 /* END OF FILE */

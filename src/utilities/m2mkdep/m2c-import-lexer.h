@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * cli-parser.h.                                                             *
+ * m2c-import-lexer.h                                                        *
  *                                                                           *
- * Public interface of command line parser module.                           *
+ * Public interface of import section lexer for dependency graph.            *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -37,54 +37,12 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef M2C_CLI_PARSER_H
-#define M2C_CLI_PARSER_H
 
-#include "string.h"
+#ifndef M2C_IMPORT_LEXER_H
+#define M2C_IMPORT_LEXER_H
 
+/* TO DO */
 
-/* ---------------------------------------------------------------------------
- * type cli_parser_status_t
- * ---------------------------------------------------------------------------
- * Enumerated token values representing m2c CLI parser status codes.
- * ------------------------------------------------------------------------ */
-
-typedef enum {
-    CLI_PARSER_STATUS_SUCCESS,
-    CLI_PARSER_STATUS_HELP_REQUESTED,
-    CLI_PARSER_STATUS_VERSION_REQUESTED,
-    CLI_PARSER_STATUS_LICENSE_REQUESTED,
-    CLI_PARSER_STATUS_ERRORS_ENCOUNTERED  
-} cli_parser_status_t;
-
-
-/* ---------------------------------------------------------------------------
- * function cli_parse_args()
- * ---------------------------------------------------------------------------
- * Parses command line arguments and sets compiler options accordingly.
- * ------------------------------------------------------------------------ */
-
-cli_parser_status_t cli_parse_args (void);
-
-
-/* ---------------------------------------------------------------------------
- * function cli_source_file()
- * ---------------------------------------------------------------------------
- * Returns a string with the source file argument.
- * ------------------------------------------------------------------------ */
-
-m2c_string_t cli_source_file (void);
-
-
-/* ---------------------------------------------------------------------------
- * function cli_error_count()
- * ---------------------------------------------------------------------------
- * Returns the count of errors encountered while parsing the arguments.
- * ------------------------------------------------------------------------ */
-
-uint_t cli_error_count (void);
-
-
-#endif /* M2C_CLI_PARSER_H */
+#endif /* M2C_IMPORT_LEXER_H */
 
 /* END OF FILE */

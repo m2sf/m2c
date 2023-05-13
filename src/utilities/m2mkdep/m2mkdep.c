@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * cli-parser.h.                                                             *
+ * m2mkdep.c                                                                 *
  *                                                                           *
- * Public interface of command line parser module.                           *
+ * Utility program to create a dependency (.dep) file.                       *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -37,54 +37,22 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef M2C_CLI_PARSER_H
-#define M2C_CLI_PARSER_H
+/* TO DO */
 
-#include "string.h"
+/* get command line arguments */
 
+/* get input file */
 
-/* ---------------------------------------------------------------------------
- * type cli_parser_status_t
- * ---------------------------------------------------------------------------
- * Enumerated token values representing m2c CLI parser status codes.
- * ------------------------------------------------------------------------ */
+/* obtain import list for input file */
 
-typedef enum {
-    CLI_PARSER_STATUS_SUCCESS,
-    CLI_PARSER_STATUS_HELP_REQUESTED,
-    CLI_PARSER_STATUS_VERSION_REQUESTED,
-    CLI_PARSER_STATUS_LICENSE_REQUESTED,
-    CLI_PARSER_STATUS_ERRORS_ENCOUNTERED  
-} cli_parser_status_t;
+/* recursively obtain import lists for all imported files */
 
+/* build dependency graph */
 
-/* ---------------------------------------------------------------------------
- * function cli_parse_args()
- * ---------------------------------------------------------------------------
- * Parses command line arguments and sets compiler options accordingly.
- * ------------------------------------------------------------------------ */
+/* check for cycles /*
 
-cli_parser_status_t cli_parse_args (void);
+/* if any cycles are found, report error and terminate */
 
-
-/* ---------------------------------------------------------------------------
- * function cli_source_file()
- * ---------------------------------------------------------------------------
- * Returns a string with the source file argument.
- * ------------------------------------------------------------------------ */
-
-m2c_string_t cli_source_file (void);
-
-
-/* ---------------------------------------------------------------------------
- * function cli_error_count()
- * ---------------------------------------------------------------------------
- * Returns the count of errors encountered while parsing the arguments.
- * ------------------------------------------------------------------------ */
-
-uint_t cli_error_count (void);
-
-
-#endif /* M2C_CLI_PARSER_H */
+/* if no cycles are found, write dependency file from dependency graph */
 
 /* END OF FILE */

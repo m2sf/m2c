@@ -42,28 +42,40 @@
 static void m2c_parse_file ();
 static void parse_start_symbol ();
 
+/* --------------------------------------------------------------------------
+ * type parser_context_t
+ * ----------------------------------------------------------------------- */
+
+typedef struct {
+  char *srcpath;
+  m2c_infile_t infile;
+  fifo_t import_list;
+} parser_context_s;
+
+typedef parser_context_s *parser_context_t;
+
 
 /* --------------------------------------------------------------------------
- * private function module_header_and_import()
+ * private function module_header_and_import(p)
  * --------------------------------------------------------------------------
  * moduleHeaderAndImport :=
  *   defModHdrAndImport | impOrPgmModHdrAndImport
  *   ;
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t module_header_and_import () {
+static m2c_token_t module_header_and_import (parser_context_t p) {
   m2c_token_t lookahead;
 
-  lookahead = m2c_next_sym();
+  lookahead = m2c_next_sym(p->infile);
    
   switch (lookahead) {
     case TOKEN_DEFINITION :
-      lookahead = def_mod_hdr_and_import();
+      lookahead = def_mod_hdr_and_import(p);
       break;
       
     case TOKEN_IMPLEMENTATION :
     case TOKEN_MODULE:
-      lookahead = imp_or_pgm_mod_hdr_and_import();
+      lookahead = imp_or_pgm_mod_hdr_and_import(p);
       break;
   } /* end switch */
   
@@ -72,7 +84,7 @@ static m2c_token_t module_header_and_import () {
 
 
 /* --------------------------------------------------------------------------
- * private function def_mod_hdr_and_import()
+ * private function def_mod_hdr_and_import(p)
  * --------------------------------------------------------------------------
  * defModHdrAndImport :=
  *   DEFINITION MODULE moduleIdent ';'
@@ -84,15 +96,15 @@ static m2c_token_t module_header_and_import () {
  * endOfDefModImport := CONST | TYPE | VAR | PROCEDURE | TO | EndOfFile ;
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t def_mod_hdr_and_import () {
+static m2c_token_t def_mod_hdr_and_import (parser_context_t p) {
   m2c_token_t lookahead;
   
   /* DEFINITION */
-  lookahead = m2c_consume_sym();
+  lookahead = m2c_consume_sym(p->infile);
   
   /* MODULE */
   if (lookahead == TOKEN_MODULE) {
-    lookahead = m2c_consume_sym();
+    lookahead = m2c_consume_sym(p->infile);
     
     /* moduleIdent */
     if (match_token(TOKEN_IDENTIFIER, RESYNC(IMPORT_OR_DEFINITION_OR_END))) {
@@ -330,7 +342,7 @@ static m2c_token_t private_import () {
 
 
 /* --------------------------------------------------------------------------
- * function m2c_parse_imports(srctype, srcpath, list, status)
+ * function m2c_parse_imports(srcpath, list, status)
  * --------------------------------------------------------------------------
  * Parses  the import section of the Modula-2 source file located at srcpath,
  * passes a list of identifiers of imported modules back in list  on success,
@@ -338,8 +350,7 @@ static m2c_token_t private_import () {
  * ----------------------------------------------------------------------- */
  
  void m2c_parse_imports
-   (m2c_sourcetype_t srctype,       /* in */
-    const char *srcpath,            /* in */
+   (const char *srcpath,            /* in */
     m2c_import_list_t *list,        /* out */
     m2c_parser_status_t *status) {  /* out */
 
