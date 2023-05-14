@@ -1,0 +1,45 @@
+Simple Format for Dependency List Files
+
+
+Purpose
+
+Upon processing a compilation unit, a list of all imported modules
+is written into a dependency list (.dep) file.
+
+
+File Format (EBNF)
+
+dependencyList :=
+  header importList EOF
+  ;
+
+header :=
+  moduleIdent ':'
+  ;
+
+importlist :=
+  ident (',' ident)* ';'
+  ;
+
+Ident :=
+  Letter (Letter | Digit)*
+  ;
+
+/* with option --lowline-identifiers */
+
+Ident :=
+  Letter ('_' (Letter | Digit))*
+  ;
+
+
+Example
+
+FooLib :
+  Bar, Baz, Bam, Boo;
+
+
+File Extension
+
+The file extension is '.dep'.
+
+[END OF DOCUMENT]
