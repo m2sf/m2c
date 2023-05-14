@@ -40,12 +40,15 @@
 #ifndef M2C_MKDEP_OPTION_FLAGS_H
 #define M2C_MKDEP_OPTION_FLAGS_H
 
+/* --------------------------------------------------------------------------
+ * imports
+ * ----------------------------------------------------------------------- */
+
 #include "m2c-mkdep-options.h"
-#include <stdio.h>
 
 
 /* --------------------------------------------------------------------------
- * Default option flags
+ * default option flags
  * ----------------------------------------------------------------------- */
 
 #define M2C_MKDEP_DEFAULT_OPTIONS { \
@@ -108,7 +111,6 @@ bool m2c_mkdep_option_lexer_debug (void) {
   return options[M2C_COMPILER_OPTION_LEXER_DEBUG];
 
 } /* end m2c_mkdep_option_lexer_debug */
-
 
 
 /* --------------------------------------------------------------------------
