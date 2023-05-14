@@ -175,7 +175,8 @@ static m2c_token_t def_mod_hdr_and_import (parser_context_t p) {
     /* moduleIdent */
     if (match_token(TOKEN_IDENTIFIER, RESYNC(IMPORT_OR_DEFINITION_OR_END))) {
       lookahead = m2c_consume_sym(p->lexer);
-
+      
+      /* collect module identifier */
       p->module_id = m2c_lexer_current_lexeme(p->lexer);
       
       /* ';' */
@@ -194,6 +195,7 @@ static m2c_token_t def_mod_hdr_and_import (parser_context_t p) {
     lookahead = m2c_next_sym(p->lexer);
   } /* end if */
   
+  /* initialise list for imported libraries */
   p->import_list = m2c_fifo_new_queue(NULL);
 
   /* import* */
@@ -233,6 +235,7 @@ static m2c_token_t import (parser_context_t p) {
   if (match_token(TOKEN_IDENTIFIER, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
     lookahead = m2c_consume_sym(p->lexer);
     
+    /* collect imported library's module identifier */
     library_id = m2c_lexer_current_lexeme(p->lexer);
     m2c_fifo_enqueue_unique(p->import_list, library_id);
 
@@ -255,6 +258,7 @@ static m2c_token_t import (parser_context_t p) {
     if (match_token(TOKEN_IDENTIFIER, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
       lookahead = m2c_consume_sym(p->lexer);
       
+      /* collect imported library's module identifier */
       library_id = m2c_lexer_current_lexeme(p->lexer);
       m2c_fifo_enqueue_unique(p->import_list, library_id);
 
@@ -312,7 +316,8 @@ static m2c_token_t imp_or_pgm_mod_hdr_and_import (parser_context_t p) {
     /* moduleIdent */
     if (match_token(TOKEN_IDENTIFIER, RESYNC(IMPORT_OR_DECLARATION_OR_END))) {
       lookahead = m2c_consume_sym(p->lexer);
-
+      
+      /* collect module identifier */
       p->module_id = m2c_lexer_current_lexeme(p->lexer);
       
       /* ';' */
@@ -331,6 +336,7 @@ static m2c_token_t imp_or_pgm_mod_hdr_and_import (parser_context_t p) {
     lookahead = m2c_next_sym(p->lexer);
   } /* end if */
   
+  /* initialise list for imported libraries */
   p->import_list = m2c_fifo_new_queue(NULL);
   
   /* privateImport* */
@@ -374,6 +380,7 @@ static m2c_token_t private_import (parser_context_t p) {
   if (match_token(TOKEN_IDENTIFIER, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
     lookahead = m2c_consume_sym(p->lexer);
     
+    /* collect imported library's module identifier */
     library_id = m2c_lexer_current_lexeme(p->lexer);
     m2c_fifo_enqueue(p->import_list, library_id);
   }
@@ -389,6 +396,7 @@ static m2c_token_t private_import (parser_context_t p) {
     if (match_token(TOKEN_IDENTIFIER, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
       lookahead = m2c_consume_sym(p->lexer);
       
+      /* collect imported library's module identifier */
       library_id = m2c_lexer_current_lexeme(p->lexer);
       m2c_fifo_enqueue(p->import_list, library_id);
    }
