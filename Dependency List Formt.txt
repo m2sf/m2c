@@ -17,8 +17,16 @@ header :=
   moduleIdent ':'
   ;
 
+moduleIdent :=
+  Ident
+  ;
+
 importlist :=
-  ident (',' ident)* ';'
+  libIdent (',' libIdent)* ';'
+  ;
+
+libIdent :=
+  Ident
   ;
 
 Ident :=
