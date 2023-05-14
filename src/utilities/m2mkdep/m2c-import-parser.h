@@ -44,31 +44,24 @@
  * imports
  * ----------------------------------------------------------------------- */
 
-#include "fifo.h"
-#include "interned-strings.h"
+#include "../lib/strings/interned-strings.h"
+
+#include "m2c-dep-list.h"
 #include "m2c-parser-status.h"
 
 
 /* --------------------------------------------------------------------------
- * type m2c_import_list_t
+ * function m2c_parse_imports(srcpath, dep_list, status)
  * --------------------------------------------------------------------------
- * List of identifiers of imported modules.
- * ----------------------------------------------------------------------- */
-
-typedef m2c_fifo_t m2c_import_list_t;
-
-
-/* --------------------------------------------------------------------------
- * function m2c_parse_imports(srcpath, list, status)
- * --------------------------------------------------------------------------
- * Parses  the import section of the Modula-2 source file located at srcpath,
- * passes a list of identifiers of imported modules back in list  on success,
- * or NULL on failure.  Passes the status of the operation back in status.
+ * Parses  the import section of the Modula-2 source file located at src_path
+ * and  passes a newly allocated dependency list with identifiers of imported
+ * modules back in dep_list, or NULL on failure.  The status of the operation
+ * is passed back in status.
  * ----------------------------------------------------------------------- */
  
  void m2c_parse_imports
-   (const intstr_t srcpath,         /* in */
-    m2c_import_list_t *list,        /* out */
+   (const intstr_t src_path,        /* in */
+    m2c_dep_list_t *dep_list,       /* out */
     m2c_parser_status_t *status);   /* out */
 
 

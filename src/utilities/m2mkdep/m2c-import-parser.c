@@ -50,38 +50,39 @@
  * private type parser_context_t
  * ----------------------------------------------------------------------- */
 
+typedef parser_context_s *parser_context_t;
+
 typedef struct {
-  intstr_t srcpath;
   m2c_import_lexer_t lexer;
-  fifo_t import_list;
+  intstr_t module_id;
+  m2c_fifo_t import_list;
   uint_t error_count;
 } parser_context_s;
 
-typedef parser_context_s *parser_context_t;
-
 
 /* --------------------------------------------------------------------------
- * function m2c_parse_imports(srcpath, list, status)
+ * function m2c_parse_imports(srcpath, dep_list, status)
  * --------------------------------------------------------------------------
- * Parses  the import section of the Modula-2 source file located at srcpath,
- * passes a list of identifiers of imported modules back in list  on success,
- * or NULL on failure.  Passes the status of the operation back in status.
+ * Parses  the import section of the Modula-2 source file located at src_path
+ * and  passes a newly allocated dependency list with identifiers of imported
+ * modules back in dep_list, or NULL on failure.  The status of the operation
+ * is passed back in status.
  * ----------------------------------------------------------------------- */
  
  static m2c_token_t module_header_and_import (parser_context_t p);
  
  void m2c_parse_imports
-   (const intstr_t srcpath,         /* in */
-    m2c_import_list_t *list,        /* out */
+   (const intstr_t src_path,        /* in */
+    m2c_dep_list_t *dep_list,       /* out */
     m2c_parser_status_t *status) {  /* out */
 
   import_parser_t parser;
   import_lexer_t lexer;
   
-  new_import_lexer(lexer, srcpath, lexer_status);
+  new_import_lexer(lexer, src_path, lexer_status);
 
   if ( /*TO DO : check status for errors */ ) {
-    *list = NULL;
+    *dep_list = NULL;
     /* TO DO : set status */
     return;
   } /* end if */
@@ -89,12 +90,13 @@ typedef parser_context_s *parser_context_t;
   parser = malloc(sizeof(import_parser_s));
 
   if (parser == NULL) {
-    *list = NULL;
+    *dep_list = NULL;
     *status = M2C_IMPORT_PARSER_STATUS_ALLOCATION_FAILED;
     return;
   } /* end if */
   
   parser->lexer = lexer;
+  parser->module_id = NULL;
   parser->import_list = NULL;
   parser->error_count = 0;
   
@@ -102,7 +104,7 @@ typedef parser_context_s *parser_context_t;
   
   /* TO DO : status */
 
-  list = parser->import_list;
+  *list = m2c_new_dep_list(parser->module_id, parser->import_list);
 
   /* TO DO : deallocate lexer and parser contexts */
   
@@ -174,7 +176,7 @@ static m2c_token_t def_mod_hdr_and_import (parser_context_t p) {
     if (match_token(TOKEN_IDENTIFIER, RESYNC(IMPORT_OR_DEFINITION_OR_END))) {
       lookahead = m2c_consume_sym(p->lexer);
 
-      module_id = m2c_lexer_current_lexeme(p->lexer);
+      p->module_id = m2c_lexer_current_lexeme(p->lexer);
       
       /* ';' */
       if (match_token(TOKEN_SEMICOLON, RESYNC(IMPORT_DEFINITION_OR_END))) {
@@ -222,6 +224,7 @@ static m2c_token_t def_mod_hdr_and_import (parser_context_t p) {
 
 static m2c_token_t import (parser_context_t p) {
   m2c_token_t lookahead;
+  intstr_t library_id = NULL;
   
   /* IMPORT */
   lookahead = m2c_consume_sym(p->lexer);
@@ -231,7 +234,7 @@ static m2c_token_t import (parser_context_t p) {
     lookahead = m2c_consume_sym(p->lexer);
     
     library_id = m2c_lexer_current_lexeme(p->lexer);
-    m2c_fifo_enqueue(p->import_list, library_id);
+    m2c_fifo_enqueue_unique(p->import_list, library_id);
 
     /* '+' */
     if (match_token(TOKEN_PLUS, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
@@ -252,8 +255,8 @@ static m2c_token_t import (parser_context_t p) {
     if (match_token(TOKEN_IDENTIFIER, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
       lookahead = m2c_consume_sym(p->lexer);
       
-      library_id = m2c_lexer_current_lexeme();
-      m2c_fifo_enqueue(p->import_list, library_id);
+      library_id = m2c_lexer_current_lexeme(p->lexer);
+      m2c_fifo_enqueue_unique(p->import_list, library_id);
 
       /* '+' */
       if (match_token(TOKEN_PLUS, RESYNC(IDENT_OR_COMMA_OR_SEMICOLON))) {
@@ -310,7 +313,7 @@ static m2c_token_t imp_or_pgm_mod_hdr_and_import (parser_context_t p) {
     if (match_token(TOKEN_IDENTIFIER, RESYNC(IMPORT_OR_DECLARATION_OR_END))) {
       lookahead = m2c_consume_sym(p->lexer);
 
-      module_id = m2c_lexer_current_lexeme(p->lexer);
+      p->module_id = m2c_lexer_current_lexeme(p->lexer);
       
       /* ';' */
       if (match_token(TOKEN_SEMICOLON, RESYNC(IMPORT_OR_DECLARATION_OR_END))) {
@@ -360,6 +363,7 @@ static m2c_token_t imp_or_pgm_mod_hdr_and_import (parser_context_t p) {
 
 static m2c_token_t private_import (parser_context_t p) {
   m2c_token_t lookahead;
+  intstr_t library_id = NULL;
   
   /* IMPORT */
   lookahead = m2c_consume_sym(p->lexer);
@@ -403,5 +407,6 @@ static m2c_token_t private_import (parser_context_t p) {
   
   return lookahead;
 } /* end private_import */
+
 
 /* END OF FILE */
