@@ -40,8 +40,13 @@
 #ifndef M2C_MATCH_LEX_H
 #define M2C_MATCH_LEX_H
 
+/* --------------------------------------------------------------------------
+ * imports
+ * ----------------------------------------------------------------------- */
+
 #include "infile.h"
 #include "m2c-token.h"
+
 
 /* Semantic Symbols */
 
@@ -57,11 +62,12 @@ char m2c_match_ident (infile_t infile, m2c_token_t *token);
 
 
 /* --------------------------------------------------------------------------
- * function m2c_match_ident_or_resword(infile, token)
+ * function m2c_match_ident_or_resword(infile, allcaps)
  * --------------------------------------------------------------------------
  * Matches  the input  at  the  current  reading position  of  infile  to  an
- * identifier or reserved word  and consumes it.  Passes the associated token
- * back in out parameter token.  Returns the new lookahead character.
+ * identifier or reserved word  and consumes it.  Passes true back in allcaps
+ * if the matched input consists exclusively of uppercase characters,  passes
+ * back false otherwise.  Returns the new lookahead character.
  * ----------------------------------------------------------------------- */
 
 char m2c_match_ident_or_resword (infile_t infile, m2c_token_t *token);
@@ -86,7 +92,7 @@ char m2c_match_numeric_literal (infile_t infile, m2c_token_t *token);
  * parameter token.  Returns the new lookahead character.
  * ----------------------------------------------------------------------- */
 
-char m2c_match_numeric_literal (infile_t infile, m2c_token_t *token);
+char m2c_match_quoted_literal (infile_t infile, m2c_token_t *token);
 
 
 /* Non-Semantic Symbols */
