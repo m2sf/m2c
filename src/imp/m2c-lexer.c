@@ -37,6 +37,10 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+/* --------------------------------------------------------------------------
+ * imports
+ * ----------------------------------------------------------------------- */
+
 #include "m2c-lexer.h"
 #include "m2c-error.h"
 #include "m2c-filereader.h"
@@ -49,7 +53,7 @@
 
 
 /* --------------------------------------------------------------------------
- * Language defined lexical limits
+ * language defined lexical limits
  * ----------------------------------------------------------------------- */
 
 #define COMMENT_NESTING_LIMIT 10
@@ -88,8 +92,8 @@ static const m2c_symbol_struct_t null_symbol = {
  * ----------------------------------------------------------------------- */
 
 struct m2c_lexer_struct_t {
-  /* infile */ m2c_infile_t infile;
-  /* current */ m2c_symbol_struct_t current;
+  m2c_infile_t infile;
+  m2c_symbol_struct_t current;
   /* lookahead */ m2c_symbol_struct_t lookahead;
   /* status */ m2c_lexer_status_t status;
   /* error_count */ uint_t error_count;
@@ -545,19 +549,12 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         
       case '!' :
         /* line comment */        
-        if (m2c_option_line_comments()) {
-          next_char = skip_line_comment(lexer);
-        }
-        else /* invalid char */ {
-          report_error_w_offending_char
-            (M2C_ERROR_INVALID_INPUT_CHAR, lexer, line, column, next_char);
-          next_char = m2c_consume_char(lexer->infile);
-        } /* end if */
-        token = TOKEN_UNKNOWN;
+        next_char = skip_line_comment(lexer);
+        token = TOKEN_LINE_COMMENT;
         break;
         
       case '\"' :
-        /* string literal */
+        /* double quoted literal */
         next_char = get_string_literal(lexer, &token);
         if (token == TOKEN_MALFORMED_STRING) {
           m2c_emit_error_w_pos
@@ -573,21 +570,13 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         break;
         
       case '&' :
-        /* ampersand synonym */
-        if (m2c_option_synonyms()) {
-          next_char = m2c_consume_char(lexer->infile);
-          token = TOKEN_AND;
-        }
-        else /* invalid char */ {
-          report_error_w_offending_char
-            (M2C_ERROR_INVALID_INPUT_CHAR, lexer, line, column, next_char);
-          next_char = m2c_consume_char(lexer->infile);
-          token = TOKEN_UNKNOWN;
-        } /* end if */
+        /* concatenation operator */
+        next_char = m2c_consume_char(lexer->infile);
+        token = TOKEN_CONCAT;
         break;
         
       case '\'' :
-        /* string literal */
+        /* single quoted literal */
         next_char = get_string_literal(lexer, &token);
         if (token == TOKEN_MALFORMED_STRING) {
           m2c_emit_error_w_pos
@@ -604,7 +593,7 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         }
         else /* block comment */ {
           next_char = skip_block_comment(lexer);
-          token = TOKEN_UNKNOWN;
+          token = TOKEN_BLOCK_COMMENT;
         } /* end if */
         break;
         
@@ -617,13 +606,22 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
       case '*' :
         /* asterisk operator */
         next_char = m2c_consume_char(lexer->infile);
-        token = TOKEN_MULTIPLICATION;
+        token = TOKEN_ASTERISK;
         break;
         
       case '+' :
-        /* plus operator */
+        /* increment or plus */
         next_char = m2c_consume_char(lexer->infile);
-        token = TOKEN_ADDITION;
+        
+        /* increment suffix */
+        if (next_char == '+') {
+          next_char = m2c_consume_char(lexer->infile);
+          token = TOKEN_PLUS_PLUS;
+        }
+        /* plus operator */
+        else {
+          token = TOKEN_PLUS;
+        } /* end if */
         break;
         
       case ',' :
@@ -633,27 +631,44 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         break;
         
       case '-' :
-        /* minus operator */
+        /* decrement or minus */
         next_char = m2c_consume_char(lexer->infile);
-        token = TOKEN_SUBTRACTION;
+        
+        /* decrement suffix */
+        if (next_char == '-') {
+          next_char = m2c_consume_char(lexer->infile);
+          token = TOKEN_MINUS_MINUS;
+        }
+        /* minus operator */
+        else {
+          token = TOKEN_MINUS;
+        } /* end if */
         break;
         
       case '.' :
-        /* range or period */
+        /* range or wildcard or period */
         next_char = m2c_consume_char(lexer->infile);
-        if /* range */ (next_char == '.') {
+        
+        /* range */
+        if (next_char == '.') {
           next_char = m2c_consume_char(lexer->infile);
           token = TOKEN_RANGE;
         }
-        else /* period */ {
+        /* wildcard */
+        else if (next_char == '*') {
+          next_char = m2c_consume_char(lexer->infile);
+          token = TOKEN_WILDCARD;
+        }
+        /* period */
+        else {
           token = TOKEN_PERIOD;
         } /* end if */
         break;
         
       case '/' :
-        /* solidus operator */
+        /* solidus */
         next_char = m2c_consume_char(lexer->infile);
-        token = TOKEN_DIVISION;
+        token = TOKEN_SOLIDUS;
         break;
         
       case '0' :
@@ -667,7 +682,7 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
       case '8' :
       case '9' :
         /* number literal */
-        next_char = lexer->get_number_literal(lexer, &token);
+        next_char = get_number_literal(lexer, &token);
         if (token == TOKEN_MALFORMED_INTEGER) {
           m2c_emit_error_w_pos(M2C_ERROR_MISSING_SUFFIX, line, column);
           lexer->error_count++;
@@ -679,13 +694,21 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         break;
         
       case ':' :
-        /* assignment or colon*/
+        /* converstion or assignment or colon */
         next_char = m2c_consume_char(lexer->infile);
-        if /* assignment */ (next_char == '=') {
+
+        /* conversion */
+        if (next_char == ':') {
+          next_char = m2c_consume_char(lexer->infile);
+          token = TOKEN_CONVERSION;
+        }
+        /* assignment */ 
+        else if (next_char == '=') {
           next_char = m2c_consume_char(lexer->infile);
           token = TOKEN_ASSIGNMENT;
         }
-        else /* colon */ {
+        /* colon */
+        else {
           token = TOKEN_COLON;
         } /* end if */
         break;
@@ -703,44 +726,45 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
           token = TOKEN_PRAGMA;
           break;
         }
-        /* not-equal synonym, or less-or-equal or equal operator */
+        /* less-or-equal or less-than */
         next_char = m2c_consume_char(lexer->infile);
         
-        if /* diamond */ (next_char == '>') {
-          if (m2c_option_synonyms()) {
-            next_char = m2c_consume_char(lexer->infile);
-            token = TOKEN_NOTEQUAL;
-          }
-          else /* invalid char */ {
-            report_error_w_offending_char
-              (M2C_ERROR_INVALID_INPUT_CHAR, lexer, line, column, next_char);
-            next_char = m2c_consume_char(lexer->infile);
-            token = TOKEN_UNKNOWN;
-          } /* end if */
-        }
-        else if /* less-or-equal */ (next_char == '=') {
+        /* less-or-equal */
+        if (next_char == '=') {
           next_char = m2c_consume_char(lexer->infile);
           token = TOKEN_LESS_THAN_OR_EQUAL;
         }
-        else /* less */ {
+        /* less-than */
+        else {
           token = TOKEN_LESS_THAN;
         } /* end if */
         break;
         
       case '=' :
-        /* equal operator */
+        /* identity or equal */
         next_char = m2c_consume_char(lexer->infile);
-        token = TOKEN_EQUAL;
+        
+        if (next_char == '=') {
+          next_char = m2c_consume_char(lexer->infile);
+          token = TOKEN_IDENTITY;
+        }
+        /* equal */
+        else {
+          token = TOKEN_EQUAL;
+        } /* end if */
         break;
         
       case '>' :
         /* greater-or-equal or equal operator */
         next_char = m2c_consume_char(lexer->infile);
-        if /* greater-or-equal */ (next_char == '=') {
+
+        /* greater-or-equal */
+        if (next_char == '=') {
           next_char = m2c_consume_char(lexer->infile);
           token = TOKEN_GREATER_THAN_OR_EQUAL;
         }
-        else /* greater */ {
+        /* greater */
+        else {
           token = TOKEN_GREATER_THAN;
         } /* end if */
         break;
@@ -756,6 +780,12 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
           next_char = m2c_consume_char(lexer->infile);
         } /* end if */
         token = TOKEN_UNKNOWN;
+        break;
+
+      case '@' :
+        /* at sign */
+        next_char = m2c_consume_char(lexer->infile);
+        token = TOKEN_AT_SIGN;
         break;
         
       case 'A' :
@@ -792,6 +822,12 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         /* left bracket */
         next_char = m2c_consume_char(lexer->infile);
         token = TOKEN_LEFT_BRACKET;
+        break;
+      
+      case '\\' :
+        /* backslash */
+        next_char = m2c_consume_char(lexer->infile);
+        token = TOKEN_BACKSLASH;
         break;
         
       case ']' :
@@ -854,21 +890,7 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         next_char = m2c_consume_char(lexer->infile);
         token = TOKEN_RIGHT_BRACE;
         break;
-        
-      case '~' :
-        /* tilde synonym */
-        if (m2c_option_synonyms()) {
-          next_char = m2c_consume_char(lexer->infile);
-          token = TOKEN_NOT;
-        }
-        else /* invalid char */ {
-          report_error_w_offending_char
-            (M2C_ERROR_INVALID_INPUT_CHAR, lexer, line, column, next_char);
-          next_char = m2c_consume_char(lexer->infile);
-          token = TOKEN_UNKNOWN;
-        } /* end if */
-        break;
-                
+                        
       default :
         /* invalid character */
         report_error_w_offending_char
