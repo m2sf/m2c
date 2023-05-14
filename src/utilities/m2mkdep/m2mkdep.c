@@ -45,12 +45,8 @@
 
 /* obtain import list for input file */
 
-/* recursively obtain import lists for all imported files */
+/* determine filename for output file */
 
-/* build dependency graph */
-
-/* check for cycles, and issue warnings if any are found /*
-
-/* write dependency file from dependency graph */
+/* write dependency file */
 
 /* END OF FILE */
