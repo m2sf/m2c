@@ -203,7 +203,8 @@ char m2c_match_quoted_literal (infile_t infile, m2c_token_t *token) {
       }
       /* any other */
       else {
-      /* TO DO: emit error -- illegal character in string literal */
+        /* TO DO: emit error -- illegal character in string literal */
+      } /* end if */
     } /* end if */
     
     if (next_char == '\\') {
