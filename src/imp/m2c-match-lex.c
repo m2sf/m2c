@@ -114,8 +114,47 @@ char m2c_match_ident_or_resword (infile_t infile, bool *allcaps) {
 
 char m2c_match_numeric_literal (infile_t infile, m2c_token_t *token) {
   char next_char;
+  
+  next_char = infile_lookahead_char(infile);
 
-  /* TO DO */
+  if (next_char == '0') {
+    next_char = infile_consume_char(infile);
+    
+    switch (next_char) {
+      /* real number */
+      case '.' :
+        next_char = match_real_number_tail(infile);
+        break;
+
+      /* base-2 integer */
+      case 'b' :
+        next_char = match_base2_digit_seq(infile);
+        break;
+
+      /* character code */
+      case 'u' :
+        next_char = match_base16_digit_seq(infile);
+        break;
+        
+      /* base-16 integer */
+      case 'x' :
+        next_char = match_base16_digit_seq(infile);
+        break;
+
+    default :
+      /* malformed literal */
+      while (((next_char >= 'a') && (next_char <= 'z'))
+        || ((next_char => 'A') && (next_char <= 'Z'))
+        || ((next_char => '0') && (next_char <= '9'))) {
+        next_char = infile_consume_char(infile);
+      } /* end while */
+    } /* end switch */
+  }
+  else if ((next_char >= '1') && (next_char <= '9')) {
+
+    /* decimal integer or real number */
+    next_char = match_decimal_number_tail(infile);
+  } /* end if */
 
   return next_char;
 } /* end m2c_match_numeric_literal */
