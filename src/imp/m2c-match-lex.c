@@ -179,9 +179,38 @@ char m2c_match_numeric_literal (infile_t infile, m2c_token_t *token) {
  * ----------------------------------------------------------------------- */
 
 char m2c_match_quoted_literal (infile_t infile, m2c_token_t *token) {
-  char next_char;
+  char next_char, delimiter;
+  
+  /* consume opening string delimiter */
+  delimiter = infile_lookahead_char(infile);
+  next_char = infile_consume_char(infile);
 
-  /* TO DO */
+  while (next_char != delimiter) {
+    /* check for control characters */
+    if (next_char == ASCII_LF) {
+      /* error: new line in string literal */
+    }
+    else if (infile_eof(infile) {
+      /* error: unexpected EOF in string literal */
+    }
+    else if ((next_char < 32) || (next_char == 127)) {
+      /* error: illegal character in string literal */
+    } /* end if */
+    
+    if (next_char == '\\') {
+      next_char - infile_consume_char(infile);
+
+      if ((next_char != 'n') && (next_char != 't') && (next_char != '//')) {
+        /* error: invalid escape sequence */
+      } /* end if */
+    } /* end if */
+    next_char = infile_consume_char(infile);
+  } /* end while */
+  
+  /* consume closing string delimiter */
+  if (next_char = delimiter) {
+    next_char = infile_consume_char(infile);
+  } /* end if */
 
   return next_char;
 } /* end m2c_match_quoted_literal */
