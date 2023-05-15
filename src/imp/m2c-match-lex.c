@@ -123,37 +123,47 @@ char m2c_match_numeric_literal (infile_t infile, m2c_token_t *token) {
     switch (next_char) {
       /* real number */
       case '.' :
-        next_char = match_real_number_tail(infile);
+        next_char = match_real_number_tail(infile, token);
         break;
 
       /* base-2 integer */
       case 'b' :
-        next_char = match_base2_digit_seq(infile);
+        next_char = match_base2_digit_seq(infile, token);
         break;
 
       /* character code */
       case 'u' :
-        next_char = match_base16_digit_seq(infile);
+        next_char = match_base16_digit_seq(infile, token);
         break;
         
       /* base-16 integer */
       case 'x' :
-        next_char = match_base16_digit_seq(infile);
+        next_char = match_base16_digit_seq(infile, token);
         break;
 
-    default :
-      /* malformed literal */
-      while (((next_char >= 'a') && (next_char <= 'z'))
-        || ((next_char => 'A') && (next_char <= 'Z'))
-        || ((next_char => '0') && (next_char <= '9'))) {
-        next_char = infile_consume_char(infile);
-      } /* end while */
+      default :
+        /* single zero */
+        if ((next_char < '0')
+          || ((next_char > '9') && (next_char < 'A'))
+          || ((next_char > 'Z') && (next_char < 'a'))
+          || (next_char > 'z')) {
+            *token = TOKEN_WHOLE_NUMBER;
+        }
+        /* malformed literal */
+        else {
+          while (((next_char >= 'a') && (next_char <= 'z'))
+            || ((next_char => 'A') && (next_char <= 'Z'))
+            || ((next_char => '0') && (next_char <= '9'))) {
+            next_char = infile_consume_char(infile);
+            *token = TOKEN_MALFORMED_INTEGER;
+          } /* end while */
+        } /* end if */
     } /* end switch */
   }
   else if ((next_char >= '1') && (next_char <= '9')) {
 
     /* decimal integer or real number */
-    next_char = match_decimal_number_tail(infile);
+    next_char = match_decimal_number_tail(infile, token);
   } /* end if */
 
   return next_char;
