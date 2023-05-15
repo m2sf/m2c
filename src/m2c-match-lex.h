@@ -130,17 +130,16 @@ char m2c_match_block_comment (infile_t infile, m2c_token_t *token);
 char m2c_match_pragma (infile_t infile, m2c_token_t *token);
 
 
-/* Disabled Code Sections */
+/* Disabled Code Section */
 
 /* --------------------------------------------------------------------------
- * function m2c_match_disabled_code_block(infile, token)
+ * function m2c_match_disabled_code_block(infile)
  * --------------------------------------------------------------------------
  * Matches the input at the  current reading position of infile to a disabled
- * code block and consumes it.  Passes the associated token back in out para-
- * meter token.  Returns the new lookahead character.
+ * code block and consumes it.   Returns the new lookahead character.
  * ----------------------------------------------------------------------- */
 
-char m2c_match_disabled_code_block (infile_t infile, m2c_token_t *token);
+char m2c_match_disabled_code_block (infile_t infile);
 
 
 #endif /* M2C_MATCH_LEX_H */
