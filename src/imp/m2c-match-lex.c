@@ -304,8 +304,25 @@ char m2c_match_block_comment (infile_t infile, m2c_token_t *token) {
 
 char m2c_match_pragma (infile_t infile, m2c_token_t *token) {
   char next_char;
+  
+  /* consume '<' and '*' */
+  next_char = infile_consume_char(infile);
+  next_char = infile_consume_char(infile);
+  
+  while ((next_char != '*') && (infile_la2_char(infile) != '>')) {
+    next_char = infile_consume_char(infile);
 
-  /* TO DO */
+    if (infile_eof(infile)) {
+      /* TO DO: emit error : unexpected EOF in pragma */
+      *token TOKEN_MALFORMED_PRAGMA;
+      return next_char;
+    } /* end if */
+  } /* end while */
+
+  /* consume '*' and '>' */
+  next_char = infile_consume_char(infile);
+  next_char = infile_consume_char(infile);
+  *token = TOKEN_PRAGMA;
 
   return next_char;
 } /* end m2c_match_pragma */
@@ -324,7 +341,24 @@ char m2c_match_pragma (infile_t infile, m2c_token_t *token) {
 char m2c_match_disabled_code_block (infile_t infile, m2c_token_t *token) {
   char next_char;
 
-  /* TO DO */
+  /* consume '?' and '<' */
+  next_char = infile_consume_char(infile);
+  next_char = infile_consume_char(infile);
+  
+  while (NOT((next_char == '>')
+    && (infile_column(infile) == 1)
+    && (infile_la2_char(infile) == '?'))) {
+
+    if (infile_eof(infile)) {
+      return next_char;
+    } /* end if */
+
+    next_char = infile_consume_char(infile);
+  } /* end while */
+  
+  /* consume '>' and '?' */
+  next_char = infile_consume_char(infile);
+  next_char = infile_consume_char(infile);
 
   return next_char;
 } /* end m2c_match_disabled_code_block */
