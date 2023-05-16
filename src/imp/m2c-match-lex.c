@@ -330,6 +330,8 @@ char m2c_match_line_comment (infile_t infile, m2c_token_t *token) {
  * meter token.  Returns the new lookahead character.
  * ----------------------------------------------------------------------- */
 
+#define COMMENT_NESTING_LIMIT 10
+
 char m2c_match_block_comment (infile_t infile, m2c_token_t *token) {
   char next_char;
   uint_t nest_level;
