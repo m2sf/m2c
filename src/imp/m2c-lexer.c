@@ -41,6 +41,7 @@
  * imports
  * ----------------------------------------------------------------------- */
 
+#include "iso646.h"
 #include "m2c-lexer.h"
 #include "m2c-error.h"
 #include "m2c-filereader.h"
@@ -459,12 +460,12 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
     column = m2c_infile_current_column(lexer->infile);
     
     /* identifier or reserved word */
-   if (next_char >= 'a') && (next_char <= 'z') {
+   if (IS_LOWER_LETTER(next_char)) {
       infile_mark_lexeme(lexer->infile);
       next_char = m2c_match_ident(lexer->infile, &token);
       lexeme = infile_lexeme(lexer->infile);
     }
-    else if (next_char >= 'A') && (next_char <= 'Z') {
+    else if (IS_UPPER_LETTER(next_char)) {
       infile_mark_lexeme(lexer->infile);
       next_char = m2c_match_ident_or_resword(lexer->infile, &allcaps);
       lexeme = infile_lexeme(lexer->infile);
@@ -477,7 +478,7 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         token = m2c_reword_token_for_lexeme(lexeme);
       } /* end if */
     }
-    else if (next_char >= '0') && (next_char <= '9') {
+    else if (IS_DIGIT(next_char)) {
       infile_mark_lexeme(lexer->infile);
       next_char = m2c_match_numeric_literal(lexer->infile, &token);
       lexeme = infile_lexeme(lexer->infile);

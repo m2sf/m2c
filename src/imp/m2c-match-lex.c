@@ -41,37 +41,10 @@
  * imports
  * ----------------------------------------------------------------------- */
 
+#include "iso646"
 #include "infile.h"
 #include "m2c-token.h"
 #include <stdbool.h>
-
-
-/* --------------------------------------------------------------------------
- * macros
- * ----------------------------------------------------------------------- */
-
-#define IS_DIGIT(_ch) \
-  ((_ch >= '0') && (_ch <= '9'))
-#define IS_NOT_DIGIT(_ch) \
-  ((_ch < '0') || (_ch > '9'))
-#define IS_LOWER_LETTER(_ch) \
-  ((_ch >= 'a') && (_ch <= 'z'))
-#define IS_NOT_LOWER_LETTER(_ch) \
-  ((_ch < 'a') || (_ch > 'z'))
-#define IS_UPPER_LETTER(_ch) \
-  ((_ch >= 'A') && (_ch <= 'Z'))
-#define IS_NOT_UPPER_LETTER(_ch) \
-  ((_ch < 'A') || (_ch > 'Z'))
-#define IS_A_TO_F(_ch) \
-  ((_ch >= 'A') && (_ch <= 'F'))
-#define IS_PRINTABLE_CHAR(_ch) \
-  (_ch >= 32) && (_ch < 127))
-#define IS_CTRL_CHAR(_ch) \
-  ((_ch < 32) || (_ch == 127))
-#define IS_LEGAL_CTRL_CHAR(_ch) \
-  ((_ch == ASCII_LF) || (_ch == ASCII_TAB))
-#define IS_ILLEGAL_CTRL_CHAR(_ch) \
-  (((_ch < 32) && (_ch != ASCII_LF) && (_ch != ASCII_TAB)) || (_ch == 127))
 
 
 /* Semantic Symbols */
