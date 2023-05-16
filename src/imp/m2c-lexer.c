@@ -527,20 +527,10 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
       infile_mark_lexeme(lexer->infile);
       next_char = m2c_match_numeric_literal(lexer->infile, &token);
       lexeme = infile_lexeme(lexer->infile);
-      
-      /* this should be moved into m2c-match-lex.c */
-      if (token == TOKEN_MALFORMED_INTEGER) {
-        m2c_emit_error_w_pos(M2C_ERROR_MISSING_SUFFIX, line, column);
-        lexer->error_count++;
-      }
-      else if (token == TOKEN_MALFORMED_REAL) {
-        m2c_emit_error_w_pos(M2C_ERROR_MISSING_EXPONENT, line, column);
-        lexer->error_count++;
-      } /* end if */
     }
     else {
       switch (next_char) {
-              
+          
         case '!' :
           /* line comment */        
           next_char = skip_line_comment(lexer);
