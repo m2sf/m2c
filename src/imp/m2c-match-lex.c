@@ -381,7 +381,7 @@ char m2c_match_disabled_code_block (infile_t infile) {
  * private function match_decimal_number_tail(infile)
  * --------------------------------------------------------------------------
  * Matches the input in infile to a decimal number tail, returns lookahead.
-
+ *
  * EBNF
  *
  * DecimalNumberTail :=
