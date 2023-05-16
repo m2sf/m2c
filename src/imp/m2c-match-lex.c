@@ -489,9 +489,9 @@ static char match_real_Number_tail (infile_t infile, m2c_token_t *token) {
 
 
 /* --------------------------------------------------------------------------
- * private function match_digi_seq(infile, token)
+ * private function match_digit_seq(infile, token)
  * --------------------------------------------------------------------------
- * Matches the input in infile to a base-2 digit sequence, returns lookahead.
+ * Matches input in infile to a decimal digit sequence, returns lookahead.
  *
  * EBNF
  *
@@ -501,7 +501,7 @@ static char match_real_Number_tail (infile_t infile, m2c_token_t *token) {
  *
  * pre-conditions:
  *  (1) infile is the current input file and it must not be NIL.
- *  (2) lookahead of infile is a base-2 digit.
+ *  (2) lookahead of infile is a decimal digit.
  *
  * post-conditions:
  *  (1) lookahead of s is the character immediately following the last digit
@@ -512,7 +512,7 @@ static char match_real_Number_tail (infile_t infile, m2c_token_t *token) {
  *  (1) illegal character encountered
  *       TO DO
  * ----------------------------------------------------------------------- */
-static char match_digi_seq (infile_t infile, m2c_token_t *token) {
+static char match_digit_seq (infile_t infile, m2c_token_t *token) {
   char next_char;
     
   /* Digit */
@@ -542,7 +542,7 @@ static char match_digi_seq (infile_t infile, m2c_token_t *token) {
   } /* end if */
   
   return next_char;
-} /* end match_digi_seq */
+} /* end match_digit_seq */
 
 
 
