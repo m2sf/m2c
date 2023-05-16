@@ -46,6 +46,34 @@
 #include <stdbool.h>
 
 
+/* --------------------------------------------------------------------------
+ * macros
+ * ----------------------------------------------------------------------- */
+
+#define IS_DIGIT(_ch) \
+  ((_ch >= '0') && (_ch <= '9'))
+#define IS_NOT_DIGIT(_ch) \
+  ((_ch < '0') || (_ch > '9'))
+#define IS_LOWER_LETTER(_ch) \
+  ((_ch >= 'a') && (_ch <= 'z'))
+#define IS_NOT_LOWER_LETTER(_ch) \
+  ((_ch < 'a') || (_ch > 'z'))
+#define IS_UPPER_LETTER(_ch) \
+  ((_ch >= 'A') && (_ch <= 'Z'))
+#define IS_NOT_UPPER_LETTER(_ch) \
+  ((_ch < 'A') || (_ch > 'Z'))
+#define IS_A_TO_F(_ch) \
+  ((_ch >= 'A') && (_ch <= 'F'))
+#define IS_PRINTABLE_CHAR(_ch) \
+  (_ch >= 32) && (_ch < 127))
+#define IS_CTRL_CHAR(_ch) \
+  ((_ch < 32) || (_ch == 127))
+#define IS_LEGAL_CTRL_CHAR(_ch) \
+  ((_ch == ASCII_LF) || (_ch == ASCII_TAB))
+#define IS_ILLEGAL_CTRL_CHAR(_ch) \
+  (((_ch < 32) && (_ch != ASCII_LF) && (_ch != ASCII_TAB)) || (_ch == 127))
+
+
 /* Semantic Symbols */
 
 /* --------------------------------------------------------------------------
@@ -60,9 +88,9 @@ char m2c_match_ident (infile_t infile, m2c_token_t *token) {
   char next_char;
   
   next_char := infile_lookahead_char(infile);
-  while (((next_char >= 'a') && (next_char <= 'z'))
-    || ((next_char => 'A') && (next_char <= 'Z'))
-    || ((next_char => '0') && (next_char <= '9'))) {
+  while (IS_LOWER_LETTER(next_char)
+    || IS_UPPER_LETTER(next_char)
+    || IS_DIGIT(next_char)) {
     next_char = infile_consume_char(infile);
   } /* end while */
 
@@ -86,20 +114,19 @@ char m2c_match_ident_or_resword (infile_t infile, bool *allcaps) {
   
   /* collect all uppercase letters */
   next_char = infile_lookahead_char(infile);
-  while ((next_char >= 'A') && (next_char <='Z')) {
+  while (IS_UPPER_LETTER(next_char)) {
     next_char = infile_consume_char(infile);
   } /* end while */
   
   /* check if followed by lowercase letter or digit */
-  if (((next_char => 'a') && (next_char <= 'z'))
-    || (next_char => '0') && (next_char <= '9')) {
+  if (IS_LOWER_LETTER(next_char) || IS_DIGIT(next_char)) {
     next_char = infile_consume_char(infile);
     *allcaps = false;
 
     /* collect any remaining letters and digits */
-    while (((next_char >= 'a') && (next_char <= 'z'))
-      || ((next_char => 'A') && (next_char <= 'Z'))
-      || ((next_char => '0') && (next_char <= '9'))) {
+    while (IS_LOWER_LETTER(next_char)
+      || IS_UPPER_LETTER(next_char)
+      || IS_DIGIT(next_char)) {
       next_char = infile_consume_char(infile);
     } /* end while */
   }
@@ -155,17 +182,16 @@ char m2c_match_numeric_literal (infile_t infile, m2c_token_t *token) {
 
       default :
         /* single zero */
-        if ((next_char < '0')
-          || ((next_char > '9') && (next_char < 'A'))
-          || ((next_char > 'Z') && (next_char < 'a'))
-          || (next_char > 'z')) {
+        if (IS_NOT_DIGIT(next_char)
+          && IS_NOT_UPPER_LETTER(next_char)
+          && IS_NOT_LOWER_LETTER(next_char)) {
             *token = TOKEN_WHOLE_NUMBER;
         }
         /* malformed literal */
         else {
-          while (((next_char >= 'a') && (next_char <= 'z'))
-            || ((next_char => 'A') && (next_char <= 'Z'))
-            || ((next_char => '0') && (next_char <= '9'))) {
+          while (IS_LOWER_LETTER(next_char)
+            || IS_UPPER_LETTER(next_char)
+            || IS_DIGIT(next_char)) {
             next_char = infile_consume_char(infile);
             *token = TOKEN_MALFORMED_INTEGER;
           } /* end while */
@@ -208,7 +234,7 @@ char m2c_match_quoted_literal (infile_t infile, m2c_token_t *token) {
         /* TO DO: emit error -- new line in string literal */
       }
       /* EOF */
-      else if (infile_eof(infile) {
+      else if (infile_eof(infile)) {
         /* TO DO: emit error -- unexpected EOF in string literal */
         *token = TOKEN_MALFORMED_STRING;
         return next_char;
@@ -270,9 +296,10 @@ char m2c_match_line_comment (infile_t infile, m2c_token_t *token) {
       exit;
     }
     /* illegal control char */
-    else if (((next_char < 32) && (next_char != ASCII_TAB))
-      || (next_char == 127)) {
-      /* TO DO: emit error - illegal control char in comment */
+    else if (IS_CTRL_CHAR(next_char) && (next_char != ASCII_TAB)) {
+      /* emit error - illegal control char in comment */
+      m2c_emit_error_ill_char_in_token
+        (infile, TOKEN_LINE_COMMENT, infile_line(), infile_column());
     } /* end if */
     
     next_char = infile_consume_char(infile);
@@ -316,19 +343,23 @@ char m2c_match_block_comment (infile_t infile, m2c_token_t *token) {
     }
     /* premature EOF */
     else if (infile_eof(infile)) {
-      /* TO DO: emit error - premature EOF in comment */
+      /* emit error - premature EOF in comment */
+      m2c_emit_error_ill_char_in_token
+        (infile, TOKEN_BLOCK_COMMENT, infile_line(), infile_column());
       *token = TOKEN_MALFORMED_COMMENT;
       return next_char;
     }
     /* legal char */
-    else if (((next_char >= 32) && (next_char != 127))
-      || (next_char == ASCII_LF) || (next_char == ASCII_TAB)) {
+    else if (IS_PRINTABLE_CHAR(next_char)
+      || IS_LEGAL_CTRL_CHAR(next_char)) {
       next_char = infile_consume_char(infile);
     }
     /* illegal control char */
     else {
       next_char = infile_consume_char(infile);
-      /* TO DO: emit error - illegal control char in comment */
+      /* emit error - illegal control char in comment */
+      m2c_emit_error_ill_char_in_token
+        (infile, TOKEN_BLOCK_COMMENT, infile_line(), infile_column());
     } /* end if */
   } /* end while */
 
@@ -357,9 +388,16 @@ char m2c_match_pragma (infile_t infile, m2c_token_t *token) {
     next_char = infile_consume_char(infile);
 
     if (infile_eof(infile)) {
-      /* TO DO: emit error : unexpected EOF in pragma */
+      /* emit error : unexpected EOF in pragma */
+      m2c_emit_error_ill_char_in_token
+        (infile, TOKEN_PRAGMA, infile_line(), infile_column());
       *token TOKEN_MALFORMED_PRAGMA;
       return next_char;
+    /* illegal control char */
+    else if (IS_ILLEGAL_CTRL_CHAR(next_char)) {
+      /* emit error - illegal control char in pragma */
+      m2c_emit_error_ill_char_in_token
+        (infile, TOKEN_PRAGMA, infile_line(), infile_column());
     } /* end if */
   } /* end while */
 
@@ -449,7 +487,7 @@ char match_decimal_number_tail (infile_t infile, m2c_token_t *token) {
   } /* end if */
   
   /* DigitSeq */
-  if ((next_char => '0') && (next_char <= '9')) {
+  if (IS_DIGIT(next_char)) {
     next_char := match_digit_seq(infile, token);
   }
   else /* lookahead is not a decimal digit */ {
@@ -497,7 +535,7 @@ static char match_real_Number_tail (infile_t infile, m2c_token_t *token) {
   next_char := infile_consume_char(infile);
   
   /* DigitSeq */
-  if ((next_char >= '0') && (next_char <= '9')) {
+  if (IS_DIGIT(next_char)) {
     next_char = match_digit_seq(infile, token);
   }
   else /* lookahead is not a decimal digit */ {
@@ -516,7 +554,7 @@ static char match_real_Number_tail (infile_t infile, m2c_token_t *token) {
     } /* end if */
     
     /* DigitSeq */
-    if ((next_char >= '0') && (next_char <= '9')) {
+    if (IS_DIGIT(next_char)) {
       next_char = match_digit_seq(infile, token);
     }
     else /* lookahead is not a decimal digit */ {
@@ -560,7 +598,7 @@ static char match_digit_seq (infile_t infile, m2c_token_t *token) {
   next_char = infile_consume_char(infile);
   
   /* Digit* */
-  while ((next_char >= '0') && (next_char <= '9')) {
+  while (IS_DIGIT(next_char)) {
     next_char = infile_consume_char(infile);
   } /* end while */
   
@@ -569,11 +607,11 @@ static char match_digit_seq (infile_t infile, m2c_token_t *token) {
     next_char = infile_consume_char(infile);
     
     /* Digit */
-    if ((next_char >= '0') && (next_char <= '9')) {
+    if (IS_DIGIT(next_char)) {
       next_char = infile_consume_char(infile);
       
       /* Digit* */
-      while ((next_char >= '0') && (next_char <= '9')) {
+      while (IS_DIGIT(next_char)) {
         next_char = infile_consume_char(infile);
       } /* end while */
 
@@ -618,7 +656,7 @@ static char match_base2_digit_seq (infile_t infile, m2c_token_t *token) {
   next_char = infile_consume_char(infile);
   
   /* Base2Digit* */
-  while ((next_char == '0') && (next_char == '1')) {
+  while ((next_char == '0') || (next_char == '1')) {
     next_char = infile_consume_char(infile);
   } /* end while */
   
@@ -627,11 +665,11 @@ static char match_base2_digit_seq (infile_t infile, m2c_token_t *token) {
     next_char = infile_consume_char(infile);
     
     /* Base2Digit */
-    if ((next_char == '0') && (next_char == '1')) {
+    if ((next_char == '0') || (next_char == '1')) {
       next_char = infile_consume_char(infile);
       
       /* Base2Digit* */
-      while ((next_char == '0') && (next_char == '1')) {
+      while ((next_char == '0') || (next_char == '1')) {
         next_char = infile_consume_char(infile);
       } /* end while */
 
@@ -676,8 +714,7 @@ static char match_base2_digit_seq (infile_t infile, m2c_token_t *token) {
   next_char = infile_consume_char(infile);
   
   /* Base16Digit* */
-  while (((next_char >= '0') && (next_char <= '9')) 
-    || ((next_char >= 'A') && (next_char <= 'F'))) {
+  while (IS_DIGIT(next_char) || IS_A_TO_F(next_char)) {
     next_char = infile_consume_char(infile);
   } /* end while */
   
@@ -686,13 +723,11 @@ static char match_base2_digit_seq (infile_t infile, m2c_token_t *token) {
     next_char = infile_consume_char(infile);
     
     /* Base16Digit */
-    if (((next_char >= '0') && (next_char <= '9')) 
-      || ((next_char >= 'A') && (next_char <= 'F'))) {
+    if (IS_DIGIT(next_char) || IS_A_TO_F(next_char)) {
       next_char = infile_consume_char(infile);
       
       /* Base16Digit* */
-      while (((next_char >= '0') && (next_char <= '9')) 
-        || ((next_char >= 'A') && (next_char <= 'F'))) {
+      while (IS_DIGIT(next_char) || IS_A_TO_F(next_char)) {
         next_char = infile_consume_char(infile);
         } /* end while */
 
