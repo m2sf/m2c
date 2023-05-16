@@ -512,6 +512,7 @@ static char match_real_Number_tail (infile_t infile, m2c_token_t *token) {
  *  (1) illegal character encountered
  *       TO DO
  * ----------------------------------------------------------------------- */
+
 static char match_digit_seq (infile_t infile, m2c_token_t *token) {
   char next_char;
     
@@ -569,6 +570,7 @@ static char match_digit_seq (infile_t infile, m2c_token_t *token) {
  *  (1) illegal character encountered
  *       TO DO
  * ----------------------------------------------------------------------- */
+
 static char match_base2_digit_seq (infile_t infile, m2c_token_t *token) {
   char next_char;
   
@@ -594,9 +596,70 @@ static char match_base2_digit_seq (infile_t infile, m2c_token_t *token) {
       } /* end while */
 
     else /* lookahead not a base-2 digit */ {
-      /* TO DO: emit error - malformed number literal */
+      /* TO DO: emit error - malformed base-2 literal */
     } /* end if */
   } /* end if */
+  
+  return next_char;
+} /* end match_base2_digit_seq */
+
+
+/* --------------------------------------------------------------------------
+ * private function match_base16_digit_seq(infile, token)
+ * --------------------------------------------------------------------------
+ * Matches input in infile to a base-16 digit sequence, returns lookahead.
+ *
+ * EBNF
+ *
+ * Base16DigitSeq :=
+ *   Base16Digit+ ( DigitSep Base16Digit+ )*
+ *   ;
+ *
+ * pre-conditions:
+ *  (1) infile is the current input file and it must not be NIL.
+ *  (2) lookahead of infile is a base-16 digit.
+ *
+ * post-conditions:
+ *  (1) lookahead of infule is the character immediately following the last
+ *      digit of the literal whose first digit was the lookahead of infile
+ *      upon entry into the procedure.
+ *
+ * error-conditions:
+ *  (1) illegal character encountered
+ *       TO DO
+ * ----------------------------------------------------------------------- */
+
+static char match_base2_digit_seq (infile_t infile, m2c_token_t *token) {
+  char next_char;
+    
+  /* Base16Digit */
+  next_char = infile_consume_char(infile);
+  
+  /* Base16Digit* */
+  while (((next_char >= '0') && (next_char <= '9')) 
+    || ((next_char >= 'A') && (next_char <= 'F'))) {
+    next_char = infile_consume_char(infile);
+  } /* end while */
+  
+  /* ( DigitSep Base16Digit+ )? */
+  if (next_char == DIGIT_SEPARATOR) {
+    next_char = infile_consume_char(infile);
+    
+    /* Base16Digit */
+    if (((next_char >= '0') && (next_char <= '9')) 
+      || ((next_char >= 'A') && (next_char <= 'F'))) {
+      next_char = infile_consume_char(infile);
+      
+      /* Base16Digit* */
+      while (((next_char >= '0') && (next_char <= '9')) 
+        || ((next_char >= 'A') && (next_char <= 'F'))) {
+        next_char = infile_consume_char(infile);
+        } /* end while */
+
+    else /* lookahead not a base-16 digit */ {
+      /* TO DO: emit error - malformed base-16 literal */
+    } /* IF */
+  } /* IF */
   
   return next_char;
 } /* end match_base2_digit_seq */
