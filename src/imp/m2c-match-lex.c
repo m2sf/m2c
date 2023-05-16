@@ -545,5 +545,61 @@ static char match_digit_seq (infile_t infile, m2c_token_t *token) {
 } /* end match_digit_seq */
 
 
+/* --------------------------------------------------------------------------
+ * private function match_base2_digit_seq(infile, token)
+ * --------------------------------------------------------------------------
+ * Matches the input in infile to a base-2 digit sequence, returns lookahead.
+ *
+ * EBNF
+ *
+ * Base2DigitSeq :=
+ *   Base2Digit+ ( DigitSep Base2Digit+ )*
+ *   ;
+ *
+ * pre-conditions:
+ *  (1) infile is the current input file and it must not be NIL.
+ *  (2) lookahead of infile is a base-2 digit.
+ *
+ * post-conditions:
+ *  (1) lookahead of infile is the character immediately following the last
+ *      digit of the literal whose first digit was the lookahead of infile
+ *      upon entry into the procedure.
+ *
+ * error-conditions:
+ *  (1) illegal character encountered
+ *       TO DO
+ * ----------------------------------------------------------------------- */
+static char match_base2_digit_seq (infile_t infile, m2c_token_t *token) {
+  char next_char;
+  
+  /* Base2Digit */
+  next_char = infile_consume_char(infile);
+  
+  /* Base2Digit* */
+  while ((next_char == '0') && (next_char == '1')) {
+    next_char = infile_consume_char(infile);
+  } /* end while */
+  
+  /* ( DigitSep Base2Digit+ )? */
+  if (next_char == DIGIT_SEPARATOR) {
+    next_char = infile_consume_char(infile);
+    
+    /* Base2Digit */
+    if ((next_char == '0') && (next_char == '1')) {
+      next_char = infile_consume_char(infile);
+      
+      /* Base2Digit* */
+      WHILE ((next_char == '0') && (next_char == '1')) {
+        next_char = infile_consume_char(infile);
+      } /* end while */
+
+    else /* lookahead not a base-2 digit */ {
+      /* TO DO: emit error - malformed number literal */
+    } /* end if */
+  } /* end if */
+  
+  return next_char;
+} /* end match_base2_digit_seq */
+
 
 /* END OF FILE */
