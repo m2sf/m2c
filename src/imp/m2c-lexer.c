@@ -435,45 +435,6 @@ void m2c_release_lexer (m2c_lexer_t *lexptr, m2c_lexer_status_t *status) {
 
 
 /* --------------------------------------------------------------------------
- * procedure report_error_w_offending_pos(error, lexer, line, column)
- * ----------------------------------------------------------------------- */
-
-static void report_error_w_offending_pos
-  (m2c_error_t error, m2c_lexer_t lexer, uint_t line, uint_t column) {
-    
-  m2c_emit_error_w_pos(error, line, column);
-  
-  if (m2c_option_verbose()) {
-    m2c_print_line_and_mark_column(lexer, line, column);
-  } /* end if */
-  
-  lexer->error_count++;
-  
-  return;
-} /* end report_error_w_offending_pos */
-  
-
-/* --------------------------------------------------------------------------
- * procedure report_error_w_offending_char(error, lexer, line, column, char)
- * ----------------------------------------------------------------------- */
-
-static void report_error_w_offending_char
-  (m2c_error_t error,
-   m2c_lexer_t lexer, uint_t line, uint_t column, char offending_char) {
-    
-  m2c_emit_error_w_chr(error, line, column, offending_char);
-  
-  if (m2c_option_verbose() && (!IS_CONTROL_CHAR(offending_char))) {
-    m2c_print_line_and_mark_column(lexer, line, column);
-  } /* end if */
-  
-  lexer->error_count++;
-  
-  return;
-} /* end report_error_w_offending_char */
-  
-
-/* --------------------------------------------------------------------------
  * private procedure get_new_lookahead_sym(lexer)
  * ----------------------------------------------------------------------- */
 
