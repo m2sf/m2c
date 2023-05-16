@@ -42,15 +42,13 @@
  * ----------------------------------------------------------------------- */
 
 #include "iso646.h"
+#include "infile.h"
 #include "m2c-lexer.h"
 #include "m2c-error.h"
-#include "m2c-filereader.h"
 #include "m2c-compiler-options.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <stdbool.h>
 
 
 /* --------------------------------------------------------------------------
