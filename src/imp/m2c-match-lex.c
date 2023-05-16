@@ -37,9 +37,14 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+/* --------------------------------------------------------------------------
+ * imports
+ * ----------------------------------------------------------------------- */
 
 #include "infile.h"
 #include "m2c-token.h"
+#include <stdbool.h>
+
 
 /* Semantic Symbols */
 
@@ -113,6 +118,11 @@ char m2c_match_ident_or_resword (infile_t infile, bool *allcaps) {
  * numeric literal and consumes it.  Passes the associated token back in  out
  * parameter token.  Returns the new lookahead character.
  * ----------------------------------------------------------------------- */
+
+static char match_decimal_number_tail(infile_t infile, m2c_token_t *token);
+static char match_real_number_tail(infile_t infile, m2c_token_t *token);
+static char match_base2_digit_seq(infile_t infile, m2c_token_t *token);
+static char match_base16_digit_seq(infile_t infile, m2c_token_t *token);
 
 char m2c_match_numeric_literal (infile_t infile, m2c_token_t *token) {
   char next_char;
@@ -395,8 +405,6 @@ char m2c_match_disabled_code_block (infile_t infile) {
  * ----------------------------------------------------------------------- */
 
 #define DIGIT_SEPARATOR '\''
-static char match_digit_seq(infile_t infile, m2c_token_t *token);
-static char match_real_number_tail(infile_t infile, m2c_token_t *token);
 
 char match_decimal_number_tail (infile_t infile, m2c_token_t *token) {
   char next_char;
