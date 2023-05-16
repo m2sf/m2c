@@ -504,9 +504,9 @@ static char match_real_Number_tail (infile_t infile, m2c_token_t *token) {
  *  (2) lookahead of infile is a decimal digit.
  *
  * post-conditions:
- *  (1) lookahead of s is the character immediately following the last digit
- *      of the literal whose first digit was the lookahead of s upon entry
- *      into the procedure.
+ *  (1) lookahead of infile is the character immediately following the last
+ *      digit of the literal whose first digit was the lookahead of infile
+ *      upon entry into the procedure.
  *
  * error-conditions:
  *  (1) illegal character encountered
@@ -620,7 +620,7 @@ static char match_base2_digit_seq (infile_t infile, m2c_token_t *token) {
  *  (2) lookahead of infile is a base-16 digit.
  *
  * post-conditions:
- *  (1) lookahead of infule is the character immediately following the last
+ *  (1) lookahead of infile is the character immediately following the last
  *      digit of the literal whose first digit was the lookahead of infile
  *      upon entry into the procedure.
  *
