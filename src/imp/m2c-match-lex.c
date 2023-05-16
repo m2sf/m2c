@@ -282,25 +282,43 @@ char m2c_match_block_comment (infile_t infile, m2c_token_t *token) {
   char next_char;
   uint_t nest_level;
   
+  /* consume opening comment delimiter */
+  next_char = infile_consume_char(infile);
+  next_char = infile_consume_char(infile);
   nest_level = 1;
-  next_char = infile_lookahead_char(infile);
 
-  while ((nest_level > 0) && (infile_eof(infile) != true)) {
-    next_char = infile_consume_char(infile);
-    
+  while (nest_level > 0) {
     /* check for '*)' */
     if ((next_char == '*') && (infile_la2_char(infile) == ')')) {
+      next_char = infile_consume_char(infile);
       next_char = infile_consume_char(infile);
       nest_level--;
     }
     /* check for '(*' */
     else if ((next_char == '(') && (infile_la2_char(infile) == '*')) {
       next_char = infile_consume_char(infile);
+      next_char = infile_consume_char(infile);
       nest_level++;
+    }
+    /* premature EOF */
+    else if (infile_eof(infile)) {
+      /* TO DO: emit error - premature EOF in comment */
+      *token = TOKEN_EOF;
+      return next_char;
+    }
+    /* legal char */
+    else if (((next_char > 32) && (next_char < 127))
+      || (next_char == ASCII_LF) || (next_char == ASCII_TAB)) {
+      next_char = infile_consume_char(infile);
+      *token = TOKEN_BLOCK_COMMENT;
+    }
+    /* illegal control char */
+    else {
+      next_char = infile_consume_char(infile);
+      /* TO DO: emit error - illegal control char in comment */
+      *token = TOKEN_MALFORMED_COMMENT;
     } /* end if */
   } /* end while */
-
-  *token = TOKEN_BLOCK_COMMENT;
 
   return next_char;
 } /* end m2c_match_block_comment */
