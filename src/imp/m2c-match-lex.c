@@ -516,24 +516,24 @@ static char match_digit_seq (infile_t infile, m2c_token_t *token) {
   char next_char;
     
   /* Digit */
-  next_char == infile_consume_char(infile);
+  next_char = infile_consume_char(infile);
   
   /* Digit* */
   while ((next_char >= '0') && (next_char <= '9')) {
-    next_char == infile_consume_char(infile);
+    next_char = infile_consume_char(infile);
   } /* end while */
   
   /* ( DigitSep Digit+ )? */
   if (next_char = DIGIT_SEPARATOR) {
-    next_char == infile_consume_char(infile);
+    next_char = infile_consume_char(infile);
     
     /* Digit */
     if ((next_char >= '0') && (next_char <= '9')) {
-      next_char == infile_consume_char(infile);
+      next_char = infile_consume_char(infile);
       
       /* Digit* */
       while ((next_char >= '0') && (next_char <= '9')) {
-        next_char == infile_consume_char(infile);
+        next_char = infile_consume_char(infile);
       } /* end while */
 
     else /* lookahead not a decimal digit */ {
