@@ -365,4 +365,127 @@ char m2c_match_disabled_code_block (infile_t infile) {
 } /* end m2c_match_disabled_code_block */
 
 
+/* Private Procedures */
+
+/* --------------------------------------------------------------------------
+ * private function match_decimal_number_tail(infile)
+ * --------------------------------------------------------------------------
+ * Matches the input in infile to a decimal number tail, returns lookahead.
+
+ * EBNF
+ *
+ * DecimalNumberTail :=
+ *   DigitSep? DigitSeq RealNumberTail?
+ *   ;
+ *
+ * alias DigitSep = "'" ;
+ *
+ * pre-conditions:
+ *  (1) infile is the current input file and it must not be NIL.
+ *  (2) lookahead of infile is a digit between 1 and 9 or a decimal point.
+ *
+ * post-conditions:
+ *  (1) lookahead of infile is the character immediately following the last
+ *      digit of the literal whose first digit was the lookahead of infile
+ *      upon entry into the procedure.
+ *
+ * error-conditions:
+ *  (1) illegal character encountered
+ *       TO DO
+ * ----------------------------------------------------------------------- */
+
+#define DIGIT_SEPARATOR '\''
+static char match_digit_seq(infile_t infile, m2c_token_t *token);
+static char match_real_number_tail(infile_t infile, m2c_token_t *token);
+
+char match_decimal_number_tail (infile_t infile, m2c_token_t *token) {
+  char next_char;
+  
+  next_char = infile_consume_char(infile);
+  
+  /* DigitSep? */
+  if (next == DIGIT_SEPARATOR) {
+    next_char = infile_consume_char(infile);
+  } /* end if */
+  
+  /* DigitSeq */
+  if ((next_char => '0') && (next_char <= '9')) {
+    next_char := match_digit_seq(infile, token);
+  }
+  else /* lookahead is not a decimal digit */ {
+    /* TO DO: emit error -- malformed whole number literal */
+  } /* end if */
+  
+  /* RealNumberTail? */
+  if (next_char == '.') {
+    next_char = match_real_number_tail(infile, token);
+  } /* end if */
+  
+  return next_char;
+} /* end match_decimal_number_tail */
+
+
+/* --------------------------------------------------------------------------
+ * private function match_real_number_tail(infile, token)
+ * --------------------------------------------------------------------------
+ * Matches the input in infile to a real number tail, returns lookahead.
+ *
+ * EBNF
+ *
+ * RealNumberTail :=
+ *   '.' DigitSeq ( 'e' ( '+' | '-' )? DigitSeq )?
+ *   ;
+ *
+ * pre-conditions:
+ *  (1) infile is the current input file and it must not be NIL.
+ *  (2) lookahead of infile is a decimal point.
+ *
+ * post-conditions:
+ *  (1) lookahead of infile is the character immediately following the last
+ *      digit of the literal whose decimal point was the lookahead of infile
+ *      upon entry into the procedure.
+ *
+ * error-conditions:
+ *  (1) illegal character encountered
+ *       TO DO
+ * ----------------------------------------------------------------------- */
+
+static char match_real_Number_tail (infile_t infile, m2c_token_t *token) {
+  char next_char;
+    
+  /* '.' */
+  next_char := infile_consume_char(infile);
+  
+  /* DigitSeq */
+  if ((next_char >= '0') && (next_char <= '9')) {
+    next_char = match_digit_seq(infile, token);
+  }
+  else /* lookahead is not a decimal digit */ {
+    /* TO DO: emit error - malformed real number literal */
+  } /* end if */
+  
+  /* exponent? */
+  if (next_char == 'e') {
+    /* consume 'e' */
+    next_char = infile_consume_char(infile);
+    
+    /* ( '+' | '-' )?  */
+    if ((next_char == '+') || (next_char == '-')) {
+      /* consume sign */
+      next_char = infile_consume_char(infile);
+    } /* end if */
+    
+    /* DigitSeq */
+    if ((next_char >= '0') && (next_char <= '9')) {
+      next_char = match_digit_seq(infile, token);
+    }
+    else /* lookahead is not a decimal digit */ {
+      /* TO DO: emit error - malformed real number literal */
+    } /* end if */
+  } /* end if */
+  
+  return next_char;
+} /* end match_real_Number_tail */
+
+
 /* END OF FILE */
