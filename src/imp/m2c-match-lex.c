@@ -41,7 +41,7 @@
  * imports
  * ----------------------------------------------------------------------- */
 
-#include "iso646"
+#include "iso646.h"
 #include "infile.h"
 #include "m2c-token.h"
 #include <stdbool.h>
