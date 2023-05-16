@@ -259,10 +259,23 @@ char m2c_match_quoted_literal (infile_t infile, m2c_token_t *token) {
 
 char m2c_match_line_comment (infile_t infile, m2c_token_t *token) {
   char next_char;
+  
+  next_char = infile_consume_char(infile);
 
-  do {
+  while (infile_eof(infile) == false) {
+    
+    if (next_char == ASCII_LF) {
+      next_char = infile_consume_char(infile);
+      exit;
+    }
+    /* illegal control char */
+    else if (((next_char < 32) && (next_char != ASCII_TAB))
+      || (next_char == 127)) {
+      /* TO DO: emit error - illegal control char in comment */
+    } /* end if */
+    
     next_char = infile_consume_char(infile);
-  } while ((next_char != ASCII_LF) && (infile_eof(infile) == false));
+  } /* end while */
   
   *token = TOKEN_LINE_COMMENT;
 
@@ -303,11 +316,11 @@ char m2c_match_block_comment (infile_t infile, m2c_token_t *token) {
     /* premature EOF */
     else if (infile_eof(infile)) {
       /* TO DO: emit error - premature EOF in comment */
-      *token = TOKEN_EOF;
+      *token = TOKEN_MALFORMED_COMMENT;
       return next_char;
     }
     /* legal char */
-    else if (((next_char > 32) && (next_char != 127))
+    else if (((next_char >= 32) && (next_char != 127))
       || (next_char == ASCII_LF) || (next_char == ASCII_TAB)) {
       next_char = infile_consume_char(infile);
     }
