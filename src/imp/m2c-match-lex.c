@@ -589,7 +589,7 @@ static char match_base2_digit_seq (infile_t infile, m2c_token_t *token) {
       next_char = infile_consume_char(infile);
       
       /* Base2Digit* */
-      WHILE ((next_char == '0') && (next_char == '1')) {
+      while ((next_char == '0') && (next_char == '1')) {
         next_char = infile_consume_char(infile);
       } /* end while */
 
