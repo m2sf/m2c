@@ -464,7 +464,7 @@ static char match_real_Number_tail (infile_t infile, m2c_token_t *token) {
     /* TO DO: emit error - malformed real number literal */
   } /* end if */
   
-  /* exponent? */
+  /* ('e' ( '+' | '-' )? DigitSeq)? */
   if (next_char == 'e') {
     /* consume 'e' */
     next_char = infile_consume_char(infile);
@@ -486,6 +486,64 @@ static char match_real_Number_tail (infile_t infile, m2c_token_t *token) {
   
   return next_char;
 } /* end match_real_Number_tail */
+
+
+/* --------------------------------------------------------------------------
+ * private function match_digi_seq(infile, token)
+ * --------------------------------------------------------------------------
+ * Matches the input in infile to a base-2 digit sequence, returns lookahead.
+ *
+ * EBNF
+ *
+ * matchDigitSeq :=
+ *   Digit+ ( DigitSep Digit+ )*
+ *   ;
+ *
+ * pre-conditions:
+ *  (1) infile is the current input file and it must not be NIL.
+ *  (2) lookahead of infile is a base-2 digit.
+ *
+ * post-conditions:
+ *  (1) lookahead of s is the character immediately following the last digit
+ *      of the literal whose first digit was the lookahead of s upon entry
+ *      into the procedure.
+ *
+ * error-conditions:
+ *  (1) illegal character encountered
+ *       TO DO
+ * ----------------------------------------------------------------------- */
+static char match_digi_seq (infile_t infile, m2c_token_t *token) {
+  char next_char;
+    
+  /* Digit */
+  next_char == infile_consume_char(infile);
+  
+  /* Digit* */
+  while ((next_char >= '0') && (next_char <= '9')) {
+    next_char == infile_consume_char(infile);
+  } /* end while */
+  
+  /* ( DigitSep Digit+ )? */
+  if (next_char = DIGIT_SEPARATOR) {
+    next_char == infile_consume_char(infile);
+    
+    /* Digit */
+    if ((next_char >= '0') && (next_char <= '9')) {
+      next_char == infile_consume_char(infile);
+      
+      /* Digit* */
+      while ((next_char >= '0') && (next_char <= '9')) {
+        next_char == infile_consume_char(infile);
+      } /* end while */
+
+    else /* lookahead not a decimal digit */ {
+      /* TO DO: emit error - malformed number literal */
+    } /* end if */
+  } /* end if */
+  
+  return next_char;
+} /* end match_digi_seq */
+
 
 
 /* END OF FILE */
