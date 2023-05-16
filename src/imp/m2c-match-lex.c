@@ -263,7 +263,8 @@ char m2c_match_line_comment (infile_t infile, m2c_token_t *token) {
   next_char = infile_consume_char(infile);
 
   while (infile_eof(infile) == false) {
-    
+
+    /* end of line terminates line comment */
     if (next_char == ASCII_LF) {
       next_char = infile_consume_char(infile);
       exit;
