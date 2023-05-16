@@ -307,18 +307,18 @@ char m2c_match_block_comment (infile_t infile, m2c_token_t *token) {
       return next_char;
     }
     /* legal char */
-    else if (((next_char > 32) && (next_char < 127))
+    else if (((next_char > 32) && (next_char != 127))
       || (next_char == ASCII_LF) || (next_char == ASCII_TAB)) {
       next_char = infile_consume_char(infile);
-      *token = TOKEN_BLOCK_COMMENT;
     }
     /* illegal control char */
     else {
       next_char = infile_consume_char(infile);
       /* TO DO: emit error - illegal control char in comment */
-      *token = TOKEN_MALFORMED_COMMENT;
     } /* end if */
   } /* end while */
+
+  *token = TOKEN_BLOCK_COMMENT;
 
   return next_char;
 } /* end m2c_match_block_comment */
