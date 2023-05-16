@@ -226,7 +226,7 @@ char m2c_match_quoted_literal (infile_t infile, m2c_token_t *token) {
 
   while (next_char != delimiter) {
     /* check for control characters */
-    if ((next_char < 32) || (next_char = 127)) {
+    if (IS_CTRL_CHAR(next_char)) {
       malformed = true;
       
       /* new line */
