@@ -189,6 +189,12 @@ char m2c_match_numeric_literal (infile_t infile, m2c_token_t *token) {
         }
         /* malformed literal */
         else {
+          /* emit error - illegal char in number literal */
+          m2c_emit_lex_error_in_token
+            (M2C_ERROR_ILLEGAL_CHAR_IN_TOKEN, infile, TOKEN_WHOLE_NUMBER,
+             next_char, infile_line(infile), infile_column(infile));
+          
+          /* collect all illegal chars */
           while (IS_LOWER_LETTER(next_char)
             || IS_UPPER_LETTER(next_char)
             || IS_DIGIT(next_char)) {
@@ -225,24 +231,25 @@ char m2c_match_quoted_literal (infile_t infile, m2c_token_t *token) {
   next_char = infile_consume_char(infile);
 
   while (next_char != delimiter) {
+    /* EOF */
+    if (infile_eof(infile)) {
+      /* emit error -- unexpected EOF in string literal */
+      m2c_emit_lex_error_in_token
+        (M2C_ERROR_EOF_IN_TOKEN, infile, TOKEN_QUOTED_STRING,
+         next_char, infile_line(infile), infile_column(infile));
+        *token = TOKEN_MALFORMED_STRING;
+        return next_char;
+      } /* end if */
+
     /* check for control characters */
     if (IS_CTRL_CHAR(next_char)) {
       malformed = true;
       
-      /* new line */
-      if (next_char == ASCII_LF) {
-        /* TO DO: emit error -- new line in string literal */
-      }
-      /* EOF */
-      else if (infile_eof(infile)) {
-        /* TO DO: emit error -- unexpected EOF in string literal */
-        *token = TOKEN_MALFORMED_STRING;
-        return next_char;
-      }
-      /* any other */
-      else {
-        /* TO DO: emit error -- illegal character in string literal */
-      } /* end if */
+      /* emit error -- control character in string literal */
+      m2c_emit_lex_error_in_token
+        (M2C_ERROR_ILLEGAL_CHAR_IN_TOKEN, infile, TOKEN_QUOTED_STRING,
+         next_char, infile_line(infile), infile_column(infile));
+       } /* end if */
     } /* end if */
     
     if (next_char == '\\') {
@@ -250,8 +257,11 @@ char m2c_match_quoted_literal (infile_t infile, m2c_token_t *token) {
 
       if ((next_char != 'n') && (next_char != 't') && (next_char != '//')) {
         malformed = true;
-        /* TO DO: emit error -- invalid escape sequence */
-      } /* end if */
+        /* emit error -- invalid escape sequence */
+        m2c_emit_lex_error_in_token
+          (M2C_ERROR_INVALID_ESCAPE_SEQUENCE, infile, TOKEN_QUOTED_STRING,
+           next_char, infile_line(infile), infile_column(infile));
+       } /* end if */
     } /* end if */
     next_char = infile_consume_char(infile);
   } /* end while */
@@ -298,9 +308,10 @@ char m2c_match_line_comment (infile_t infile, m2c_token_t *token) {
     /* illegal control char */
     else if (IS_CTRL_CHAR(next_char) && (next_char != ASCII_TAB)) {
       /* emit error - illegal control char in comment */
-      m2c_emit_error_ill_char_in_token
-        (infile, TOKEN_LINE_COMMENT, infile_line(), infile_column());
-    } /* end if */
+      m2c_emit_lex_error_in_token
+        (M2C_ERROR_ILLEGAL_CHAR_IN_TOKEN, infile, TOKEN_LINE_COMMENT,
+         next_char, infile_line(infile), infile_column(infile));
+     } /* end if */
     
     next_char = infile_consume_char(infile);
   } /* end while */
@@ -344,8 +355,9 @@ char m2c_match_block_comment (infile_t infile, m2c_token_t *token) {
     /* premature EOF */
     else if (infile_eof(infile)) {
       /* emit error - premature EOF in comment */
-      m2c_emit_error_ill_char_in_token
-        (infile, TOKEN_BLOCK_COMMENT, infile_line(), infile_column());
+      m2c_emit_lex_error_in_token
+        (M2C_ERROR_EOF_IN_TOKEN, infile, TOKEN_BLOCK_COMMENT,
+         next_char, infile_line(infile), infile_column(infile));
       *token = TOKEN_MALFORMED_COMMENT;
       return next_char;
     }
@@ -358,8 +370,9 @@ char m2c_match_block_comment (infile_t infile, m2c_token_t *token) {
     else {
       next_char = infile_consume_char(infile);
       /* emit error - illegal control char in comment */
-      m2c_emit_error_ill_char_in_token
-        (infile, TOKEN_BLOCK_COMMENT, infile_line(), infile_column());
+      m2c_emit_lex_error_in_token
+        (M2C_ERROR_ILLEGAL_CHAR_IN_TOKEN, infile, TOKEN_BLOCK_COMMENT,
+         next_char, infile_line(infile), infile_column(infile));
     } /* end if */
   } /* end while */
 
@@ -389,15 +402,18 @@ char m2c_match_pragma (infile_t infile, m2c_token_t *token) {
 
     if (infile_eof(infile)) {
       /* emit error : unexpected EOF in pragma */
-      m2c_emit_error_ill_char_in_token
-        (infile, TOKEN_PRAGMA, infile_line(), infile_column());
+      m2c_emit_lex_error_in_token
+        (M2C_ERROR_EOF_IN_TOKEN, infile, TOKEN_PRAGMA,
+         next_char, infile_line(infile), infile_column(infile));
       *token TOKEN_MALFORMED_PRAGMA;
       return next_char;
+
     /* illegal control char */
     else if (IS_ILLEGAL_CTRL_CHAR(next_char)) {
       /* emit error - illegal control char in pragma */
-      m2c_emit_error_ill_char_in_token
-        (infile, TOKEN_PRAGMA, infile_line(), infile_column());
+      m2c_emit_lex_error_in_token
+        (M2C_ERROR_ILLEGAL_CHAR_IN_TOKEN, infile, TOKEN_PRAGMA,
+         next_char, infile_line(infile), infile_column(infile));
     } /* end if */
   } /* end while */
 
@@ -429,6 +445,8 @@ char m2c_match_disabled_code_block (infile_t infile) {
   while (NOT((next_char == '>')
     && (infile_column(infile) == 1)
     && (infile_la2_char(infile) == '?'))) {
+    
+    /* since this is a debugging aid, all input is ignored, legal or not */
 
     if (infile_eof(infile)) {
       return next_char;
@@ -491,7 +509,10 @@ char match_decimal_number_tail (infile_t infile, m2c_token_t *token) {
     next_char := match_digit_seq(infile, token);
   }
   else /* lookahead is not a decimal digit */ {
-    /* TO DO: emit error -- malformed whole number literal */
+    /* emit error -- missing digit after digit separator in number */
+    m2c_emit_lex_error_in_token
+      (M2C_ERROR_MISSING_DIGIT_AFTER_DSEP, infile, TOKEN_WHOLE_NUMBER,
+       next_char, infile_line(infile), infile_column(infile));
   } /* end if */
   
   /* RealNumberTail? */
@@ -533,13 +554,17 @@ static char match_real_Number_tail (infile_t infile, m2c_token_t *token) {
     
   /* '.' */
   next_char := infile_consume_char(infile);
+  *token = TOKEN_REAL_NUMBER;
   
   /* DigitSeq */
   if (IS_DIGIT(next_char)) {
     next_char = match_digit_seq(infile, token);
   }
   else /* lookahead is not a decimal digit */ {
-    /* TO DO: emit error - malformed real number literal */
+    /* emit error - missing digit after decimal point in real number */
+    m2c_emit_lex_error_in_token
+      (M2C_ERROR_MISSING_DIGIT_AFTER_DP, infile, TOKEN_REAL_NUMBER,
+       next_char, infile_line(infile), infile_column(infile));
   } /* end if */
   
   /* ('e' ( '+' | '-' )? DigitSeq)? */
@@ -558,7 +583,10 @@ static char match_real_Number_tail (infile_t infile, m2c_token_t *token) {
       next_char = match_digit_seq(infile, token);
     }
     else /* lookahead is not a decimal digit */ {
-      /* TO DO: emit error - malformed real number literal */
+      /* emit error - missing exponent in real number */
+      m2c_emit_lex_error_in_token
+        (M2C_ERROR_MISSING_EXPONENT_AFTER_E, infile, TOKEN_REAL_NUMBER,
+         next_char, infile_line(infile), infile_column(infile));
     } /* end if */
   } /* end if */
   
@@ -616,7 +644,10 @@ static char match_digit_seq (infile_t infile, m2c_token_t *token) {
       } /* end while */
 
     else /* lookahead not a decimal digit */ {
-      /* TO DO: emit error - malformed number literal */
+      /* emit error - missing digit after digit separator in number */
+      m2c_emit_lex_error_in_token
+        (M2C_ERROR_MISSING_DIGIT_AFTER_DSEP, infile, *token,
+         next_char, infile_line(infile), infile_column(infile));
     } /* end if */
   } /* end if */
   
@@ -674,7 +705,10 @@ static char match_base2_digit_seq (infile_t infile, m2c_token_t *token) {
       } /* end while */
 
     else /* lookahead not a base-2 digit */ {
-      /* TO DO: emit error - malformed base-2 literal */
+      /* emit error - missing digit after digit separator in number */
+      m2c_emit_lex_error_in_token
+        (M2C_ERROR_MISSING_DIGIT_AFTER_DSEP, infile, TOKEN_WHOLE_NUMBER,
+         next_char, infile_line(infile), infile_column(infile));
     } /* end if */
   } /* end if */
   
@@ -707,7 +741,7 @@ static char match_base2_digit_seq (infile_t infile, m2c_token_t *token) {
  *       TO DO
  * ----------------------------------------------------------------------- */
 
-static char match_base2_digit_seq (infile_t infile, m2c_token_t *token) {
+static char match_base16_digit_seq (infile_t infile, m2c_token_t *token) {
   char next_char;
     
   /* Base16Digit */
@@ -732,12 +766,15 @@ static char match_base2_digit_seq (infile_t infile, m2c_token_t *token) {
         } /* end while */
 
     else /* lookahead not a base-16 digit */ {
-      /* TO DO: emit error - malformed base-16 literal */
+      /* emit error - missing digit after digit separator in number */
+      m2c_emit_lex_error_in_token
+        (M2C_ERROR_MISSING_DIGIT_AFTER_DSEP, infile, TOKEN_WHOLE_NUMBER,
+         next_char, infile_line(infile), infile_column(infile));
     } /* IF */
   } /* IF */
   
   return next_char;
-} /* end match_base2_digit_seq */
+} /* end match_base16_digit_seq */
 
 
 /* END OF FILE */

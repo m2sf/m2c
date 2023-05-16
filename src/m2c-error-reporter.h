@@ -48,28 +48,43 @@
 #include "m2c-common.h"
 #include "m2c-token.h"
 
+/* --------------------------------------------------------------------------
+ * error codes
+ * ----------------------------------------------------------------------- */
+
+typedef enum {
+  M2C_ERROR_ILLEGAL_CHAR,
+  M2C_ERROR_ILLEGAL_CHAR_IN_TOKEN,
+  M2C_ERROR_ILLEGAL_ESCAPE_SEQUENCE,
+  M2C_ERROR_MISSING_DIGIT_AFTER_DP,
+  M2C_ERROR_MISSING_DIGIT_AFTER_DSEP,
+  M2C_ERROR_MISSING_EXPONENT_AFTER_E,
+} m2c_error_t;
+
 
 /* Lexical Errors */
 
 /* --------------------------------------------------------------------------
- * procedure m2c_emit_error_ill_char(infile, char, line, col)
+ * procedure m2c_emit_lex_error(code, infile, ch, line, col)
  * --------------------------------------------------------------------------
- * Reports illegal character in infile at line and column to the console.
+ * Reports a lexical error of type code in infile, without token context, for
+ * the given offending character at the given line and column. 
  * ----------------------------------------------------------------------- */
 
-void m2c_emit_error_ill_char
-  (infile_t infile, char ch, uint_t line, uint_t col);
+void m2c_emit_lex_error
+  (m2c_error_t code, infile_t infile, char ch, uint_t line, uint_t col);
 
 
 /* --------------------------------------------------------------------------
- * procedure m2c_emit_error_ill_char_in_token(infile, token, ch, line, col)
+ * procedure m2c_emit_lex_error_in_token(code, infile, token, ch, line, col)
  * --------------------------------------------------------------------------
- * Reports illegal character in infile within symbol token  at the given line
- * and column to the console.
+ * Reports a lexical error  of type code  in infile  with given token context
+ * for the given offending character at the given line and column. 
  * ----------------------------------------------------------------------- */
 
-void m2c_emit_error_ill_char_in_token
-  (infile_t infile, m2c_token_t token, char ch, uint_t line, uint_t col);
+void m2c_emit_lex_error_in_token
+  (m2c_error_t code, infile_t infile,
+   m2c_token_t token, char ch, uint_t line, uint_t col);
 
 
 /* Syntax Errors */
