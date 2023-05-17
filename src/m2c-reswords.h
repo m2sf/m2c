@@ -19,7 +19,7 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * m2c-resword.h                                                             *
+ * m2c-reswords.h                                                            *
  *                                                                           *
  * Public interface of Modula-2 reserved word matching module.               *
  *                                                                           *
@@ -37,33 +37,38 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef M2C_RESWORD_H
-#define M2C_RESWORD_H
+#ifndef M2C_RESWORDS_H
+#define M2C_RESWORDS_H
 
+/* --------------------------------------------------------------------------
+ * imports
+ * ----------------------------------------------------------------------- */
+
+#include "interned-strings.h"
 #include "m2c-token.h"
 
 
 /* --------------------------------------------------------------------------
- * function m2c_reword_token_for_lexeme(lexeme, length)
+ * function m2c_reword_token_for_lexeme(lexeme, default_token)
  * --------------------------------------------------------------------------
- * Tests if the given lexeme represents a reserved word and returns the
- * corresponding token or TOKEN_INVALID if it does not match a reserved word.
+ * Tests  if lexeme matches  a reserved word  and  returns  its corresponding
+ * token.  Returns default_token if lexeme does not match a reserved word.
  * ----------------------------------------------------------------------- */
 
-m2c_token_t m2c_reword_token_for_lexeme (const char *lexeme, uint_t length);
+m2c_token_t m2c_reword_token_for_lexeme
+  (intstr_t lexeme, m2c_token_t default_token);
 
 
 /* --------------------------------------------------------------------------
- * function m2c_lexeme_for_resword(token)
+ * function m2c_resword_lexeme_for_token(token)
  * --------------------------------------------------------------------------
- * Returns an immutable pointer to a NUL terminated character string with
- * the lexeme for the reserved word represented by token.  Returns NULL
- * if the token does not represent a reserved word.
+ * Tests  if token represents  a reserved word  and returns its corresponding
+ * lexeme.  Returns NULL if token does not represent a reserved word.
  * ----------------------------------------------------------------------- */
 
-const char *m2c_resword_lexeme_for_token (m2c_token_t token);
+intstr_t m2c_resword_lexeme_for_token (m2c_token_t token);
 
 
-#endif M2C_RESWORD_H
+#endif M2C_RESWORDS_H
 
 /* END OF FILE */
