@@ -88,6 +88,8 @@ char m2c_match_ident
  * lexeme in lexeme.  Returns the new lookahead character.
  * ----------------------------------------------------------------------- */
 
+static char match_lowline_ident_tail(infile_t infile, m2c_token_t *token);
+
 char m2c_match_lowline_ident
   (infile_t infile, m2c_token_t *token, intstr_t *lexeme) {
   char next_char;
@@ -192,7 +194,7 @@ char m2c_match_lowline_ident_or_resword
     else /* lowline ident tail */
       next_char = match_lowline_ident_tail(infile, token);
     } /* end if */
-    
+
     *lexeme = infile_lexeme(infile);
   }
   else /* identifier or resword */ {
