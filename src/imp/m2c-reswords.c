@@ -69,449 +69,443 @@ m2c_token_t m2c_reword_token_for_lexeme
   
   switch (length) {
     case /* length = 2 */ 2 :
-      switch (lexeme[0]) {
+      switch (lexstr[0]) {
       
-	    case 'B' :
-	      /* BY */
-	      if (lexeme[1] == 'Y') {
-	        return TOKEN_BY;
-	      }
-	    
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	
 	    case 'D' :
 	      /* DO */
-	      if (lexeme[1] == 'O') {
+	      if (lexstr[1] == 'O') {
 	        return TOKEN_DO;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
+
+          return default_token;
 	
 	    case 'I' :
 	      /* IF */
-	      if (lexeme[1] == 'F') {
+	      if (lexstr[1] == 'F') {
 	        return TOKEN_IF;
 	      }
-	  	    
+          	  	    
 	      /* IN */
-	      else if (lexeme[1] == 'N') {
+	      else if (lexstr[1] == 'N') {
 	        return TOKEN_IN;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	    
+          } /* end if */
+
+	      return default_token;
+
 	    case 'O' :
 	      /* OF */
-	      if (lexeme[1] == 'F') {
+	      if (lexstr[1] == 'F') {
 	        return TOKEN_OF;
 	      }
 	      
 	      /* OR */
-	      else if (lexeme[1] == 'R') {
+	      else if (lexstr[1] == 'R') {
 	        return TOKEN_OR;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
-	    
+
+	      return default_token;
+
 	    case 'T' :
 	      /* TO */
-	      if (lexeme[1] == 'O') {
+	      if (lexstr[1] == 'O') {
 	        return TOKEN_TO;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
-	    
+
+	      return default_token;
+
 	    default :
-	      return TOKEN_UNKNOWN;
+	      return default_token;
 	  } /* end switch */
 	
     case /* length = 3 */ 3 :
-      switch (lexeme[0]) {
+      switch (lexstr[0]) {
       
 	    case 'A' :
 	      /* AND */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_AND])) {
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_AND])) {
 	        return TOKEN_AND;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
+
+          return default_token;
         	
 	    case 'D' :
 	      /* DIV */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_DIV])) {
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_DIV])) {
 	        return TOKEN_DIV;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
+	      
+          return default_token;
 	
 	    case 'E' :
 	      /* END */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_END])) {
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_END])) {
 	        return TOKEN_END;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
+	      
+          return default_token;
 	      
 	    case 'F' :
 	      /* FOR */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_FOR])) {
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_FOR])) {
 	        return TOKEN_FOR;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
+	      
+	      return default_token;
 	      
 	    case 'M' :
 	      /* MOD */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_MOD])) {
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_MOD])) {
 	        return TOKEN_MOD;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
+          
+          return default_token;
 	      
 	    case 'N' :
-	      /* NOT */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_NOT])) {
-	        return TOKEN_NOT;
-	      }
+
+          switch (lexstr[2]) {
+	        case 'P' :
+              /* NOP */
+	          if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_NOP])) {
+	            return TOKEN_NOP;
+              } /* end if */
+              
+              return default_token;
+            
+            case 'T' :
+              /* NOT */
+	          if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_NOT])) {
+	            return TOKEN_NOT;
+              } /* end if */
+              
+              return default_token;
+
+            case 'W' :
+              /* NEW */
+	          if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_NEW])) {
+	            return TOKEN_NEW;
+              } /* end if */
+              
+              return default_token;
+          
+	      } /* end switch */
 	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
+          return default_token;
 	      
 	    case 'S' :
 	      /* SET */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_SET])) {
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_SET])) {
 	        return TOKEN_SET;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
+	      
+	      return default_token;
 	      
 	    case 'V' :
 	      /* VAR */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_VAR])) {
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_VAR])) {
 	        return TOKEN_VAR;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
 	      
+	      return default_token;
+	      
 	    default :
-	      return TOKEN_UNKNOWN;
+	      return default_token;
 	  } /* end switch */
 	
     case /* length = 4 */ 4 :
-      switch (lexeme[1]) {
+      switch (lexstr[1]) {
       
 	    case 'A' :
 	      /* CASE */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_CASE])) {
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_CASE])) {
 	        return TOKEN_CASE;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
+	      
+	      return default_token;
+
+        case 'E' :
+          /* READ */
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_READ])) {
+	        return TOKEN_READ;
+	      } /* end if */
+	      
+	      return default_token;
 	      
 	    case 'H' :
 	      /* THEN */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_THEN])) {
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_THEN])) {
 	        return TOKEN_THEN;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
-	      
-	    case 'I' :
-	      /* WITH */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_WITH])) {
-	        return TOKEN_WITH;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
+          
+          return default_token;
 	      
 	    case 'L' :
 	      /* ELSE */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_ELSE])) {
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_ELSE])) {
 	        return TOKEN_ELSE;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
+	      
+	      return default_token;
 	      
 	    case 'O' :
-	      /* LOOP */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_LOOP])) {
-	        return TOKEN_LOOP;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'R' :
-	      /* FROM */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_FROM])) {
-	        return TOKEN_FROM;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
+          switch (lexstr[3]) {
+
+            case 'P' :
+	          /* LOOP */
+	          if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_LOOP])) {
+	            return TOKEN_LOOP;
+	          } /* end if */
+              
+              return default_token;
+            
+            case 'Y' :
+              /* COPY */
+	          if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_LOOP])) {
+	            return TOKEN_LOOP;
+	          } /* end if */
+              
+              return default_token;
+          } /* end switch */
+
+          return default_token;
+
 	    case 'X' :
 	      /* EXIT */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_EXIT])) {
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_EXIT])) {
 	        return TOKEN_EXIT;
-	      }
+	      } /* end if */	      
 	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
+	      return default_token;
 	      
         case 'Y' :
           /* TYPE */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_TYPE])) {
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_TYPE])) {
 	        return TOKEN_TYPE;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
+          
+          return default_token;
 	      
 	    default :
-	      return TOKEN_UNKNOWN;
+	      return default_token;
 	  } /* end switch */
 	
     case /* length = 5 */ 5 :
-      switch (lexeme[0]) {
-      
-	    case 'A' :
-	      /* ARRAY */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_ARRAY])) {
-	        return TOKEN_ARRAY;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'B' :
+      switch (lexstr[4]) {
+        
+        case 'E' :
+          switch (lexstr[3]) {
+            case 'L' :
+              /* WHILE */
+	          if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_WHILE])) {
+	            return TOKEN_WHILE;
+	          } /* end if */
+              
+              return default_token;
+              
+            case 'T' :
+              /* WRITE */
+	          if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_WRITE])) {
+	            return TOKEN_WRITE;
+	          } /* end if */
+
+              return default_token;
+            
+	        default :
+	          return default_token;
+          } /* end switch */
+          
+        case 'F' :
+          /* ELSIF */
+          if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_ELSIF])) {
+            return TOKEN_ELSIF;
+          } /* end if */
+
+          return default_token;
+
+        case 'L' :
+          /* UNTIL */
+          if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_UNTIL])) {
+            return TOKEN_UNTIL;
+          } /* end if */
+
+          return default_token;
+
+	    case 'N' :
 	      /* BEGIN */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_BEGIN])) {
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_BEGIN])) {
 	        return TOKEN_BEGIN;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
+          
+          return default_token;
 	      
-	    case 'C' :
+	    case 'S' :
+	      /* ALIAS */
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_ALIAS])) {
+	        return TOKEN_ALIAS;
+	      } /* end if */
+          
+          return default_token;
+
+	    case 'T' :
 	      /* CONST */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_CONST])) {
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_CONST])) {
 	        return TOKEN_CONST;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
-	      
-	    case 'E' :
-	      /* ELSIF */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_ELSIF])) {
-	        return TOKEN_ELSIF;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
+          
+          return default_token;
+
+	    case 'Y' :
+	      /* ARRAY */
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_ARRAY])) {
+	        return TOKEN_ARRAY;
 	      } /* end if */
-	      
-	    case 'U' :
-	      /* UNTIL */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_UNTIL])) {
-	        return TOKEN_UNTIL;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'W' :
-	      /* WHILE */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_WHILE])) {
-	        return TOKEN_WHILE;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
+          
+          return default_token;
 	      
 	    default :
-	      return TOKEN_UNKNOWN;
+	      return default_token;
 	  } /* end switch */
 	
     case /* length 6 */ 6 :
-      switch (lexeme[5]) {
-      
-	    case 'E' :
-	      /* MODULE */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_MODULE])) {
-	        return TOKEN_MODULE;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
+      switch (lexstr[2]) {
+        case 'A' :
+          /* OPAQUE */
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_OPAQUE])) {
+	        return TOKEN_OPAQUE;
 	      } /* end if */
-	      
-	    case 'D' :
-	      /* RECORD */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_RECORD])) {
+          
+          return default_token;
+
+        case 'C' :
+          /* RECORD */
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_RECORD])) {
 	        return TOKEN_RECORD;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
 	      } /* end if */
-	      
-	    case 'N' :
-	      /* RETURN */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_RETURN])) {
-	        return TOKEN_RETURN;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
+          
+          return default_token;
+
+        case 'D' :
+          /* MODULE */
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_MODULE])) {
+	        return TOKEN_MODULE;
 	      } /* end if */
-	      
-	    case 'T' :
-	      switch (lexeme[0]) {
-	      
-	        case 'E' :
-	          /* EXPORT */
-	          if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_EXPORT])) {
-	            return TOKEN_EXPORT;
-	          }
-	          
-	          else {
-	            return TOKEN_UNKNOWN;
-	          } /* end if */
-	        
-	        case 'I' :
-	          /* IMPORT */
-	          if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_IMPORT])) {
-	            return TOKEN_IMPORT;
-	          }
-	          
-	          else {
-	            return TOKEN_UNKNOWN;
-	          } /* end if */
-	        
-	        case 'R' :
-	          /* REPEAT */
-	          if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_REPEAT])) {
-	            return TOKEN_REPEAT;
-	          }
-	          
-	          else {
-	            return TOKEN_UNKNOWN;
-	          } /* end if */
-	          
-	        default :
-	          return TOKEN_UNKNOWN;
-	      } /* end switch */
-	      
+          
+          return default_token;
+
+        case 'P' :
+          switch (lexstr[0]) {
+            case 'I' :
+              /* IMPORT */
+              if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_IMPORT])) {
+                return TOKEN_IMPORT;
+              } /* end if */
+
+              return default_token;
+
+            case 'R' :
+              /* REPEAT */
+              if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_REPEAT])) {
+                return TOKEN_REPEAT;
+              } /* end if */
+
+              return default_token;
+
+            default :
+              return default_token;
+          } /* end switch */
+        
+        case 'T' :
+          switch (lexstr[3]) {
+            case 'A' :
+              /* RETAIN */
+              if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_RETAIN])) {
+                return TOKEN_RETAIN;
+              } /* end if */
+
+              return default_token;
+
+            case 'U' :
+              /* RETURN */
+              if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_RETURN])) {
+                return TOKEN_RETURN;
+              } /* end if */
+
+              return default_token;
+
+            default :
+              return default_token;
+          } /* end switch */
+
 	    default :
-	      return TOKEN_UNKNOWN;
-	  } /* end switch */
-	
+	      return default_token;
+      } /* end switch */
+
+
     case /* length = 7 */ 7 :
-      /* POINTER */
-      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_POINTER])) {
-	    return TOKEN_POINTER;
-      }
+      switch (lexstr[0]) {
+        case 'A' :
+          /* ARGLIST */
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_ARGLIST])) {
+	        return TOKEN_ARGLIST;
+	      } /* end if */
+          
+          return default_token;
+
+        case 'P' :
+          /* POINTER */
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_POINTER])) {
+	        return TOKEN_POINTER;
+	      } /* end if */
+          
+          return default_token;
+
+        case 'R' :
+          /* RELEASE */
+	      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_RELEASE])) {
+	        return TOKEN_RELEASE;
+	      } /* end if */
+          
+          return default_token;
+
+	    default :
+	      return default_token;
+      } /* end switch */
       
-      else {
-	    return TOKEN_UNKNOWN;
-      } /* end if */
+    case /* length = 8 */ 8 :
+      /* OCTETSEQ */
+	  if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_OCTETSEQ])) {
+	    return TOKEN_OCTETSEQ;
+	  } /* end if */
+          
+      return default_token;
       
     case /* length = 9 */ 9 :
-      switch (lexeme[0]) {
-      
-        case 'P' :
-          /* PROCEDURE */
-          if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_PROCEDURE])) {
-	        return TOKEN_PROCEDURE;
-          }
+      /* PROCEDURE */
+	  if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_PROCEDURE])) {
+	    return TOKEN_PROCEDURE;
+	  } /* end if */
           
-          else {
-	        return TOKEN_UNKNOWN;
-          } /* end if */
-        
-        case 'Q' :
-          /* QUALIFIED */
-          if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_QUALIFIED])) {
-	        return TOKEN_QUALIFIED;
-          }
-          
-          else {
-	        return TOKEN_UNKNOWN;
-          } /* end if */
-        
-        default :
-	      return TOKEN_UNKNOWN;
-      } /* end switch */
+      return default_token;
 	
-    case /* length = 10 */ 10 :
-      /* DEFINITION */
-      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_DEFINITION])) {
-	    return TOKEN_DEFINITION;
-      }
-      
-      else {
-	    return TOKEN_UNKNOWN;
+    case /* length = 11 */ 11 :
+      /* UNQUALIFIED */
+      if (str_match(lexstr, m2c_resword_lexeme_table[TOKEN_UNQUALIFIED])) {
+	    return TOKEN_UNQUALIFIED;
       } /* end if */
+      
+      return default_token;
     
     case /* length = 14 */ 14 :
       /* IMPLEMENTATION */
-      if (str_match(lexeme,
+      if (str_match(lexstr,
           m2c_resword_lexeme_table[TOKEN_IMPLEMENTATION])) {
 	    return TOKEN_IMPLEMENTATION;
-      }
-      
-      else {
-	    return TOKEN_UNKNOWN;
       } /* end if */
+      
+      return default_token;
     
     default :
-      return TOKEN_UNKNOWN;
+      return default_token;
   } /* end switch (length) */
-
 } /* end m2c_reword_token_for_lexeme */
 
 
@@ -522,9 +516,9 @@ m2c_token_t m2c_reword_token_for_lexeme
  * lexeme.  Returns NULL if token does not represent a reserved word.
  * ----------------------------------------------------------------------- */
 
-intstr_t m2c_resword_lexeme_for_token (m2c_token_t token);
+intstr_t m2c_resword_lexeme_for_token (m2c_token_t token) {
 
+} /* end m2c_resword_lexeme_for_token */
 
-#endif M2C_RESWORDS_H
 
 /* END OF FILE */
