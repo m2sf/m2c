@@ -68,9 +68,7 @@ char m2c_match_ident
   infile_mark_lexeme(infile);
 
   next_char := infile_lookahead_char(infile);
-  while (IS_LOWER_LETTER(next_char)
-    || IS_UPPER_LETTER(next_char)
-    || IS_DIGIT(next_char)) {
+  while (IS_LETTER_OR_DIGIT(next_char)) {
     next_char = infile_consume_char(infile);
   } /* end while */
 
@@ -93,53 +91,23 @@ char m2c_match_ident
 char m2c_match_lowline_ident
   (infile_t infile, m2c_token_t *token, intstr_t *lexeme) {
   char next_char;
+  m2c_token_t result;
+  bool malformed = false;
   
   infile_mark_lexeme(infile);
   
-  /* Letter */
-  next_char := infile_lookahead_char(infile);
+  /* (Letter | Digit)* */
+  while (IS_LETTER_OR_DIGIT(next_char)) {
+    next_char := infile_lookahead_char(infile);
+  } /* end if */
+  
+  if (next_char != '_') {
+    *token = TOKEN_IDENT;
+  }
+  else /* lowline ident tail */
+    next_char = match_lowline_ident_tail(infile, token);
+  } /* end if */
 
-  /* ( '_'? (Letter | Digit)+ )* */
-  while (IS_LETTER_OR_DIGIT(next_char) || (next_char == '_')) {
-    
-    /* (Letter | Digit)+ */
-    if (IS_LETTER_OR_DIGIT(next_char)) {
-      while (IS_LETTER_OR_DIGIT(next_char)) {
-        next_char = infile_consume_char(infile);
-      } /* end while */
-    }
-    /* '_' (Letter | Digit)+ */
-    else {
-      next_char = infile_consume_char(infile);
-      
-      /* EOF */
-      if (infile_eof(infile)) {
-        /* emit error -- unexpected EOF in identifier */
-        m2c_emit_lex_error_in_token
-          (M2C_ERROR_EOF_IN_TOKEN, infile, TOKEN_IDENT,
-           next_char, infile_line(infile), infile_column(infile));
-        *token = TOKEN_MALFORMED_IDENT;
-        *lexeme = infile_lexeme(infile);
-        return next_char;
-      } /* end if */
-      
-      /* (Letter | Digit)+ */
-      if (IS_LETTER_OR_DIGIT(next_char)) {
-        next_char = infile_consume_char(infile);
-        while (IS_LETTER_OR_DIGIT(next_char)) {
-          next_char = infile_consume_char(infile);
-        } /* end while */
-      }
-      else {
-        /* emit error - illegal char in identifier */
-        m2c_emit_lex_error_in_token
-          (M2C_ERROR_ILLEGAL_CHAR_IN_TOKEN, infile, TOKEN_IDENT,
-           next_char, infile_line(infile), infile_column(infile));
-      } /* end if */
-    } /* end if */
-  } /* end while */
-
-  *token = TOKEN_IDENT;
   *lexeme = infile_lexeme(infile);
   
   return next_char;
@@ -157,7 +125,6 @@ char m2c_match_lowline_ident
 char m2c_match_ident_or_resword
   (infile_t infile, m2c_token_t *token, intstr_t *lexeme) {
   char next_char;
-  bool allcaps;
   
   infile_mark_lexeme(infile);
   
@@ -170,22 +137,67 @@ char m2c_match_ident_or_resword
   /* check if followed by lowercase letter or digit */
   if (IS_LOWER_LETTER(next_char) || IS_DIGIT(next_char)) {
     next_char = infile_consume_char(infile);
-    allcaps = false;
-
+    
     /* collect any remaining letters and digits */
-    while (IS_LOWER_LETTER(next_char)
-      || IS_UPPER_LETTER(next_char)
-      || IS_DIGIT(next_char)) {
+    while (IS_LETTER_OR_DIGIT(next_char)) {
       next_char = infile_consume_char(infile);
     } /* end while */
     
-    /* either ident or resword */
-    *lexeme = infile_lexeme(infile);
-    *token = m2c_token_for_ident_or_resword(TOKEN_STDIDENT, lexeme);
-  }
-  else /* identifier */ {
+    /* cannot be a resword */
     *lexeme = infile_lexeme(infile);
     *token = TOKEN_STDIDENT;
+  }
+  else /* identifier or resword */ {
+    *lexeme = infile_lexeme(infile);
+    *token = m2c_token_for_ident_or_resword(TOKEN_IDENT, lexeme);
+  } /* end if*/
+  
+  return next_char;
+} /* end m2c_match_ident_or_resword */
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_match_lowline_ident_or_resword(infile, token, lexeme)
+ * --------------------------------------------------------------------------
+ * Matches the input  at the current reading position of infile  to a lowline
+ * identifier  allowing non-leading, non-trailing and non-consecutive lowline
+ * characters or a resword  and consumes it.  Passes  the associated token in
+ * token and its lexeme in lexeme.  Returns the new lookahead character.
+ * ----------------------------------------------------------------------- */
+
+char m2c_match_lowline_ident_or_resword
+  (infile_t infile, m2c_token_t *token, intstr_t *lexeme) {
+  char next_char;
+  
+  infile_mark_lexeme(infile);
+  
+  /* collect all uppercase letters */
+  next_char = infile_lookahead_char(infile);
+  while (IS_UPPER_LETTER(next_char)) {
+    next_char = infile_consume_char(infile);
+  } /* end while */
+  
+  /* check if followed by lowercase letter or digit */
+  if (IS_LOWER_LETTER(next_char) || IS_DIGIT(next_char)) {
+    next_char = infile_consume_char(infile);
+    
+    /* collect any remaining letters and digits */
+    while (IS_LETTER_OR_DIGIT(next_char)) {
+      next_char = infile_consume_char(infile);
+    } /* end while */
+
+    if (next_char != '_') {
+      *token = TOKEN_IDENT;
+    }
+    else /* lowline ident tail */
+      next_char = match_lowline_ident_tail(infile, token);
+    } /* end if */
+    
+    *lexeme = infile_lexeme(infile);
+  }
+  else /* identifier or resword */ {
+    *lexeme = infile_lexeme(infile);
+    *token = m2c_token_for_ident_or_resword(TOKEN_IDENT, lexeme);
   } /* end if*/
   
   return next_char;
@@ -564,6 +576,126 @@ char m2c_match_disabled_code_block (infile_t infile) {
 
 
 /* Private Procedures */
+
+/* --------------------------------------------------------------------------
+ * private function match_lowline_ident_tail(infile)
+ * --------------------------------------------------------------------------
+ * Matches input in infile to a lowline identifier tail, returns lookahead.
+ *
+ * EBNF
+ *
+ * LowlineIdentTail :=
+ *   ( Lowline (Letter | Digit)+ )+
+ *   ;
+ *
+ * alias DigitSep = "'" ;
+ *
+ * pre-conditions:
+ *  (1) infile is the current input file and it must not be NIL.
+ *  (2) lookahead of infile is the lowline character '_'.
+ *
+ * post-conditions:
+ *  (1) lookahead of infile is the character immediately following the last
+ *      character of the identifier tail whose first character was the
+ *      lookahead of infile upon entry into the procedure.
+ *
+ * error-conditions:
+ *  (1) illegal character encountered
+ *       TO DO
+ * ----------------------------------------------------------------------- */
+
+static char match_lowline_letter_ident_seq
+  (infile_t infile, m2c_token_t *token);
+
+static char match_lowline_ident_tail (infile_t infile, m2c_token_t *token) {
+  char next_char;
+  bool malformed;
+  m2c_token_t result;
+  
+  malformed = false;
+  next_char = infile_lookahead_char(infile);
+  
+  /* ( Lowline (Letter | Digit)+ )+ */
+  while (next_char == '_') {
+    next_char = match_lowline_letter_digit_seq(infile, &result);
+
+    if (result == TOKEN_MALFORMED_IDENT) {
+      malformed = true;
+    } /* end if */
+  } /* end while */
+  
+  if (malformed) {
+    *token = TOKEN_MALFORMED_IDENT;
+  }
+  else {
+    *token = TOKEN_IDENT;
+  } /* end if */
+
+  return next_char;
+} /* end match_lowline_ident_tail */
+
+
+/* --------------------------------------------------------------------------
+ * private function match_lowline_letter_digit_seq(infile, token)
+ * --------------------------------------------------------------------------
+ * Matches the input  in infile to a  lowline preceded letter-digit sequence,
+ * returns lookahead.
+ *
+ * EBNF
+ *
+ * LowlineLetterDigitSeq :=
+ *   Lowline (Letter | Digit)+
+ *   ;
+ *
+ * pre-conditions:
+ *  (1) infile is the current input file and it must not be NIL.
+ *  (2) lookahead of infile is the lowline character '_'.
+ *
+ * post-conditions:
+ *  (1) lookahead of infile is the character immediately following the last
+ *      character of the matched character sequence whose first character
+ *      was the lookahead of infile upon entry into the procedure.
+ *
+ * error-conditions:
+ *  (1) illegal character encountered
+ *       TO DO
+ * ----------------------------------------------------------------------- */
+
+static char match_lowline_letter_ident_seq
+  (infile_t infile, m2c_token_t *token) {
+  char next_char;
+  
+  /* '_' */
+  next_char = infile_consume_char(infile);
+
+  /* EOF */
+  if (infile_eof(infile)) {
+    /* emit error -- unexpected EOF in identifier */
+    m2c_emit_lex_error_in_token
+      (M2C_ERROR_EOF_IN_TOKEN, infile, TOKEN_IDENT,
+       next_char, infile_line(infile), infile_column(infile));
+    *token = TOKEN_MALFORMED_IDENT;
+    return next_char;
+  } /* end if */
+    
+  /* (Letter | Digit)+ */
+  if (IS_LETTER_OR_DIGIT(next_char) {
+    while (IS_LETTER_OR_DIGIT(next_char)) {
+      next_char = infile_consume_char(infile);
+    } /* end if */
+    *token = TOKEN_IDENT;
+  }
+  else /* illegal char */ {
+    /* emit error - illegal char in identifier */
+    m2c_emit_lex_error_in_token
+      (M2C_ERROR_ILLEGAL_CHAR_IN_TOKEN, infile, TOKEN_IDENT,
+       next_char, infile_line(infile), infile_column(infile));
+    *token = TOKEN_MALFORMED_IDENT;
+  } /* end if */
+  
+  return next_char;
+} /* end match_lowline_letter_ident_seq */
+
 
 /* --------------------------------------------------------------------------
  * private function match_decimal_number_tail(infile)
