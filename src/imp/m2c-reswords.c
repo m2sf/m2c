@@ -60,13 +60,13 @@ static void init_resword_lextab(void);
 
 
 /* --------------------------------------------------------------------------
- * function m2c_reword_token_for_lexeme(lexeme, default_token)
+ * function m2c_resword_token_for_lexeme(lexeme, default_token)
  * --------------------------------------------------------------------------
  * Tests  if lexeme matches  a reserved word  and  returns  its corresponding
  * token.  Returns default_token if lexeme does not match a reserved word.
  * ----------------------------------------------------------------------- */
 
-m2c_token_t m2c_reword_token_for_lexeme
+m2c_token_t m2c_resword_token_for_lexeme
   (intstr_t lexeme, m2c_token_t default_token) {
   
   const char *lexstr;
@@ -525,7 +525,7 @@ m2c_token_t m2c_reword_token_for_lexeme
     default :
       return default_token;
   } /* end switch (length) */
-} /* end m2c_reword_token_for_lexeme */
+} /* end m2c_resword_token_for_lexeme */
 
 
 /* --------------------------------------------------------------------------
