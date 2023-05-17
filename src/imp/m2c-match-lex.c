@@ -44,22 +44,29 @@
 #include "iso646.h"
 #include "infile.h"
 #include "m2c-token.h"
+#include "m2c-resword.h"
+#include "m2c-error-reporter.h"
+#include "m2c-compiler-options.h"
+
 #include <stdbool.h>
 
 
 /* Semantic Symbols */
 
 /* --------------------------------------------------------------------------
- * function m2c_match_ident(infile, token)
+ * function m2c_match_ident(infile, token, lexeme)
  * --------------------------------------------------------------------------
  * Matches  the input  at  the  current  reading position  of  infile  to  an
- * identifier and consumes it.  Passes the associated token back in out para-
- * meter token.  Returns the new lookahead character.
+ * identifier  and consumes it.  Passes the associated token in token and its
+ * lexeme in lexeme.  Returns the new lookahead character.
  * ----------------------------------------------------------------------- */
 
-char m2c_match_ident (infile_t infile, m2c_token_t *token) {
+char m2c_match_ident
+  (infile_t infile, m2c_token_t *token, intstr_t *lexeme) {
   char next_char;
   
+  infile_mark_lexeme(infile);
+
   next_char := infile_lookahead_char(infile);
   while (IS_LOWER_LETTER(next_char)
     || IS_UPPER_LETTER(next_char)
@@ -68,22 +75,26 @@ char m2c_match_ident (infile_t infile, m2c_token_t *token) {
   } /* end while */
 
   *token = TOKEN_STDIDENT;
+  *lexeme = infile_lexeme(infile);
   
   return next_char;
 } /* end m2c_match_ident */
 
 
 /* --------------------------------------------------------------------------
- * function m2c_match_ident_or_resword(infile, allcaps)
+ * function m2c_match_ident_or_resword(infile, token, lexeme)
  * --------------------------------------------------------------------------
  * Matches  the input  at  the  current  reading position  of  infile  to  an
- * identifier or reserved word  and consumes it.  Passes true back in allcaps
- * if the matched input consists exclusively of uppercase characters,  passes
- * back false otherwise.  Returns the new lookahead character.
+ * identifier or reserved word  and consumes it.  Passes the associated token
+ * in token and its lexeme in lexeme.  Returns the new lookahead character.
  * ----------------------------------------------------------------------- */
 
-char m2c_match_ident_or_resword (infile_t infile, bool *allcaps) {
+char m2c_match_ident_or_resword
+  (infile_t infile, m2c_token_t *token, intstr_t *lexeme) {
   char next_char;
+  bool allcaps;
+  
+  infile_mark_lexeme(infile);
   
   /* collect all uppercase letters */
   next_char = infile_lookahead_char(infile);
@@ -94,7 +105,7 @@ char m2c_match_ident_or_resword (infile_t infile, bool *allcaps) {
   /* check if followed by lowercase letter or digit */
   if (IS_LOWER_LETTER(next_char) || IS_DIGIT(next_char)) {
     next_char = infile_consume_char(infile);
-    *allcaps = false;
+    allcaps = false;
 
     /* collect any remaining letters and digits */
     while (IS_LOWER_LETTER(next_char)
@@ -102,9 +113,14 @@ char m2c_match_ident_or_resword (infile_t infile, bool *allcaps) {
       || IS_DIGIT(next_char)) {
       next_char = infile_consume_char(infile);
     } /* end while */
+    
+    /* either ident or resword */
+    *lexeme = infile_lexeme(infile);
+    *token = m2c_token_for_ident_or_resword(TOKEN_STDIDENT, lexeme);
   }
-  else {
-    *allcaps = true;
+  else /* identifier */ {
+    *lexeme = infile_lexeme(infile);
+    *token = TOKEN_STDIDENT;
   } /* end if*/
   
   return next_char;
@@ -112,11 +128,11 @@ char m2c_match_ident_or_resword (infile_t infile, bool *allcaps) {
 
 
 /* --------------------------------------------------------------------------
- * function m2c_match_numeric_literal(infile, token)
+ * function m2c_match_numeric_literal(infile, token, lexeme)
  * --------------------------------------------------------------------------
  * Matches  the  input  at  the  current  reading position  of  infile  to  a
- * numeric literal and consumes it.  Passes the associated token back in  out
- * parameter token.  Returns the new lookahead character.
+ * numeric literal and consumes it.  Passes the associated token in token and
+ * its lexeme in lexeme.  Returns the new lookahead character.
  * ----------------------------------------------------------------------- */
 
 static char match_decimal_number_tail(infile_t infile, m2c_token_t *token);
@@ -124,8 +140,11 @@ static char match_real_number_tail(infile_t infile, m2c_token_t *token);
 static char match_base2_digit_seq(infile_t infile, m2c_token_t *token);
 static char match_base16_digit_seq(infile_t infile, m2c_token_t *token);
 
-char m2c_match_numeric_literal (infile_t infile, m2c_token_t *token) {
+char m2c_match_numeric_literal
+  (infile_t infile, m2c_token_t *token, intstr_t *lexeme) {
   char next_char;
+  
+  infile_mark_lexeme(infile);
   
   next_char = infile_lookahead_char(infile);
 
@@ -182,23 +201,28 @@ char m2c_match_numeric_literal (infile_t infile, m2c_token_t *token) {
     /* decimal integer or real number */
     next_char = match_decimal_number_tail(infile, token);
   } /* end if */
+  
+  *lexeme = infile_lexeme(infile);
 
   return next_char;
 } /* end m2c_match_numeric_literal */
 
 
 /* --------------------------------------------------------------------------
- * function m2c_match_quoted_literal(infile, token)
+ * function m2c_match_quoted_literal(infile, token, lexeme)
  * --------------------------------------------------------------------------
  * Matches  the  input  at  the  current  reading position  of  infile  to  a
- * quoted literal  and consumes it.  Passes the associated token back in  out
- * parameter token.  Returns the new lookahead character.
+ * quoted literal  and consumes it.  Passes the associated token in token and
+ * its lexeme in lexeme.  Returns the new lookahead character.
  * ----------------------------------------------------------------------- */
 
-char m2c_match_quoted_literal (infile_t infile, m2c_token_t *token) {
+char m2c_match_quoted_literal
+  (infile_t infile, m2c_token_t *token, intstr_t *lexeme) {
   char next_char, delimiter;
   bool malformed = false;
   
+  infile_mark_lexeme(infile);
+
   /* consume opening string delimiter */
   delimiter = infile_lookahead_char(infile);
   next_char = infile_consume_char(infile);
@@ -211,6 +235,7 @@ char m2c_match_quoted_literal (infile_t infile, m2c_token_t *token) {
         (M2C_ERROR_EOF_IN_TOKEN, infile, TOKEN_QUOTED_STRING,
          next_char, infile_line(infile), infile_column(infile));
         *token = TOKEN_MALFORMED_STRING;
+        *lexeme = infile_lexeme(infile);
         return next_char;
       } /* end if */
 
@@ -252,6 +277,8 @@ char m2c_match_quoted_literal (infile_t infile, m2c_token_t *token) {
     *token = TOKEN_QUOTED_STRING;
   } /* end if */
 
+  *lexeme = infile_lexeme(infile);
+
   return next_char;
 } /* end m2c_match_quoted_literal */
 
@@ -259,16 +286,22 @@ char m2c_match_quoted_literal (infile_t infile, m2c_token_t *token) {
 /* Non-Semantic Symbols */
 
 /* --------------------------------------------------------------------------
- * function m2c_match_line_comment(infile, token)
+ * function m2c_match_line_comment(infile, token, lexeme)
  * --------------------------------------------------------------------------
  * Matches the input  at the  current reading position  of  infile  to a line
- * comment  and consumes it.  Passes the associated token  back in  out para-
- * meter token.  Returns the new lookahead character.
+ * comment  and consumes it.  Passes  the associated token  in token.  Passes
+ * its lexeme in lexeme  if compiler-optiion  preserve-comments  is  enabled,
+ * otherwise NULL.  Returns the new lookahead character.
  * ----------------------------------------------------------------------- */
 
-char m2c_match_line_comment (infile_t infile, m2c_token_t *token) {
+char m2c_match_line_comment
+  (infile_t infile, m2c_token_t *token, intstr_t *lexeme) {
   char next_char;
   
+  if (m2c_compiler_option_preserve_comments()) {
+    infile_mark_lexeme(infile);
+  } /* end if */
+
   next_char = infile_consume_char(infile);
 
   while (infile_eof(infile) == false) {
@@ -289,25 +322,38 @@ char m2c_match_line_comment (infile_t infile, m2c_token_t *token) {
     next_char = infile_consume_char(infile);
   } /* end while */
   
-  *token = TOKEN_LINE_COMMENT;
-
+  if (m2c_compiler_option_preserve_comments()) {
+    *token = TOKEN_LINE_COMMENT;
+    *lexeme = infile_lexeme(infile);
+  }
+  else /* don't preserve */ {
+    *token = TOKEN_UNKNOWN;
+    *lexeme = NULL;
+  } /* end if */
+  
   return next_char;
 } /* end m2c_match_line_comment */
 
 
 /* --------------------------------------------------------------------------
- * function m2c_match_block_comment(infile, token)
+ * function m2c_match_block_comment(infile, token, lexeme)
  * --------------------------------------------------------------------------
  * Matches the input  at the  current reading position  of infile  to a block
- * comment  and consumes it.  Passes the associated token  back in  out para-
- * meter token.  Returns the new lookahead character.
+ * comment  and consumes it.  Passes  the associated token  in token.  Passes
+ * its lexeme in lexeme  if compiler-optiion  preserve-comments  is  enabled,
+ * otherwise NULL.  Returns the new lookahead character.
  * ----------------------------------------------------------------------- */
 
 #define COMMENT_NESTING_LIMIT 10
 
-char m2c_match_block_comment (infile_t infile, m2c_token_t *token) {
+char m2c_match_block_comment
+  (infile_t infile, m2c_token_t *token, intstr_t *lexeme) {
   char next_char;
   uint_t nest_level;
+  
+  if (m2c_compiler_option_preserve_comments()) {
+    infile_mark_lexeme(infile);
+  } /* end if */
   
   /* consume opening comment delimiter */
   next_char = infile_consume_char(infile);
@@ -334,6 +380,7 @@ char m2c_match_block_comment (infile_t infile, m2c_token_t *token) {
         (M2C_ERROR_EOF_IN_TOKEN, infile, TOKEN_BLOCK_COMMENT,
          next_char, infile_line(infile), infile_column(infile));
       *token = TOKEN_MALFORMED_COMMENT;
+      *lexeme = infile_lexeme(infile);
       return next_char;
     }
     /* legal char */
@@ -350,24 +397,34 @@ char m2c_match_block_comment (infile_t infile, m2c_token_t *token) {
          next_char, infile_line(infile), infile_column(infile));
     } /* end if */
   } /* end while */
-
-  *token = TOKEN_BLOCK_COMMENT;
+  
+  if (m2c_compiler_option_preserve_comments()) {
+    *token = TOKEN_BLOCK_COMMENT;
+    *lexeme = infile_lexeme(infile);
+  }
+  else /* don't preserve */ {
+    *token = TOKEN_UNKNOWN;
+    *lexeme = NULL;
+  } /* end if */
 
   return next_char;
 } /* end m2c_match_block_comment */
 
 
 /* --------------------------------------------------------------------------
- * function m2c_match_pragma(infile, token)
+ * function m2c_match_pragma(infile, token, lexeme)
  * --------------------------------------------------------------------------
  * Matches the input at the  current reading position  of infile  to a pragma
- * and consumes it.  Passes the associated token back in out parameter token.
- * Returns the new lookahead character.
+ * and consumes it.  Passes the associated token back in token and its lexeme
+ * in lexeme.  Returns the new lookahead character.
  * ----------------------------------------------------------------------- */
 
-char m2c_match_pragma (infile_t infile, m2c_token_t *token) {
+char m2c_match_pragma
+  (infile_t infile, m2c_token_t *token, intstr_t *lexeme) {
   char next_char;
   
+  infile_mark_lexeme(infile);
+
   /* consume '<' and '*' */
   next_char = infile_consume_char(infile);
   next_char = infile_consume_char(infile);
@@ -381,6 +438,7 @@ char m2c_match_pragma (infile_t infile, m2c_token_t *token) {
         (M2C_ERROR_EOF_IN_TOKEN, infile, TOKEN_PRAGMA,
          next_char, infile_line(infile), infile_column(infile));
       *token TOKEN_MALFORMED_PRAGMA;
+      *lexeme = infile_lexeme(infile);
       return next_char;
 
     /* illegal control char */
@@ -395,7 +453,9 @@ char m2c_match_pragma (infile_t infile, m2c_token_t *token) {
   /* consume '*' and '>' */
   next_char = infile_consume_char(infile);
   next_char = infile_consume_char(infile);
+
   *token = TOKEN_PRAGMA;
+  *lexeme = infile_lexeme(infile);
 
   return next_char;
 } /* end m2c_match_pragma */
