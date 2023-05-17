@@ -457,47 +457,37 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
     line = m2c_infile_current_line(lexer->infile);
     column = m2c_infile_current_column(lexer->infile);
     
+    /* identifier */
+    if (IS_LOWER_LETTER(next_char)) {
+      next_char = m2c_match_ident(lexer->infile, &token, &lexeme);
+    }
     /* identifier or reserved word */
-   if (IS_LOWER_LETTER(next_char)) {
-      infile_mark_lexeme(lexer->infile);
-      next_char = m2c_match_ident(lexer->infile, &token);
-      lexeme = infile_lexeme(lexer->infile);
-    }
     else if (IS_UPPER_LETTER(next_char)) {
-      infile_mark_lexeme(lexer->infile);
-      next_char = m2c_match_ident_or_resword(lexer->infile, &allcaps);
-      lexeme = infile_lexeme(lexer->infile);
-      
-      /* set default token */
-      token = TOKEN_STDIDENT;
-
-      /* determine if resword */
-      if (allcaps) {
-        token = m2c_reword_token_for_lexeme(lexeme);
-      } /* end if */
+      next_char = m2c_match_ident_or_resword(lexer->infile, &token, &lexeme);
     }
+    /* numeric literal */
     else if (IS_DIGIT(next_char)) {
       infile_mark_lexeme(lexer->infile);
-      next_char = m2c_match_numeric_literal(lexer->infile, &token);
-      lexeme = infile_lexeme(lexer->infile);
+      next_char = m2c_match_numeric_literal(lexer->infile, &token, &lexeme);
+    }
+    /* disabled code section */
+    else if ((next_char == '?') && (column == 1)
+      && (infile_la2_char(lexer->infile) == '<')) {
+      next_char = m2c_match_disabled_code_block(lexer->infile);
     }
     else {
       switch (next_char) {
           
         case '!' :
           /* line comment */        
-          next_char = skip_line_comment(lexer);
-          token = TOKEN_LINE_COMMENT;
+          next_char =
+            m2c_match_line_comment(lexer->infile, &token, &lexeme);
           break;
         
         case '\"' :
           /* double quoted literal */
-          next_char = get_string_literal(lexer, &token);
-          if (token == TOKEN_MALFORMED_STRING) {
-            m2c_emit_error_w_pos
-              (M2C_ERROR_MISSING_STRING_DELIMITER, line, column);
-            lexer->error_count++;
-          } /* end if */
+          next_char =
+            m2c_match_quoted_literal(lexer->infile, &token, &lexeme);
           break;
         
         case '#' :
@@ -514,12 +504,8 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         
         case '\'' :
           /* single quoted literal */
-          next_char = get_string_literal(lexer, &token);
-          if (token == TOKEN_MALFORMED_STRING) {
-            m2c_emit_error_w_pos
-              (M2C_ERROR_MISSING_STRING_DELIMITER, line, column);
-            lexer->error_count++;
-          } /* end if */
+          next_char =
+            m2c_match_quoted_literal(lexer->infile, &token, &lexeme);
           break;
         
         case '(' :
@@ -529,8 +515,8 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
             token = TOKEN_LEFT_PARENTHESIS;
           }
           else /* block comment */ {
-            next_char = skip_block_comment(lexer);
-            token = TOKEN_BLOCK_COMMENT;
+            next_char =
+              m2c_match_block_comment(lexer->infile, &token, &lexeme);
           } /* end if */
           break;
         
@@ -637,8 +623,7 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         case '<' :
           /* pragma */
           if (m2c_la2_char(lexer->infile) == '*') {
-            next_char = get_pragma(lexer);
-            token = TOKEN_PRAGMA;
+            next_char = m2c_match_pragma(lexer->infile, &token, &lexeme);
             break;
           }
           /* less-or-equal or less-than */
@@ -683,20 +668,7 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
             token = TOKEN_GREATER_THAN;
           } /* end if */
           break;
-        
-        case '?' :
-          /* disabled code section */
-          if ((column == 1) && (infile_la2_char(lexer->infile) == '<')) {
-            next_char = skip_code_section(lexer);
-          }
-          else /* invalid character */ {
-            report_error_w_offending_char
-              (M2C_ERROR_INVALID_INPUT_CHAR, lexer, line, column, next_char);
-            next_char = m2c_consume_char(lexer->infile);
-          } /* end if */
-          token = TOKEN_UNKNOWN;
-          break;
-        
+                
         case '@' :
           /* at sign */
           next_char = m2c_consume_char(lexer->infile);
@@ -751,8 +723,9 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
             token = TOKEN_END_OF_FILE;
           }
           else /* invalid char */ {
-            report_error_w_offending_char
-              (M2C_ERROR_INVALID_INPUT_CHAR, lexer, line, column, next_char);
+            m2c_emit_lex_error
+              (M2C_ERROR_ILLEGAL_CHAR, lexer->infile,
+               next_char, infile_line(lexer->infile), infile_column(lexer->infile));
             next_char = m2c_consume_char(lexer->infile);
             token = TOKEN_UNKNOWN;
           } /* end if */
