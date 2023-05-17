@@ -43,6 +43,8 @@
 
 #include "m2c-reswords.h"
 
+#include <stdbool>
+
 
 /* --------------------------------------------------------------------------
  * resword lexeme table
@@ -68,7 +70,7 @@ m2c_token_t m2c_reword_token_for_lexeme
   (intstr_t lexeme, m2c_token_t default_token) {
   
   const char *lexstr;
-  uint_t length;
+  unsigned int length;
   
   if (lexeme == NULL) {
     return default_token;
