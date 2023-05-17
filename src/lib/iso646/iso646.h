@@ -79,6 +79,12 @@
 #define IS_NOT_UPPER_LETTER(_ch) \
   ((_ch < 'A') || (_ch > 'Z'))
 
+#define IS_LETTER(_ch) \
+  (IS_LOWER_LETTER(_ch) || IS_UPPER_LETTER(_ch))
+
+#define IS_LETTER_OR_DIGIT(_ch) \
+  (IS_LETTER(_ch) || IS_DIGIT(_ch))
+
 #define IS_A_TO_F(_ch) \
   ((_ch >= 'A') && (_ch <= 'F'))
 

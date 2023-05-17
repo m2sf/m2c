@@ -74,11 +74,76 @@ char m2c_match_ident
     next_char = infile_consume_char(infile);
   } /* end while */
 
-  *token = TOKEN_STDIDENT;
+  *token = TOKEN_IDENT;
   *lexeme = infile_lexeme(infile);
   
   return next_char;
 } /* end m2c_match_ident */
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_match_lowline_ident(infile, token, lexeme)
+ * --------------------------------------------------------------------------
+ * Matches the input  at the current reading position of infile  to a lowline
+ * identifier  allowing non-leading, non-trailing and non-consecutive lowline
+ * characters and consumes it.  Passes the associated token in token  and its
+ * lexeme in lexeme.  Returns the new lookahead character.
+ * ----------------------------------------------------------------------- */
+
+char m2c_match_lowline_ident
+  (infile_t infile, m2c_token_t *token, intstr_t *lexeme) {
+  char next_char;
+  
+  infile_mark_lexeme(infile);
+  
+  /* Letter */
+  next_char := infile_lookahead_char(infile);
+
+  /* ( '_'? (Letter | Digit)+ )* */
+  while (IS_LETTER_OR_DIGIT(next_char) || (next_char == '_')) {
+    
+    /* (Letter | Digit)+ */
+    if (IS_LETTER_OR_DIGIT(next_char)) {
+      while (IS_LETTER_OR_DIGIT(next_char)) {
+        next_char = infile_consume_char(infile);
+      } /* end while */
+    }
+    /* '_' (Letter | Digit)+ */
+    else {
+      next_char = infile_consume_char(infile);
+      
+      /* EOF */
+      if (infile_eof(infile)) {
+        /* emit error -- unexpected EOF in identifier */
+        m2c_emit_lex_error_in_token
+          (M2C_ERROR_EOF_IN_TOKEN, infile, TOKEN_IDENT,
+           next_char, infile_line(infile), infile_column(infile));
+        *token = TOKEN_MALFORMED_IDENT;
+        *lexeme = infile_lexeme(infile);
+        return next_char;
+      } /* end if */
+      
+      /* (Letter | Digit)+ */
+      if (IS_LETTER_OR_DIGIT(next_char)) {
+        next_char = infile_consume_char(infile);
+        while (IS_LETTER_OR_DIGIT(next_char)) {
+          next_char = infile_consume_char(infile);
+        } /* end while */
+      }
+      else {
+        /* emit error - illegal char in identifier */
+        m2c_emit_lex_error_in_token
+          (M2C_ERROR_ILLEGAL_CHAR_IN_TOKEN, infile, TOKEN_IDENT,
+           next_char, infile_line(infile), infile_column(infile));
+      } /* end if */
+    } /* end if */
+  } /* end while */
+
+  *token = TOKEN_IDENT;
+  *lexeme = infile_lexeme(infile);
+  
+  return next_char;
+} /* end m2c_match_lowline_ident */
 
 
 /* --------------------------------------------------------------------------

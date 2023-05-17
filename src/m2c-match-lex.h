@@ -63,6 +63,19 @@ char m2c_match_ident (infile_t infile, m2c_token_t *token, intstr_t *lexeme);
 
 
 /* --------------------------------------------------------------------------
+ * function m2c_match_lowline_ident(infile, token, lexeme)
+ * --------------------------------------------------------------------------
+ * Matches the input  at the current reading position of infile  to a lowline
+ * identifier  allowing non-leading, non-trailing and non-consecutive lowline
+ * characters and consumes it.  Passes the associated token in token  and its
+ * lexeme in lexeme.  Returns the new lookahead character.
+ * ----------------------------------------------------------------------- */
+
+char m2c_match_lowline_ident
+  (infile_t infile, m2c_token_t *token, intstr_t *lexeme);
+
+
+/* --------------------------------------------------------------------------
  * function m2c_match_ident_or_resword(infile, token, lexeme)
  * --------------------------------------------------------------------------
  * Matches  the input  at  the  current  reading position  of  infile  to  an
