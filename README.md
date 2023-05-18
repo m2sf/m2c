@@ -23,7 +23,7 @@ https://github.com/m2sf/PDFs/blob/master/M2BSK%20Language%20Description.pdf
 
 **M2C does not support the earlier PIM or ISO dialects.**
 
-For a PIM Modula-2 translator see the [M2T project](https://github.com/trijezdci/m2t).
+For a PIM Modula-2 translator see the [MOTTO project](https://github.com/trijezdci/motto).
 
 For an ISO Modula-2 compiler that generates C sources, see [XDS-C](https://github.com/excelsior-oss/xds#xds-c).
 
