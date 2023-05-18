@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * m2c-compiler-options.h                                                    *
+ * m2c-compiler-options.c                                                    *
  *                                                                           *
- * Public interface of compiler options module.                              *
+ * Implementation of compiler options module.                                *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -37,53 +37,40 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef M2C_COMPILER_OPTIONS_H
-#define M2C_COMPILER_OPTIONS_H
+/* --------------------------------------------------------------------------
+ * imports
+ * ----------------------------------------------------------------------- */
 
-#include <stdbool.h>
+#include "m2c-compiler-options.h"
 
 
 /* --------------------------------------------------------------------------
- * type m2c_compiler_option_t
- * --------------------------------------------------------------------------
- * Enumerated token values representing Modula-2 terminal symbols.
+ * Default option flags
  * ----------------------------------------------------------------------- */
 
-typedef enum {
-  
-  /* Diagnostic Options */
+#define DEFAULT_OPTIONS { \
+  /* verbose */ false, \
+  /* lexer_debug */ false, \
+  /* parser_debug */ false, \
+  /* show_settings */ false, \
+  /* errant_semicolon */ false, \
+  /* ast_required */ false, \
+  /* graph_requre */ false, \
+  /* xlat_required */ true, \
+  /* obj_required */ false, \
+  /* preserve_comments */ true, \
+  /* lowline_identifiers */ false, \
+  /* dollar_identifiers */ false \
+} /* DEFAULT_OPTIONS */
 
-  M2C_COMPILER_OPTION_VERBOSE,             /* --verbose */
-  M2C_COMPILER_OPTION_LEXER_DEBUG,         /* --lexer-debug */
-  M2C_COMPILER_OPTION_PARSER_DEBUG,        /* --parser-debug */
-  M2C_COMPILER_OPTION_SHOW_SETTINGS,       /* --show-settings */
-  M2C_COMPILER_OPTION_ERRANT_SEMICOLONS,   /* --errant-semicolons */
 
-  /* Build Product Options */
-  
-  M2C_COMPILER_OPTION_AST_REQUIRED,         /* --ast, --no-ast */
-  M2C_COMPILER_OPTION_GRAPH_REQUIRED,      /* --graph, --no-graph */
-  M2C_COMPILER_OPTION_XLAT_REQUIRED,       /* --xlat, --no-xlat */
-  M2C_COMPILER_OPTION_OBJ_REQUIRED,        /* --obj, --no-obj */
+/* --------------------------------------------------------------------------
+ * hidden variable compiler_option
+ * ----------------------------------------------------------------------- */
 
-  /* Comment Options */
-  
-  /* --preserve-comments, --strip-comments */
-  M2C_COMPILER_OPTION_PRESERVE_COMMENTS,
+#define OPTION_COUNT M2C_COMPILER_OPTION_END_MARK
 
-  /* Capability Options */
-  
-  /* --dollar-identifiers, --no-dollar-identifiers */
-  M2C_COMPILER_OPTION_DOLLAR_IDENTIFIERS,
-
-  /* --lowline-identifiers, --no-lowline-identifiers */
-  M2C_COMPILER_OPTION_LOWLINE_IDENTIFIERS,
-
-  /* Enumeration Terminator */
-
-  M2C_COMPILER_OPTION_END_MARK
-
-} m2c_compiler_option_t;
+m2t_compiler_option_t compiler_option[OPTION_COUNT] = DEFAULT_OPTIONS;
 
 
 /* --------------------------------------------------------------------------
@@ -92,7 +79,11 @@ typedef enum {
  * Sets the given option to the given boolean value.
  * ----------------------------------------------------------------------- */
 
-void m2c_compiler_option_set (m2c_compiler_option_t option, bool value);
+void m2c_compiler_option_set (m2c_compiler_option_t option, bool value) {
+  if (option < OPTION_COUNT) {
+    compiler_option[option] = value;
+  } /* end if */
+} /* end m2c_compiler_option_set */
 
 
 /* --------------------------------------------------------------------------
@@ -101,7 +92,9 @@ void m2c_compiler_option_set (m2c_compiler_option_t option, bool value);
  * Returns true if option --verbose is turned on, else false.
  * ----------------------------------------------------------------------- */
 
-bool m2c_compiler_option_verbose (void);
+bool m2c_compiler_option_verbose (void) {
+  return compiler_option[M2C_COMPILER_OPTION_VERBOSE];
+} /* end m2c_compiler_option_verbose */
 
 
 /* --------------------------------------------------------------------------
@@ -110,7 +103,9 @@ bool m2c_compiler_option_verbose (void);
  * Returns true if option --lexer-debug is turned on, else false.
  * ----------------------------------------------------------------------- */
 
-bool m2c_compiler_option_lexer_debug (void);
+bool m2c_compiler_option_lexer_debug (void) {
+  return compiler_option[M2C_COMPILER_OPTION_LEXER_DEBUG];
+} /* end m2c_compiler_option_lexer_debug */
 
 
 /* --------------------------------------------------------------------------
@@ -119,7 +114,9 @@ bool m2c_compiler_option_lexer_debug (void);
  * Returns true if option --parser-debug is turned on, else false.
  * ----------------------------------------------------------------------- */
 
-bool m2c_compiler_option_parser_debug (void);
+bool m2c_compiler_option_parser_debug (void) {
+  return compiler_option[M2C_COMPILER_OPTION_PARSER_DEBUG];
+} /* end m2c_compiler_option_parser_debug */
 
 
 /* --------------------------------------------------------------------------
@@ -128,7 +125,9 @@ bool m2c_compiler_option_parser_debug (void);
  * Returns true if option --show-settings is turned on, else false.
  * ----------------------------------------------------------------------- */
 
-bool m2c_compiler_option_show_settings (void);
+bool m2c_compiler_option_show_settings (void) {
+  return compiler_option[M2C_COMPILER_OPTION_SHOW_SETTINGS];
+} /* end m2c_compiler_option_show_settings */
 
 
 /* --------------------------------------------------------------------------
@@ -137,7 +136,9 @@ bool m2c_compiler_option_show_settings (void);
  * Returns true if option --errant-semicolons is turned on, else false.
  * ----------------------------------------------------------------------- */
 
-bool m2c_compiler_option_errant_semicolons (void);
+bool m2c_compiler_option_errant_semicolons (void) {
+  return compiler_option[M2C_COMPILER_OPTION_ERRANT_SEMICOLONS];
+} /* end m2c_compiler_option_errant_semicolons */
 
 
 /* --------------------------------------------------------------------------
@@ -146,7 +147,9 @@ bool m2c_compiler_option_errant_semicolons (void);
  * Returns true if option --ast is turned on, else false.
  * ----------------------------------------------------------------------- */
 
-bool m2c_compiler_option_ast_required (void);
+bool m2c_compiler_option_ast_required (void) {
+  return compiler_option[M2C_COMPILER_OPTION_AST_REQUIRED];
+} /* end m2c_compiler_option_ast_required */
 
 
 /* --------------------------------------------------------------------------
@@ -155,7 +158,9 @@ bool m2c_compiler_option_ast_required (void);
  * Returns true if option --graph is turned on, else false.
  * ----------------------------------------------------------------------- */
 
-bool m2c_compiler_option_graph_required (void);
+bool m2c_compiler_option_graph_required (void) {
+  return compiler_option[M2C_COMPILER_OPTION_GRAPH_REQUIRED];
+} /* end m2c_compiler_option_graph_required */
 
 
 /* --------------------------------------------------------------------------
@@ -164,7 +169,9 @@ bool m2c_compiler_option_graph_required (void);
  * Returns true if option --xlat is turned on, else false.
  * ----------------------------------------------------------------------- */
 
-bool m2c_compiler_option_xlat_required (void);
+bool m2c_compiler_option_xlat_required (void) {
+  return compiler_option[M2C_COMPILER_OPTION_XLAT_REQUIRED];
+} /* end m2c_compiler_option_xlat_required */
 
 
 /* --------------------------------------------------------------------------
@@ -173,7 +180,9 @@ bool m2c_compiler_option_xlat_required (void);
  * Returns true if option --obj is turned on, else false.
  * ----------------------------------------------------------------------- */
 
-bool m2c_compiler_option_obj_required (void);
+bool m2c_compiler_option_obj_required (void) {
+  return compiler_option[M2C_COMPILER_OPTION_OBJ_REQUIRED];
+} /* end m2c_compiler_option_obj_required */
 
 
 /* --------------------------------------------------------------------------
@@ -182,7 +191,9 @@ bool m2c_compiler_option_obj_required (void);
  * Returns true if option --preserve-comments is turned on, else false.
  * ----------------------------------------------------------------------- */
 
-bool m2c_compiler_option_preserve_comments (void);
+bool m2c_compiler_option_preserve_comments (void) {
+  return compiler_option[M2C_COMPILER_OPTION_PRESERVE_COMMENTS];
+} /* end m2c_compiler_option_preserve_comments */
 
 
 /* --------------------------------------------------------------------------
@@ -191,7 +202,9 @@ bool m2c_compiler_option_preserve_comments (void);
  * Returns true if option --lowline-identifiers is turned on, else false.
  * ----------------------------------------------------------------------- */
 
-bool m2c_compiler_option_lowline_identifiers (void);
+bool m2c_compiler_option_lowline_identifiers (void) {
+  return compiler_option[M2C_COMPILER_OPTION_LOWLINE_IDENTIFIERS];
+} /* end m2c_compiler_option_lowline_identifiers */
 
 
 /* --------------------------------------------------------------------------
@@ -200,7 +213,9 @@ bool m2c_compiler_option_lowline_identifiers (void);
  * Returns true if option --dollar-identifiers is turned on, else false.
  * ----------------------------------------------------------------------- */
 
-bool m2c_compiler_option_dollar_identifiers (void);
+bool m2c_compiler_option_dollar_identifiers (void) {
+  return compiler_option[M2C_COMPILER_OPTION_DOLLAR_IDENTIFIERS];
+} /* end m2c_compiler_option_dollar_identifiers */
 
 
 /* --------------------------------------------------------------------------
@@ -209,9 +224,11 @@ bool m2c_compiler_option_dollar_identifiers (void);
  * Prints the current settings to the console.
  * ----------------------------------------------------------------------- */
 
-void m2c_compiler_option_print_settings (void);
+void m2c_compiler_option_print_settings (void) {
 
+  /* TO DO */
 
-#endif M2C_COMPILER_OPTIONS_H
+} /* end m2c_compiler_option_print_settings */
+
 
 /* END OF FILE */
