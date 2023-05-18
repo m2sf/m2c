@@ -21,7 +21,7 @@
  *                                                                           *
  * m2c-tokenset.h                                                            *
  *                                                                           *
- * Public interface for Modula-2 tokenset type.                              *
+ * Public interface for M2C tokenset type.                                   *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -40,9 +40,11 @@
 #ifndef M2C_TOKENSET_H
 #define M2C_TOKENSET_H
 
-#include "m2c-common.h"
-#include "m2c-token.h"
+/* --------------------------------------------------------------------------
+ * imports
+ * ----------------------------------------------------------------------- */
 
+#include "m2c-token.h"
 #include <stdbool.h>
 
 

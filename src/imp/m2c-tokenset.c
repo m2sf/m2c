@@ -1,39 +1,47 @@
 /* M2C Modula-2 Compiler & Translator
  *
- * Copyright (c) 2015-2023 Benjamin Kowarsch
- *
- * @synopsis
- *
- * M2C  is a  Modula-2 to C translator  and  via-C compiler  for the bootstrap
- * subset of the revised Modula-2 language described in
- *
- * https://github.com/m2sf/PDFs/blob/master/M2BSK%20Language%20Description.pdf
- *
- * In compiler mode,  M2C compiles Modula-2 source files via C to object files
- * or executables  using the host system's resident C compiler and linker.  In
- * translator mode, it translates Modula-2 source files to C source files.
- *
- * Further information at https://github.com/m2sf/m2c/wiki
- *
- * @file
- *
- * m2c-tokenset.c
- *
- * Implementation of M2C tokenset type.
- *
- * @license
- *
- * M2C is free software:  You can redistribute  and modify it  under the terms
- * of the  GNU Lesser General Public License (LGPL)  either version 2.1  or at
- * your choice version 3, both as published by the Free Software Foundation.
- *
- * M2C  is distributed  in the hope  that it will be useful,  but  WITHOUT ANY
- * WARRANTY;  without even  the implied warranty of MERCHANTABILITY or FITNESS
- * FOR ANY PARTICULAR PURPOSE.  Read the license for more details.
- *
- * You should have  received  a copy of the  GNU Lesser General Public License
- * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.
- */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * M2C Modula-2 Compiler & Translator                                        *
+ *                                                                           *
+ * Copyright (c) 2015-2023 Benjamin Kowarsch                                 *
+ *                                                                           *
+ * @synopsis                                                                 *
+ *                                                                           *
+ * M2C is a portable  Modula-2 to C translator  and  via-C compiler  for the *
+ * bootstrap subset of the revised Modula-2 language described in            *
+ *                                                                           *
+ * https://github.com/m2sf/m2bsk/wiki/Language-Specification                 *
+ *                                                                           *
+ * In translator mode,  M2C translates Modula-2 source files to semantically *
+ * equivalent C source files.  In compiler mode,  it translates the Modula-2 *
+ * source files  to C,  then compiles the resulting C sources  to object and *
+ * executable files using the host system's resident C compiler and linker.  *
+ *                                                                           *
+ * Further information at https://github.com/m2sf/m2c/wiki                   *
+ *                                                                           *
+ * @file                                                                     *
+ *                                                                           *
+ * m2c-tokenset.c                                                            *
+ *                                                                           *
+ * Implementation of M2C tokenset type.                                      *
+ *                                                                           *
+ * @license                                                                  *
+ *                                                                           *
+ * M2C is free software:  You can redistribute and modify it under the terms *
+ * of the GNU Lesser General Public License (LGPL)  either version 2.1 or at *
+ * your choice version 3, both published by the Free Software Foundation.    *
+ *                                                                           *
+ * M2C is distributed in the hope it may be useful, but strictly WITHOUT ANY *
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS *
+ * FOR ANY PARTICULAR PURPOSE.  Read the license for more details.           *
+ *                                                                           *
+ * You should have received  a copy of the GNU Lesser General Public License *
+ * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* --------------------------------------------------------------------------
+ * imports
+ * ----------------------------------------------------------------------- */
 
 #include "m2c-tokenset.h"
 
@@ -46,24 +54,42 @@
 
 
 /* --------------------------------------------------------------------------
- * constant M2C_TOKENSET_SEGMENT_COUNT
+ * private type segment_t
  * --------------------------------------------------------------------------
- * Number of 32 bit segments in a tokenset.
+ * Type representing bitmap segments in a tokenset.
  * ----------------------------------------------------------------------- */
 
-#define M2C_TOKENSET_SEGMENT_COUNT ((TOKEN_END_MARK / 32) + 1)
+typedef unsigned long long segment_t;
+
+
+/* --------------------------------------------------------------------------
+ * constant SEGMENT_BITWIDTH
+ * --------------------------------------------------------------------------
+ * Size of a segment in octets.
+ * ----------------------------------------------------------------------- */
+
+#define SEGMENT_BITWIDTH (sizeof(segment_t) * 8)
+
+
+/* --------------------------------------------------------------------------
+ * constant SEGMENT_COUNT
+ * --------------------------------------------------------------------------
+ * Number of segments in a tokenset.
+ * ----------------------------------------------------------------------- */
+
+#define SEGMENT_COUNT \
+  ((TOKEN_END_MARK / SEGMENT_BITWIDTH) + 1)
 
 
 /* --------------------------------------------------------------------------
  * hidden type m2c_tokenset_opaque_t
  * --------------------------------------------------------------------------
- * Opaque record type representing a Modula-2 tokenset object,
- * implemented as an array of 32-bit segments.
+ * Opaque record type representing a tokenset object.
  * ----------------------------------------------------------------------- */
 
 struct m2c_tokenset_opaque_t {
-   /* segment */ uint32_t segment[M2C_TOKENSET_SEGMENT_COUNT];
-   /* elem_count */ uint_t elem_count;
+   /* segment */ segment_t segment[SEGMENT_COUNT];
+   /* elem_count */ unsigned elem_count;
 };
 
 typedef struct m2c_tokenset_opaque_t m2c_tokenset_opaque_t;
@@ -81,7 +107,7 @@ uint_t count_bits_in_set (m2c_tokenset_t set);
 
 m2c_tokenset_t m2c_new_tokenset_from_list (m2c_token_t first_token, ...) {
   m2c_tokenset_t new_set;
-  uint_t bit, seg_index;
+  unsigned bit, seg_index;
   m2c_token_t token;
   
   va_list token_list;
@@ -97,7 +123,7 @@ m2c_tokenset_t m2c_new_tokenset_from_list (m2c_token_t first_token, ...) {
   
   /* initialise */
   seg_index = 0;
-  while (seg_index < M2C_TOKENSET_SEGMENT_COUNT) {
+  while (seg_index < SEGMENT_COUNT) {
     new_set->segment[seg_index] = 0;
     seg_index++;
   } /* end while */
@@ -108,8 +134,8 @@ m2c_tokenset_t m2c_new_tokenset_from_list (m2c_token_t first_token, ...) {
   
     /* store token in set if in range */
     if (token < TOKEN_END_MARK) {
-      seg_index = token / 32;
-      bit = token % 32;
+      seg_index = token / SEGMENT_BITWIDTH;
+      bit = token % SEGMENT_BITWIDTH;
       new_set->segment[seg_index] = new_set->segment[seg_index] | (1 << bit);
     } /* end if */
     
@@ -134,7 +160,7 @@ m2c_tokenset_t m2c_new_tokenset_from_list (m2c_token_t first_token, ...) {
 
 m2c_tokenset_t m2c_new_tokenset_from_union (m2c_tokenset_t first_set, ...) {
   m2c_tokenset_t new_set;
-  uint_t seg_index;
+  unsigned seg_index;
   m2c_tokenset_t set;
   
   va_list set_list;
@@ -150,7 +176,7 @@ m2c_tokenset_t m2c_new_tokenset_from_union (m2c_tokenset_t first_set, ...) {
   
   /* initialise */
   seg_index = 0;
-  while (seg_index < M2C_TOKENSET_SEGMENT_COUNT) {
+  while (seg_index < SEGMENT_COUNT) {
     new_set->segment[seg_index] = 0;
     seg_index++;
   } /* end while */
@@ -159,7 +185,7 @@ m2c_tokenset_t m2c_new_tokenset_from_union (m2c_tokenset_t first_set, ...) {
   /* calculate union with each set in list */
   while (set != NULL) {
     /* for each segment ... */
-    while (seg_index < M2C_TOKENSET_SEGMENT_COUNT) {
+    while (seg_index < SEGMENT_COUNT) {
       /* ... store union of corresponding segments */
       new_set->segment[seg_index] =
         new_set->segment[seg_index] | set->segment[seg_index];
@@ -186,14 +212,14 @@ m2c_tokenset_t m2c_new_tokenset_from_union (m2c_tokenset_t first_set, ...) {
  * ----------------------------------------------------------------------- */
 
 bool m2c_tokenset_element (m2c_tokenset_t set, m2c_token_t token) {
-  uint_t bit, seg_index;
+  unsigned bit, seg_index;
   
   if (token >= TOKEN_END_MARK) {
     return false;
   } /* end if */
   
-  seg_index = token / 32;
-  bit = token % 32;
+  seg_index = token / SEGMENT_BITWIDTH;
+  bit = token % SEGMENT_BITWIDTH;
   
   return ((set->segment[seg_index] & (1 << bit)) != 0);
 } /* end m2c_tokenset_element */
@@ -205,7 +231,7 @@ bool m2c_tokenset_element (m2c_tokenset_t set, m2c_token_t token) {
  * Returns the number of elements in set.
  * ----------------------------------------------------------------------- */
 
-uint_t m2c_tokenset_element_count (m2c_tokenset_t set) {  
+unsigned m2c_tokenset_element_count (m2c_tokenset_t set) {  
   if (set == NULL) {
     return 0;
   } /* end if */
@@ -221,10 +247,10 @@ uint_t m2c_tokenset_element_count (m2c_tokenset_t set) {
  * ----------------------------------------------------------------------- */
 
 bool m2c_tokenset_subset (m2c_tokenset_t set, m2c_tokenset_t subset) {
-  uint_t seg_index;
+  unsigned seg_index;
   
   seg_index = 0;
-  while (seg_index < M2C_TOKENSET_SEGMENT_COUNT) {
+  while (seg_index < SEGMENT_COUNT) {
     if (((set->segment[seg_index] & subset->segment[seg_index]) ^
         subset->segment[seg_index]) == 0) {
       seg_index++;
@@ -245,10 +271,10 @@ bool m2c_tokenset_subset (m2c_tokenset_t set, m2c_tokenset_t subset) {
  * ----------------------------------------------------------------------- */
 
 bool m2c_tokenset_disjunct (m2c_tokenset_t set1, m2c_tokenset_t set2) {
-  uint_t seg_index;
+  unsigned seg_index;
   
   seg_index = 0;
-  while (seg_index < M2C_TOKENSET_SEGMENT_COUNT) {
+  while (seg_index < SEGMENT_COUNT) {
     if ((set1->segment[seg_index] & set2->segment[seg_index]) == 0) {
       seg_index++;
     }
@@ -269,7 +295,7 @@ bool m2c_tokenset_disjunct (m2c_tokenset_t set1, m2c_tokenset_t set2) {
  * ----------------------------------------------------------------------- */
 
 void m2c_tokenset_print_set (const char *set_name, m2c_tokenset_t set) {
-  uint_t bit, seg_index, count;
+  unsigned bit, seg_index, count;
   m2c_token_t token;
   
   printf("%s = {", set_name);
@@ -281,8 +307,8 @@ void m2c_tokenset_print_set (const char *set_name, m2c_tokenset_t set) {
   count = 0;
   token = 0;
   while ((count <= set->elem_count) && (token < TOKEN_END_MARK)) {
-    seg_index = token / 32;
-    bit = token % 32;
+    seg_index = token / SEGMENT_BITWIDTH;
+    bit = token % SEGMENT_BITWIDTH;
     if ((set->segment[seg_index] & (1 << bit)) != 0) {
       count++;
       if (count < set->elem_count) {
@@ -307,7 +333,7 @@ void m2c_tokenset_print_set (const char *set_name, m2c_tokenset_t set) {
  * ----------------------------------------------------------------------- */
 
 void m2c_tokenset_print_list (m2c_tokenset_t set) {
-  uint_t bit, seg_index, count;
+  unsigned bit, seg_index, count;
   m2c_token_t token;
   
   if (set->elem_count == 0) {
@@ -317,8 +343,8 @@ void m2c_tokenset_print_list (m2c_tokenset_t set) {
   count = 0;
   token = 0;
   while ((count <= set->elem_count) && (token < TOKEN_END_MARK)) {
-    seg_index = token / 32;
-    bit = token % 32;
+    seg_index = token / SEGMENT_BITWIDTH;
+    bit = token % SEGMENT_BITWIDTH;
     
     if ((set->segment[seg_index] & (1 << bit)) != 0) {
       count++;
@@ -367,16 +393,16 @@ void m2c_tokenset_print_list (m2c_tokenset_t set) {
  * procedure m2c_tokenset_print_literal_struct(ident)
  * --------------------------------------------------------------------------
  * Prints a struct definition for tokenset literals.
- * Format: struct ident { uint_t s0, s1, s2, ..., n };
+ * Format: struct ident { unsigned s0, s1, s2, ..., n };
  * ----------------------------------------------------------------------- */
 
 void m2c_tokenset_print_literal_struct (const char *ident) {
-  uint_t seg_index;
+  unsigned seg_index;
   
-  printf("struct %s { uint_t s0", ident);
+  printf("struct %s { unsigned s0", ident);
   
   seg_index = 1;
-  while (seg_index < M2C_TOKENSET_SEGMENT_COUNT) {
+  while (seg_index < SEGMENT_COUNT) {
     printf(", s%u", seg_index);
     seg_index++;
   } /* end while */
@@ -395,16 +421,33 @@ void m2c_tokenset_print_literal_struct (const char *ident) {
  * ----------------------------------------------------------------------- */
 
 void m2c_tokenset_print_literal (m2c_tokenset_t set) {
-  uint_t seg_index;
+  unsigned seg_index;
   
+/* print list head and first segment */
+#if (SEGMENT_BITWIDTH == 64)
+  printf("{ /* bits: */ %#16ullX", set->segment[0]);
+#elif (SEGMENT_BITWIDTH == 32)
+  printf("{ /* bits: */ %#8ullX", set->segment[0]);
+#else
   printf("{ /* bits: */ 0x%08X", set->segment[0]);
-  
+#endif
+
+/* print remaining segments */
   seg_index = 1;
-  while (seg_index < M2C_TOKENSET_SEGMENT_COUNT) {
+  while (seg_index < SEGMENT_COUNT) {
+  
+#if (SEGMENT_BITWIDTH == 64)
+    printf(", %#16ullX", set->segment[seg_index]);
+#elif (SEGMENT_BITWIDTH == 32)
+    printf(", %#8ullX", set->segment[seg_index]);
+#else
     printf(", 0x%08X", set->segment[seg_index]);
+#endif
+
     seg_index++;
   } /* end while */
   
+/* print counter and list tail */
   printf(", /* counter: */ %u }\n", set->elem_count);
 } /* m2c_tokenset_print_literal */
 
@@ -428,15 +471,15 @@ void m2c_tokenset_release (m2c_tokenset_t set) {
  * Returns the number of set bits in set.
  * ----------------------------------------------------------------------- */
 
-uint_t count_bits_in_set (m2c_tokenset_t set) {
-  uint_t bit, seg_index, bit_count;
+unsigned count_bits_in_set (m2c_tokenset_t set) {
+  unsigned bit, seg_index, bit_count;
   
   bit_count = 0;
   seg_index = 0;
   
-  while (seg_index < M2C_TOKENSET_SEGMENT_COUNT) {
+  while (seg_index < SEGMENT_COUNT) {
     bit = 0;
-    while (bit < 32) {
+    while (bit < SEGMENT_BITWIDTH) {
       if ((set->segment[seg_index] & (1 << bit)) != 0) {
         bit_count++;
       } /* end if */
