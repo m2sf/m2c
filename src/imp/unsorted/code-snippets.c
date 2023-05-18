@@ -1,4 +1,32 @@
 /* --------------------------------------------------------------------------
+ * private function str_match(str1, str2)
+ * --------------------------------------------------------------------------
+ * Returns true character strings str1 and str2 match, otherwise false.
+ * ----------------------------------------------------------------------- */
+
+#define MAX_RESWORD_LENGTH 14
+
+static bool str_match (const char *str1, const char *str2) {
+  uint_t index;
+  
+  index = 0;
+  while (index <= MAX_RESWORD_LENGTH + 1) {
+    if (str1[index] != str2[index]) {
+      return false;
+    }
+    else if (str1[index] == '\0') {
+      return true;
+    }
+    else {
+      index++;
+    } /* end if */
+  } /* end while */
+  
+  return false;
+} /* end str_match */
+
+
+/* --------------------------------------------------------------------------
  * function collect_lowercase_word(src_index, source, tgt_index, target)
  * --------------------------------------------------------------------------
  * Matches the character sequence in source starting at src_index to a lower-

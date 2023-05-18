@@ -1,39 +1,45 @@
-/* M2C Modula-2 Compiler & Translator
- *
- * Copyright (c) 2015-2023 Benjamin Kowarsch
- *
- * @synopsis
- *
- * M2C  is a  Modula-2 to C translator  and  via-C compiler  for the bootstrap
- * subset of the revised Modula-2 language described in
- *
- * https://github.com/m2sf/PDFs/blob/master/M2BSK%20Language%20Description.pdf
- *
- * In compiler mode,  M2C compiles Modula-2 source files via C to object files
- * or executables  using the host system's resident C compiler and linker.  In
- * translator mode, it translates Modula-2 source files to C source files.
- *
- * Further information at https://github.com/m2sf/m2c/wiki
- *
- * @file
- *
- * m2c-token.c
- *
- * Implementation of M2C token type.
- *
- * @license
- *
- * M2C is free software:  You can redistribute  and modify it  under the terms
- * of the  GNU Lesser General Public License (LGPL)  either version 2.1  or at
- * your choice version 3, both as published by the Free Software Foundation.
- *
- * M2C  is distributed  in the hope  that it will be useful,  but  WITHOUT ANY
- * WARRANTY;  without even  the implied warranty of MERCHANTABILITY or FITNESS
- * FOR ANY PARTICULAR PURPOSE.  Read the license for more details.
- *
- * You should have  received  a copy of the  GNU Lesser General Public License
- * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.
- */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * M2C Modula-2 Compiler & Translator                                        *
+ *                                                                           *
+ * Copyright (c) 2015-2023 Benjamin Kowarsch                                 *
+ *                                                                           *
+ * @synopsis                                                                 *
+ *                                                                           *
+ * M2C is a portable  Modula-2 to C translator  and  via-C compiler  for the *
+ * bootstrap subset of the revised Modula-2 language described in            *
+ *                                                                           *
+ * https://github.com/m2sf/m2bsk/wiki/Language-Specification                 *
+ *                                                                           *
+ * In translator mode,  M2C translates Modula-2 source files to semantically *
+ * equivalent C source files.  In compiler mode,  it translates the Modula-2 *
+ * source files  to C,  then compiles the resulting C sources  to object and *
+ * executable files using the host system's resident C compiler and linker.  *
+ *                                                                           *
+ * Further information at https://github.com/m2sf/m2c/wiki                   *
+ *                                                                           *
+ * @file                                                                     *
+ *                                                                           *
+ * m2c-token.c                                                               *
+ *                                                                           *
+ * Implementation of M2C token module.                                       *
+ *                                                                           *
+ * @license                                                                  *
+ *                                                                           *
+ * M2C is free software:  You can redistribute and modify it under the terms *
+ * of the GNU Lesser General Public License (LGPL)  either version 2.1 or at *
+ * your choice version 3, both published by the Free Software Foundation.    *
+ *                                                                           *
+ * M2C is distributed in the hope it may be useful, but strictly WITHOUT ANY *
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS *
+ * FOR ANY PARTICULAR PURPOSE.  Read the license for more details.           *
+ *                                                                           *
+ * You should have received  a copy of the GNU Lesser General Public License *
+ * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* --------------------------------------------------------------------------
+ * imports
+ * ----------------------------------------------------------------------- */
 
 #include "m2c-token.h"
 
@@ -41,24 +47,26 @@
 
 
 /* --------------------------------------------------------------------------
- * array m2c_token_name_table
+ * hidden array token_name_table
  * --------------------------------------------------------------------------
  * Human readable names for tokens.
  * ----------------------------------------------------------------------- */
 
-static const char *m2c_token_name_table[] = {
+static const char *token_name_table[] = {
   /* Null Token */
   
   "UNKNOWN",
   
   /* Reserved Words */
 
+  "RW-ALIAS\0",
   "RW-AND\0",
+  "RW-ARGLIST\0",
   "RW-ARRAY\0",
   "RW-BEGIN\0",
-  "RW-BY\0",
   "RW-CASE\0",
   "RW-CONST\0",
+  "RW-COPY\0",
   "RW-DEFINITION\0",
   "RW-DIV\0",
   "RW-DO\0",
@@ -66,9 +74,7 @@ static const char *m2c_token_name_table[] = {
   "RW-ELSIF\0",
   "RW-END\0",
   "RW-EXIT\0",
-  "RW-EXPORT\0",
   "RW-FOR\0",
-  "RW-FROM\0",
   "RW-IF\0",
   "RW-IMPLEMENTATION\0",
   "RW-IMPORT\0",
@@ -76,23 +82,30 @@ static const char *m2c_token_name_table[] = {
   "RW-LOOP\0",
   "RW-MOD\0",
   "RW-MODULE\0",
+  "RW-NEW\0",
+  "RW-NOP\0",
   "RW-NOT\0",
+  "RW-OCTETSEQ\0",
   "RW-OF\0",
+  "RW-OPAQUE\0",
   "RW-OR\0",
   "RW-POINTER\0",
   "RW-PROCEDURE\0",
-  "RW-QUALIFIED\0",
+  "RW-READ\0",
   "RW-RECORD\0",
+  "RW-RELEASE\0",
   "RW-REPEAT\0",
+  "RW-RETAIN\0",
   "RW-RETURN\0",
   "RW-SET\0",
   "RW-THEN\0",
   "RW-TO\0",
   "RW-TYPE\0",
+  "RW-UNQUALIFIED\0",
   "RW-UNTIL\0",
   "RW-VAR\0",
   "RW-WHILE\0",
-  "RW-WITH\0",
+  "RW-WRITE\0",
   
   /* Identifiers */
   
@@ -100,738 +113,184 @@ static const char *m2c_token_name_table[] = {
   
   /* Literals */
   
-  "STRING-LITERAL\0",
   "INTEGER-LITERAL\0",
   "REAL-LITERAL\0",
-  "CHAR-LITERAL\0",
+  "CHAR-CODE-LITERAL\0",
+  "STRING-LITERAL\0",
   
-  "MALFORMED-STRING\0",
-  "MALFORMED-INTEGER\0",
-  "MALFORMED-REAL\0",
+  /* Punctuation */
   
-  /* Pragmas */
-  
-  "PRAGMA\0",
-  
-  /* Special Symbols */
-  
-  "PLUS\0",
-  "MINUS\0",
-  "EQUAL\0",
-  "NOTEQUAL\0",
-  "LESS-THAN\0",
-  "LESS-OR-EQUAL\0",
-  "GREATER-THAN\0",
-  "GREATER-OR-EQUAL\0",
-  "ASTERISK\0",
-  "SOLIDUS\0",
-  "ASSIGNMENT\0",
   "COMMA\0",
-  "PERIOD\0",
   "COLON\0",
   "SEMICOLON\0",
-  "RANGE\0",
-  "DEREF\0",
-  "VERTICAL-BAR\0",
+  "AT-SIGN\0",
+  "BAR\0",
+  "DOT-DOT\0",
+  "ASSIGN\0",
+  "PLUS-PLUS\0",
+  "MINUS-MINUS\0",
+  "WILDCARD\0",
+  
+  /* Paired Delimiters */
+
   "LEFT-PAREN\0",
   "RIGHT-PAREN\0",
   "LEFT-BRACKET\0",
   "RIGHT-BRACKET\0",
   "LEFT-BRACE\0",
   "RIGHT-BRACE\0",
+  
+  /* Operators */
+  
+  /* Non-Resword Level-1 Operators */
+  
+  "EQUAL\0",
+  "NOT-EQUAL\0",
+  "LESS\0",
+  "LESS-OR-EQUAL\0",
+  "GREATER\0",
+  "GREATER-OR-EQUAL\0",
+  "IDENTITY\0",
+  
+  /* Non-Resword Level-2 Operators */
+  
+  "PLUS\0",
+  "MINUS\0",
+  "CONCAT\0",
+  "SET-DIFF\0",
+
+  /* Non-Resword Level-3 Operators */
+  
+  "ASTERISK\0",
+  "SOLIDUS\0",
+  
+  /* Non-Resword Level-4 Operators */
+  
+  /* none */
+  
+  /* Non-Resword Level-5 Operators */
+  
+  "TYPE-CONV\0",
+  
+  /* Non-Resword Level-6 Operators */
+  
+  "DOT\0",
+  "DEREF\0",
+  
+  /* End Of File Marker */
+  
   "END-OF-FILE\0",
+  
+  /* Non-Semantic Symbols */
+  
+  /* Comments and Pragmas */
+  
+  "LINE-COMMENT\0",
+  "BLOCK-COMMENT\0",
+  "PRAGMA\0",
+  
+  /* Malformed Symbols */
+    
+  "MALFORMED-INTEGER\0",
+  "MALFORMED-REAL\0",
+  "MALFORMED-CHAR-CODE\0",
+  "MALFORMED-STRING\0",
+  
+  "MALFORMED-COMMENT\0",
+  "MALFORMED-PRAGMA\0",
   
   /* out-of-range guard */
   
   "\0"
 
-}; /* end m2c_token_name_table */
+}; /* end token_name_table */
 
 
 /* --------------------------------------------------------------------------
- * array m2c_resword_lexeme_table
- * --------------------------------------------------------------------------
- * Lexeme strings for reserved word tokens.
- * ----------------------------------------------------------------------- */
-
-static const char *m2c_resword_lexeme_table[] = {
-  
-  /* dummy */
-  "\0",
-  
-  /* lexemes */
-  "AND\0",
-  "ARRAY\0",
-  "BEGIN\0",
-  "BY\0",
-  "CASE\0",
-  "CONST\0",
-  "DEFINITION\0",
-  "DIV\0",
-  "DO\0",
-  "ELSE\0",
-  "ELSIF\0",
-  "END\0",
-  "EXIT\0",
-  "EXPORT\0",
-  "FOR\0",
-  "FROM\0",
-  "IF\0",
-  "IMPLEMENTATION\0",
-  "IMPORT\0",
-  "IN\0",
-  "LOOP\0",
-  "MOD\0",
-  "MODULE\0",
-  "NOT\0",
-  "OF\0",
-  "OR\0",
-  "POINTER\0",
-  "PROCEDURE\0",
-  "QUALIFIED\0",
-  "RECORD\0",
-  "REPEAT\0",
-  "RETURN\0",
-  "SET\0",
-  "THEN\0",
-  "TO\0",
-  "TYPE\0",
-  "UNTIL\0",
-  "VAR\0",
-  "WHILE\0",
-  "WITH\0",
-
-}; /* end m2c_resword_lexeme_table */
-
-
-/* --------------------------------------------------------------------------
- * array m2c_special_symbol_lexeme_table
+ * hidden array special_symbol_lexeme_table
  * --------------------------------------------------------------------------
  * Lexeme strings for special symbol tokens.
  * ----------------------------------------------------------------------- */
 
-static const char *m2c_special_symbol_lexeme_table[] = {
+static const char *special_symbol_lexeme_table[] = {
   
-  "+\0",  /* PLUS */
-  "-\0",  /* MINUS */
-  "=\0",  /* EQUAL */
-  "#\0",  /* NOTEQUAL */
-  "<\0",  /* LESS-THAN */
-  "<=\0", /* LESS-OR-EQUAL */
-  ">\0",  /* GREATER-THAN */
-  ">=\0", /* GREATER-OR-EQUAL */ 
-  "*\0",  /* ASTERISK */         
-  "/\0",  /* SOLIDUS */
-  ":=\0", /* ASSIGNMENT */       
-  ",\0",  /* COMMA */ 
-  ".\0",  /* PERIOD */ 
-  ":\0",  /* COLON */ 
-  ";\0",  /* SEMICOLON */ 
-  "..\0", /* RANGE */ 
-  "^\0",  /* DEREF */ 
-  "|\0",  /* VERTICAL-BAR */ 
-  "(\0",  /* LEFT-PAREN */ 
-  ")\0",  /* RIGHT-PAREN */ 
-  "[\0",  /* LEFT-BRACKET */ 
-  "]\0",  /* RIGHT-BRACKET */ 
-  "{\0",  /* LEFT-BRACE */ 
-  "}\0"   /* RIGHT-BRACE */ 
+  /* Punctuation */
   
-}; /* end m2c_special_symbol_lexeme_table */
-
-
-/* --------------------------------------------------------------------------
- * private function str_match(str1, str2)
- * --------------------------------------------------------------------------
- * Returns true character strings str1 and str2 match, otherwise false.
- * ----------------------------------------------------------------------- */
-
-#define MAX_RESWORD_LENGTH 14
-
-static bool str_match (const char *str1, const char *str2) {
-  uint_t index;
+  ",\0",   /* COMMA */
+  ":\0",   /* COLON */
+  ";\0",   /* SEMICOLON */
+  "@\0",   /* AT-SIGN */
+  "|\0",   /* BAR */
+  "..\0",  /* DOT-DOT */
+  ":=\0",  /* ASSIGN */
+  "++\0",  /* PLUS-PLUS */
+  "--\0",  /* MINUS-MINUS */
+  ".*\0",  /* WILDCARD */
   
-  index = 0;
-  while (index <= MAX_RESWORD_LENGTH + 1) {
-    if (str1[index] != str2[index]) {
-      return false;
-    }
-    else if (str1[index] == '\0') {
-      return true;
-    }
-    else {
-      index++;
-    } /* end if */
-  } /* end while */
+  /* Paired Delimiters */
   
-  return false;
-} /* end str_match */
-
-
-/* --------------------------------------------------------------------------
- * function m2c_is_valid_token(token)
- * --------------------------------------------------------------------------
- * Returns true if token represents a terminal symbol, otherwise false.
- * ----------------------------------------------------------------------- */
-
-inline bool m2c_is_valid_token (m2c_token_t token) {
-  return ((token > TOKEN_UNKNOWN) && (token < TOKEN_END_MARK));
-} /* end  */
-
-
-/* --------------------------------------------------------------------------
- * function m2c_is_resword_token(token)
- * --------------------------------------------------------------------------
- * Returns true if token represents a reserved word, otherwise false.
- * ----------------------------------------------------------------------- */
-
-inline bool m2c_is_resword_token (m2c_token_t token) {
-  return ((token >= TOKEN_AND) && (token <= TOKEN_WITH));
-} /* end m2c_is_resword_token */
-
-
-/* --------------------------------------------------------------------------
- * function m2c_is_literal_token(token)
- * --------------------------------------------------------------------------
- * Returns true if token represents a literal, otherwise false.
- * ----------------------------------------------------------------------- */
-
-inline bool m2c_is_literal_token (m2c_token_t token) {
-  return ((token >= TOKEN_STRING) && (token <= TOKEN_CHAR));
-} /* end m2c_is_literal_token */
-
-
-/* --------------------------------------------------------------------------
- * function m2c_is_malformed_literal_token(token)
- * --------------------------------------------------------------------------
- * Returns TRUE if token represents a malformed literal, otherwise FALSE.
- * ----------------------------------------------------------------------- */
-
-inline bool m2c_is_malformed_literal_token (m2c_token_t token) {
-  return ((token >= TOKEN_MALFORMED_STRING) &&
-          (token <= TOKEN_MALFORMED_REAL));
-} /* end m2c_is_malformed_literal_token */
-
-
-/* --------------------------------------------------------------------------
- * function m2c_is_special_symbol_token(token)
- * --------------------------------------------------------------------------
- * Returns TRUE if token represents a special symbol, otherwise FALSE.
- * ----------------------------------------------------------------------- */
-
-inline bool m2c_is_special_symbol_token (m2c_token_t token) {
-  return ((token >= TOKEN_ADDITION) && (token <= TOKEN_RIGHT_BRACE));
-} /* end m2c_is_special_symbol_token */
-
-
-/* --------------------------------------------------------------------------
- * function m2c_token_for_resword(lexeme, length)
- * --------------------------------------------------------------------------
- * Tests if the given lexeme represents a reserved word and returns the
- * corresponding token or TOKEN_UNKNOWN if it does not match a reserved word.
- * ----------------------------------------------------------------------- */
-
-m2c_token_t m2c_token_for_resword (const char *lexeme, uint_t length) {
+  "(\0",   /* LEFT-PAREN */
+  ")\0",   /* RIGHT-PAREN */
+  "[\0",   /* LEFT-BRACKET */
+  "]\0",   /* RIGHT-BRACKET */
+  "{\0",   /* LEFT-BRACE */
+  "}\0",   /* RIGHT-BRACE */
   
-  /* verify pre-conditions */
-  if ((lexeme == NULL) || (length < 2) || (length > 14)) {
-    return TOKEN_UNKNOWN;
-  } /* end if */
+  /* Operators */
   
-  switch (length) {
-    case /* length = 2 */ 2 :
-      switch (lexeme[0]) {
-      
-	    case 'B' :
-	      /* BY */
-	      if (lexeme[1] == 'Y') {
-	        return TOKEN_BY;
-	      }
-	    
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	
-	    case 'D' :
-	      /* DO */
-	      if (lexeme[1] == 'O') {
-	        return TOKEN_DO;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	
-	    case 'I' :
-	      /* IF */
-	      if (lexeme[1] == 'F') {
-	        return TOKEN_IF;
-	      }
-	  	    
-	      /* IN */
-	      else if (lexeme[1] == 'N') {
-	        return TOKEN_IN;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	    
-	    case 'O' :
-	      /* OF */
-	      if (lexeme[1] == 'F') {
-	        return TOKEN_OF;
-	      }
-	      
-	      /* OR */
-	      else if (lexeme[1] == 'R') {
-	        return TOKEN_OR;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	    
-	    case 'T' :
-	      /* TO */
-	      if (lexeme[1] == 'O') {
-	        return TOKEN_TO;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	    
-	    default :
-	      return TOKEN_UNKNOWN;
-	  } /* end switch */
-	
-    case /* length = 3 */ 3 :
-      switch (lexeme[0]) {
-      
-	    case 'A' :
-	      /* AND */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_AND])) {
-	        return TOKEN_AND;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-        	
-	    case 'D' :
-	      /* DIV */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_DIV])) {
-	        return TOKEN_DIV;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	
-	    case 'E' :
-	      /* END */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_END])) {
-	        return TOKEN_END;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'F' :
-	      /* FOR */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_FOR])) {
-	        return TOKEN_FOR;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'M' :
-	      /* MOD */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_MOD])) {
-	        return TOKEN_MOD;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'N' :
-	      /* NOT */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_NOT])) {
-	        return TOKEN_NOT;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'S' :
-	      /* SET */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_SET])) {
-	        return TOKEN_SET;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'V' :
-	      /* VAR */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_VAR])) {
-	        return TOKEN_VAR;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    default :
-	      return TOKEN_UNKNOWN;
-	  } /* end switch */
-	
-    case /* length = 4 */ 4 :
-      switch (lexeme[1]) {
-      
-	    case 'A' :
-	      /* CASE */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_CASE])) {
-	        return TOKEN_CASE;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'H' :
-	      /* THEN */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_THEN])) {
-	        return TOKEN_THEN;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'I' :
-	      /* WITH */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_WITH])) {
-	        return TOKEN_WITH;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'L' :
-	      /* ELSE */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_ELSE])) {
-	        return TOKEN_ELSE;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'O' :
-	      /* LOOP */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_LOOP])) {
-	        return TOKEN_LOOP;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'R' :
-	      /* FROM */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_FROM])) {
-	        return TOKEN_FROM;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'X' :
-	      /* EXIT */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_EXIT])) {
-	        return TOKEN_EXIT;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-        case 'Y' :
-          /* TYPE */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_TYPE])) {
-	        return TOKEN_TYPE;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    default :
-	      return TOKEN_UNKNOWN;
-	  } /* end switch */
-	
-    case /* length = 5 */ 5 :
-      switch (lexeme[0]) {
-      
-	    case 'A' :
-	      /* ARRAY */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_ARRAY])) {
-	        return TOKEN_ARRAY;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'B' :
-	      /* BEGIN */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_BEGIN])) {
-	        return TOKEN_BEGIN;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'C' :
-	      /* CONST */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_CONST])) {
-	        return TOKEN_CONST;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'E' :
-	      /* ELSIF */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_ELSIF])) {
-	        return TOKEN_ELSIF;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'U' :
-	      /* UNTIL */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_UNTIL])) {
-	        return TOKEN_UNTIL;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'W' :
-	      /* WHILE */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_WHILE])) {
-	        return TOKEN_WHILE;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    default :
-	      return TOKEN_UNKNOWN;
-	  } /* end switch */
-	
-    case /* length 6 */ 6 :
-      switch (lexeme[5]) {
-      
-	    case 'E' :
-	      /* MODULE */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_MODULE])) {
-	        return TOKEN_MODULE;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'D' :
-	      /* RECORD */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_RECORD])) {
-	        return TOKEN_RECORD;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'N' :
-	      /* RETURN */
-	      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_RETURN])) {
-	        return TOKEN_RETURN;
-	      }
-	      
-	      else {
-	        return TOKEN_UNKNOWN;
-	      } /* end if */
-	      
-	    case 'T' :
-	      switch (lexeme[0]) {
-	      
-	        case 'E' :
-	          /* EXPORT */
-	          if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_EXPORT])) {
-	            return TOKEN_EXPORT;
-	          }
-	          
-	          else {
-	            return TOKEN_UNKNOWN;
-	          } /* end if */
-	        
-	        case 'I' :
-	          /* IMPORT */
-	          if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_IMPORT])) {
-	            return TOKEN_IMPORT;
-	          }
-	          
-	          else {
-	            return TOKEN_UNKNOWN;
-	          } /* end if */
-	        
-	        case 'R' :
-	          /* REPEAT */
-	          if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_REPEAT])) {
-	            return TOKEN_REPEAT;
-	          }
-	          
-	          else {
-	            return TOKEN_UNKNOWN;
-	          } /* end if */
-	          
-	        default :
-	          return TOKEN_UNKNOWN;
-	      } /* end switch */
-	      
-	    default :
-	      return TOKEN_UNKNOWN;
-	  } /* end switch */
-	
-    case /* length = 7 */ 7 :
-      /* POINTER */
-      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_POINTER])) {
-	    return TOKEN_POINTER;
-      }
-      
-      else {
-	    return TOKEN_UNKNOWN;
-      } /* end if */
-      
-    case /* length = 9 */ 9 :
-      switch (lexeme[0]) {
-      
-        case 'P' :
-          /* PROCEDURE */
-          if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_PROCEDURE])) {
-	        return TOKEN_PROCEDURE;
-          }
-          
-          else {
-	        return TOKEN_UNKNOWN;
-          } /* end if */
-        
-        case 'Q' :
-          /* QUALIFIED */
-          if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_QUALIFIED])) {
-	        return TOKEN_QUALIFIED;
-          }
-          
-          else {
-	        return TOKEN_UNKNOWN;
-          } /* end if */
-        
-        default :
-	      return TOKEN_UNKNOWN;
-      } /* end switch */
-	
-    case /* length = 10 */ 10 :
-      /* DEFINITION */
-      if (str_match(lexeme, m2c_resword_lexeme_table[TOKEN_DEFINITION])) {
-	    return TOKEN_DEFINITION;
-      }
-      
-      else {
-	    return TOKEN_UNKNOWN;
-      } /* end if */
-    
-    case /* length = 14 */ 14 :
-      /* IMPLEMENTATION */
-      if (str_match(lexeme,
-          m2c_resword_lexeme_table[TOKEN_IMPLEMENTATION])) {
-	    return TOKEN_IMPLEMENTATION;
-      }
-      
-      else {
-	    return TOKEN_UNKNOWN;
-      } /* end if */
-    
-    default :
-      return TOKEN_UNKNOWN;
-  } /* end switch (length) */
-} /* end m2c_token_for_resword */
-
+  /* Non-Resword Level-1 Operators */
+  
+  "=\0",   /* EQUAL */
+  "#\0",   /* NOT-EQUAL */
+  "<\0",   /* LESS */
+  "<=\0",  /* LESS-OR-EQUAL */
+  ">\0",   /* GREATER */
+  ">=\0",  /* GREATER-OR-EQUAL */
+  "==\0",  /* IDENTITY */
+  
+  /* Non-Resword Level-2 Operators */
+  
+  "+\0",   /* PLUS */
+  "-\0",   /* MINUS */
+  "&\0",   /* CONCAT */
+  "\\\0",  /* SET-DIFF */
+  
+  /* Non-Resword Level-3 Operators */
 
-/* --------------------------------------------------------------------------
- * function m2c_lexeme_for_resword(token)
- * --------------------------------------------------------------------------
- * Returns an immutable pointer to a NUL terminated character string with
- * the lexeme for the reserved word represented by token.  Returns NULL
- * if the token does not represent a reserved word.
- * ----------------------------------------------------------------------- */
-
-const char *m2c_lexeme_for_resword (m2c_token_t token) {
-  uint_t index;
+  "*\0",   /* ASTERISK */
+  "/\0",   /* SOLIDUS */
   
-  /* check pre-conditions */
-  if ((token < FIRST_RESERVED_WORD_TOKEN) ||
-      (token > LAST_RESERVED_WORD_TOKEN)) {
-    return NULL;
-  } /* end if */
+  /* Non-Resword Level-4 Operators */
   
-  index = (uint_t) token;
-    
-  /* return lexeme */
-  return m2c_resword_lexeme_table[index];
+  /* none */
   
-} /* end m2c_lexeme_for_resword */
+  /* Non-Resword Level-5 Operators */
+  
+  "::\0",  /* TYPE-CONV */
+  
+  /* Non-Resword Level-6 Operators */
+  
+  ".\0",   /* DOT */
+  "^\0"    /* DEREF */
+  
+}; /* end special_symbol_lexeme_table */
 
 
 /* --------------------------------------------------------------------------
  * function m2c_lexeme_for_special_symbol(token)
  * --------------------------------------------------------------------------
- * Returns an immutable pointer to a NUL terminated character string with
- * the lexeme for the special symbol represented by token.  Returns NULL
- * if the token does not represent a special symbol.
+ * Returns an immutable pointer to a NUL terminated character string with the
+ * lexeme for the special symbol represented by token.  Returns NULL if token
+ * does not represent a special symbol.
  * ----------------------------------------------------------------------- */
 
 const char *m2c_lexeme_for_special_symbol (m2c_token_t token) {
-  uint_t index;
-  
-  /* check pre-conditions */
-  if ((token < FIRST_SPECIAL_SYMBOL_TOKEN) ||
-      (token > LAST_SPECIAL_SYMBOL_TOKEN)) {
+  if (M2C_IS_SPECIAL_SYMBOL_TOKEN(token)) {
+    return special_symbol_lexeme_table[token];
+  }
+  else /* not a special symbol token */ {
     return NULL;
   } /* end if */
-  
-  index = token - FIRST_SPECIAL_SYMBOL_TOKEN;
-  
-  /* return lexeme */
-  return m2c_special_symbol_lexeme_table[index];
-  
 } /* end m2c_lexeme_for_special_symbol */
 
 
@@ -844,11 +303,12 @@ const char *m2c_lexeme_for_special_symbol (m2c_token_t token) {
 
 const char *m2c_name_for_token (m2c_token_t token) {
   if (token < TOKEN_END_MARK) {
-    return m2c_token_name_table[token];
+    return token_name_table[token];
   }
   else /* invalid token */ {
     return NULL;
   } /* end if */
 } /* end m2c_name_for_token */
+
 
 /* END OF FILE */
