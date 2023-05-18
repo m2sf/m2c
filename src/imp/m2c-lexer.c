@@ -78,6 +78,15 @@ static const m2c_symbol_struct_t null_symbol = {
 
 
 /* --------------------------------------------------------------------------
+ * private type match_handler_t
+ * --------------------------------------------------------------------------
+ * function type for lexical matching function.
+ * ----------------------------------------------------------------------- */
+
+typedef char (*match_handler_t) (infile_t, *m2c_token_t, *intstr_t);
+
+
+/* --------------------------------------------------------------------------
  * hidden type m2c_lexer_struct_t
  * --------------------------------------------------------------------------
  * record type representing a Modula-2 lexer object.
@@ -86,9 +95,10 @@ static const m2c_symbol_struct_t null_symbol = {
 struct m2c_lexer_struct_t {
   m2c_infile_t infile;
   m2c_symbol_struct_t current;
-  /* lookahead */ m2c_symbol_struct_t lookahead;
-  /* status */ m2c_lexer_status_t status;
-  /* error_count */ uint_t error_count;
+  m2c_symbol_struct_t lookahead;
+  m2c_lexer_status_t status;
+  match_handler_t match_ident;
+  match_handler_t match_ident_or_resword;
 }; /* m2c_lexer_struct_t */
 
 typedef struct m2c_lexer_struct_t m2c_lexer_struct_t;
@@ -166,6 +176,15 @@ void m2c_new_lexer
    new_lexer->current = null_symbol;
    new_lexer->lookahead = null_symbol;
    new_lexer->error_count = 0;
+   
+   if (m2c_compiler_option_dollar_identifiers()) {
+    new_lexer->match_ident = m2c_match_lowline_ident;
+    new_lexer->match_ident_or_resword = m2c_match_lowline_ident_or_resword;
+   }
+   else /* no dollar identifiers */ {
+    new_lexer->match_ident = m2c_match_ident;
+    new_lexer->match_ident_or_resword = m2c_match_ident_or_resword;
+   } /* end if */
       
    /* read first symbol */
    get_new_lookahead_sym(new_lexer);
@@ -459,21 +478,17 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
     
     /* identifier */
     if (IS_LOWER_LETTER(next_char)) {
-      next_char = m2c_match_ident(lexer->infile, &token, &lexeme);
+      next_char = lexer->match_ident(lexer->infile, &token, &lexeme);
     }
     /* identifier or reserved word */
     else if (IS_UPPER_LETTER(next_char)) {
-      next_char = m2c_match_ident_or_resword(lexer->infile, &token, &lexeme);
+      next_char =
+        lexer->match_ident_or_resword(lexer->infile, &token, &lexeme);
     }
     /* numeric literal */
     else if (IS_DIGIT(next_char)) {
       infile_mark_lexeme(lexer->infile);
       next_char = m2c_match_numeric_literal(lexer->infile, &token, &lexeme);
-    }
-    /* disabled code section */
-    else if ((next_char == '?') && (column == 1)
-      && (infile_la2_char(lexer->infile) == '<')) {
-      next_char = m2c_match_disabled_code_block(lexer->infile);
     }
     else {
       switch (next_char) {
@@ -721,6 +736,12 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
           /* End-of-File marker */        
           if (m2c_infile_eof(lexer->infile)) {
             token = TOKEN_END_OF_FILE;
+          }
+          /* disabled code section */
+          else if ((next_char == '?') && (column == 1)
+            && (infile_la2_char(lexer->infile) == '<')) {
+            next_char = m2c_match_disabled_code_block(lexer->infile);
+            token = TOKEN_UNKNOWN;
           }
           else /* invalid char */ {
             m2c_emit_lex_error
