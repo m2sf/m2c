@@ -42,7 +42,7 @@
 
 #include "m2c-token.h"
 #include "m2c-common.h"
-#include "m2c-unique-string.h"
+#include "interned-strings.h"
 
 
 /* --------------------------------------------------------------------------
@@ -225,17 +225,6 @@ uint_t m2c_lexer_lookahead_column (m2c_lexer_t lexer);
  * ----------------------------------------------------------------------- */
 
 uint_t m2c_lexer_current_column (m2c_lexer_t lexer);
-
-
-/* --------------------------------------------------------------------------
- * procedure m2c_print_line_and_mark_column(lexer, line, column)
- * --------------------------------------------------------------------------
- * Prints the given source line of the current symbol to the console and
- * marks the given coloumn with a caret '^'.
- * ----------------------------------------------------------------------- */
-
-void m2c_print_line_and_mark_column
-  (m2c_lexer_t lexer, uint_t line, uint_t column);
 
 
 /* --------------------------------------------------------------------------

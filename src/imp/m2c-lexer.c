@@ -43,8 +43,10 @@
 
 #include "iso646.h"
 #include "infile.h"
+
 #include "m2c-lexer.h"
 #include "m2c-error.h"
+#include "m2c-match-lex.h"
 #include "m2c-compiler-options.h"
 
 #include <stdlib.h>
@@ -58,10 +60,10 @@
  * ----------------------------------------------------------------------- */
 
 typedef struct {
-  /* token */ m2c_token_t token;
-  /* line */ uint_t line;
-  /* column */ uint_t column;
-  /* lexeme */ m2c_string_t lexeme;
+  intstr_t lexeme;
+  m2c_token_t token;
+  unsigned int line;
+  unsigned int column;
 } m2c_symbol_struct_t;
 
 
@@ -69,11 +71,11 @@ typedef struct {
  * null symbol for initialisation.
  * ----------------------------------------------------------------------- */
 
-static const m2c_symbol_struct_t null_symbol = {
+static const m2c_symbol_struct_t nullsym = {
+  /* lexeme */ NULL,
   /* token */ TOKEN_UNKNOWN,
   /* line */ 0,
-  /* column */ 0,
-  /* lexeme */ NULL
+  /* column */ 0
 }; /* null_symbol */
 
 
@@ -132,9 +134,9 @@ typedef struct m2c_lexer_struct_t m2c_lexer_struct_t;
 void m2c_new_lexer
   (m2c_lexer_t *lexer, intstr_t filename, m2c_lexer_status_t *status) {
    
-   m2c_infile_t infile;
+   infile_t infile;
    m2c_lexer_t new_lexer;
-   m2c_infile_status_t infile_status;
+   infile_status_t infile_status;
    
    /* check pre-conditions */
    if ((lexer == NULL) || (filename == NULL)) {
@@ -173,10 +175,9 @@ void m2c_new_lexer
    
    /* initialise lexer object */
    new_lexer->infile = infile;
-   new_lexer->current = null_symbol;
-   new_lexer->lookahead = null_symbol;
-   new_lexer->error_count = 0;
-   
+   new_lexer->current = nullsym;
+   new_lexer->lookahead = nullsym;
+      
    if (m2c_compiler_option_dollar_identifiers()) {
     new_lexer->match_ident = m2c_match_lowline_ident;
     new_lexer->match_ident_or_resword = m2c_match_lowline_ident_or_resword;
@@ -374,35 +375,6 @@ uint_t m2c_lexer_current_column (m2c_lexer_t lexer) {
 
 
 /* --------------------------------------------------------------------------
- * procedure m2c_print_line_and_mark_column(lexer, line, column)
- * --------------------------------------------------------------------------
- * Prints the given source line of the current symbol to the console and
- * marks the given coloumn with a caret '^'.
- * ----------------------------------------------------------------------- */
-
-void m2c_print_line_and_mark_column
-  (m2c_lexer_t lexer, uint_t line, uint_t column) {
-  
-  uint_t n;
-  
-  /* print the line */
-  infile_print_line(lexer->infile, line);
-  
-  /* advance to column */
-  n = 1;
-  while (n < column) {
-    console_write_char(" ");
-    n++;
-  } /* end while */
-  
-  /* mark the column with a caret */
-  console_write_chars("^\n\n");
-  
-  return;
-} /* end m2c_print_line_and_mark_column */
-
-
-/* --------------------------------------------------------------------------
  * procedure m2c_release_lexer(lexer, status)
  * --------------------------------------------------------------------------
  * Closes the file associated with lexer, deallocates its file object,
@@ -445,13 +417,20 @@ void m2c_release_lexer (m2c_lexer_t *lexptr, m2c_lexer_status_t *status) {
 } /* end m2c_release_lexer */
 
 
+/* Private Functions */
+
 /* --------------------------------------------------------------------------
  * private procedure get_new_lookahead_sym(lexer)
+ * --------------------------------------------------------------------------
+ * Skips any whitespace, newlines, disabled code sections, illegal characters
+ * and if compiler switch preserve-comments is off, any comments; matches the
+ * remaining input  to a valid symbol,  and  reads it  into lexer's lookahead
+ * symbol buffer.  Any errors are reported to the console via error-reporter. 
  * ----------------------------------------------------------------------- */
 
 static void get_new_lookahead_sym (m2c_lexer_t lexer) {
   
-  uint_t line, column;
+  unsigned int line, column;
   m2c_token_t token;
   char next_char;
   

@@ -1,3 +1,33 @@
+
+/* --------------------------------------------------------------------------
+ * procedure m2c_print_line_and_mark_column(lexer, line, column)
+ * --------------------------------------------------------------------------
+ * Prints the given source line of the current symbol to the console and
+ * marks the given coloumn with a caret '^'.
+ * ----------------------------------------------------------------------- */
+
+void m2c_print_line_and_mark_column
+  (m2c_lexer_t lexer, uint_t line, uint_t column) {
+  
+  uint_t n;
+  
+  /* print the line */
+  infile_print_line(lexer->infile, line);
+  
+  /* advance to column */
+  n = 1;
+  while (n < column) {
+    console_write_char(" ");
+    n++;
+  } /* end while */
+  
+  /* mark the column with a caret */
+  console_write_chars("^\n\n");
+  
+  return;
+} /* end m2c_print_line_and_mark_column */
+
+
 /* --------------------------------------------------------------------------
  * Forward declarations
  * ----------------------------------------------------------------------- */
