@@ -7,4 +7,7 @@
 * rework IO library
 * rework AST
 * rework driver
-* implement m2make
+* implement code generator
+* implement m2make utility
+
+[END OF FILE]
