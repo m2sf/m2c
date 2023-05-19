@@ -43,6 +43,7 @@
 
 #include "m2c-cli-lexer.h"
 #include "pathnames.h"
+#include "cstring.h"
 #include "iso646.h"
 
 #include <stddef.h>
@@ -58,7 +59,7 @@
 typedef struct {
   unsigned index;
   unsigned count;
-  char **lexeme;
+  char **argstr;
 } cli_args_t;
 
 
@@ -102,7 +103,8 @@ void cli_init (int argc, char **argv) {
  * Reads and consumes the next commmand line argument and returns its token.
  * ------------------------------------------------------------------------ */
 
-static cli_token_t match_compiler_switch (const char *argstr);
+static cli_token_t match_compiler_switch
+  (const char *argstr, unsigned length);
 
 cli_token_t cli_next_token (void) {
   cli_token_t token;
@@ -114,10 +116,10 @@ cli_token_t cli_next_token (void) {
   } /* end if */
   
   argstr = cli_arg.argstr[cli_arg.index];
-  length = strlen(argstr);
+  length = cstr_length(argstr);
   
   if (argstr[0] == '-') {
-    token = match_compiler_switch(argstr);
+    token = match_compiler_switch(argstr, length);
   }
   else {
     /* tentatively parse as pathname */
@@ -165,15 +167,19 @@ const char *cli_last_arg (void) {
  * CLI_TOKEN_INVALID if argstr does not represent a valid compiler switch.
  * ------------------------------------------------------------------------ */
 
-static cli_token_t match_compiler_switch (const char *argstr) {
-  unsigned length;
+#define MAX_COMPILER_SWITCH_LENGTH 24
+
+static cli_token_t match_compiler_switch
+  (const char *argstr, unsigned length) {
   
   if (argstr == NULL) {
     return CLI_TOKEN_END_OF_INPUT;
   } /* end if */
   
-  length = strlen(argstr);
-
+  if ((length < 2) || (length > MAX_COMPILER_SWITCH_LENGTH)) {
+    return CLI_TOKEN_INVALID
+  } /* end if */
+  
   switch (length) {
     case /* length == */ 2 :
       switch (argstr[1]) {
@@ -193,13 +199,13 @@ static cli_token_t match_compiler_switch (const char *argstr) {
       switch (argstr[2]) {
         /* --ast */
         case 'a' :
-          if (str_match(argstr, "--ast")) {
+          if (cstr_match(argstr, "--ast")) {
             return CLI_TOKEN_AST;
           } /* end if */
           
         /* --obj */
         case 'o' :
-          if (str_match(argstr, "--obj")) {
+          if (cstr_match(argstr, "--obj")) {
             return CLI_TOKEN_OBJ;
           } /* end if */
         
@@ -211,13 +217,13 @@ static cli_token_t match_compiler_switch (const char *argstr) {
       switch (argstr[2]) {
         /* --help */
         case 'h' :
-          if (str_match(argstr, "--help")) {
+          if (cstr_match(argstr, "--help")) {
             return CLI_TOKEN_HELP;
           } /* end if */
           
         /* --xlat */
         case 'x' :
-          if (str_match(argstr, "--xlat")) {
+          if (cstr_match(argstr, "--xlat")) {
             return CLI_TOKEN_XLAT;
           } /* end if */
         
@@ -227,7 +233,7 @@ static cli_token_t match_compiler_switch (const char *argstr) {
       
     case /* length == */ 7 :
       /* --graph */
-      if (str_match(argstr, "--graph")) {
+      if (cstr_match(argstr, "--graph")) {
         return CLI_TOKEN_GRAPH;
       } /* end if */
       
@@ -235,13 +241,13 @@ static cli_token_t match_compiler_switch (const char *argstr) {
       switch (argstr[5]) {
         /* --no-ast */
         case 'a' :
-          if (str_match(argstr, "--no-ast")) {
+          if (cstr_match(argstr, "--no-ast")) {
             return CLI_TOKEN_NO_AST;
           } /* end if */
           
         /* --no-obj */
         case 'o' :
-          if (str_match(argstr, "--no-obj")) {
+          if (cstr_match(argstr, "--no-obj")) {
             return CLI_TOKEN_NO_OBJ;
           } /* end if */
         
@@ -253,25 +259,25 @@ static cli_token_t match_compiler_switch (const char *argstr) {
       switch (argstr[5]) {
         /* --verbose */
         case 'b' :
-          if (str_match(argstr, "--verbose")) {
+          if (cstr_match(argstr, "--verbose")) {
             return CLI_TOKEN_VERBOSE;
           } /* end if */
           
         /* --license */
         case 'e' :
-          if (str_match(argstr, "--license")) {
+          if (cstr_match(argstr, "--license")) {
             return CLI_TOKEN_LICENSE;
           } /* end if */
         
         /* --version */
         case 's' :
-          if (str_match(argstr, "--version")) {
+          if (cstr_match(argstr, "--version")) {
             return CLI_TOKEN_VERSION;
           } /* end if */
         
         /* --no-xlat */
         case 'x' :
-          if (str_match(argstr, "--no-xlat")) {
+          if (cstr_match(argstr, "--no-xlat")) {
             return CLI_TOKEN_NO_XLAT;
           } /* end if */
         
@@ -283,19 +289,19 @@ static cli_token_t match_compiler_switch (const char *argstr) {
       switch (argstr[2]) {
         /* --ast-only */
         case 'a' :
-          if (str_match(argstr, "--ast-only")) {
+          if (cstr_match(argstr, "--ast-only")) {
             return CLI_TOKEN_AST_ONLY;
           } /* end if */
           
         /* --no-graph */
         case 'n' :
-          if (str_match(argstr, "--no-graph")) {
+          if (cstr_match(argstr, "--no-graph")) {
             return CLI_TOKEN_NO_GRAPH;
           } /* end if */
           
         /* --obj-only */
         case 'o' :
-          if (str_match(argstr, "--obj-only")) {
+          if (cstr_match(argstr, "--obj-only")) {
             return CLI_TOKEN_OBJ_ONLY;
           } /* end if */
         
@@ -305,13 +311,13 @@ static cli_token_t match_compiler_switch (const char *argstr) {
       
     case /* length == */ 11 :
       /* --xlat-only */
-      if (str_match(argstr, "--xlat-only")) {
+      if (cstr_match(argstr, "--xlat-only")) {
         return CLI_TOKEN_XLAT_ONLY;
       } /* end if */
       
     case /* length == */ 12 :
       /* --graph-only */
-      if (str_match(argstr, "--graph-only")) {
+      if (cstr_match(argstr, "--graph-only")) {
         return CLI_TOKEN_GRAPH_ONLY;
       } /* end if */
       
@@ -319,13 +325,13 @@ static cli_token_t match_compiler_switch (const char *argstr) {
       switch (argstr[2]) {
         /* --lexer-debug */
         case 'l' :
-          if (str_match(argstr, "--lexer-debug")) {
+          if (cstr_match(argstr, "--lexer-debug")) {
             return CLI_TOKEN_LEXER_DEBUG;
           } /* end if */
           
         /* --syntax-only */
         case 's' :
-          if (str_match(argstr, "--syntax-only")) {
+          if (cstr_match(argstr, "--syntax-only")) {
             return CLI_TOKEN_SYNTAX_ONLY;
           } /* end if */
         
@@ -335,19 +341,19 @@ static cli_token_t match_compiler_switch (const char *argstr) {
       
     case /* length == */ 14 :
       /* --parser-debug */
-      if (str_match(argstr, "--parser-debug")) {
+      if (cstr_match(argstr, "--parser-debug")) {
         return CLI_TOKEN_PARSER_DEBUG;
       } /* end if */
       
     case /* length == */ 15 :
       /* --show-settings */
-      if (str_match(argstr, "--show-settings")) {
+      if (cstr_match(argstr, "--show-settings")) {
         return CLI_TOKEN_SHOW_SETTINGS;
       } /* end if */
       
     case /* length == */ 16 :
       /* --strip-comments */
-      if (str_match(argstr, "--strip-comments")) {
+      if (cstr_match(argstr, "--strip-comments")) {
         return CLI_TOKEN_STRIP_COMMENTS;
       } /* end if */
       
@@ -355,13 +361,13 @@ static cli_token_t match_compiler_switch (const char *argstr) {
       switch (argstr[2]) {
         /* --errant-semicolons */
         case 'e' :
-          if (str_match(argstr, "--errant-semicolons")) {
+          if (cstr_match(argstr, "--errant-semicolons")) {
             return CLI_TOKEN_ERRANT_SEMICOLON;
           } /* end if */
           
         /* --preserve-comments */
         case 'p' :
-          if (str_match(argstr, "--preserve-comments")) {
+          if (cstr_match(argstr, "--preserve-comments")) {
             return CLI_TOKEN_PRESERVE_COMMENTS;
           } /* end if */
         
@@ -371,25 +377,25 @@ static cli_token_t match_compiler_switch (const char *argstr) {
       
     case /* length == */ 20 :
       /* --dollar-identifiers */
-      if (str_match(argstr, "--dollar-identifiers")) {
+      if (cstr_match(argstr, "--dollar-identifiers")) {
         return CLI_TOKEN_DOLLAR_IDENTIFIERS;
       } /* end if */
       
     case /* length == */ 21 :
       /* --lowline-identifiers */
-      if (str_match(argstr, "--lowline-identifiers")) {
+      if (cstr_match(argstr, "--lowline-identifiers")) {
         return CLI_TOKEN_LOWLINE_IDENTIFIERS;
       } /* end if */
       
     case /* length == */ 23 :
       /* --no-dollar-identifiers */
-      if (str_match(argstr, "--no-dollar-identifiers")) {
+      if (cstr_match(argstr, "--no-dollar-identifiers")) {
         return CLI_TOKEN_NO_DOLLAR_IDENTIFIERS;
       } /* end if */
       
     case /* length == */ 24 :
       /* --no-lowline-identifiers */
-      if (str_match(argstr, "--no-lowline-identifiers")) {
+      if (cstr_match(argstr, "--no-lowline-identifiers")) {
         return CLI_TOKEN_NO_LOWLINE_IDENTIFIERS;
       } /* end if */
       
