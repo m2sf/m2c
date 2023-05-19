@@ -19,7 +19,7 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * cli-lexer.h                                                               *
+ * m2c-cli-lexer.h                                                           *
  *                                                                           *
  * Public interface of command line lexer module.                            *
  *                                                                           *
@@ -39,9 +39,6 @@
 
 #ifndef M2C_CLI_LEXER_H
 #define M2C_CLI_LEXER_H
-
-#include "string.h"
-
 
 /* ---------------------------------------------------------------------------
  * type cli_token_t
@@ -112,6 +109,132 @@ typedef enum {
 
 
 /* ---------------------------------------------------------------------------
+ * Token group boundaries
+ * ------------------------------------------------------------------------ */
+
+#define CLI_FIRST_INFO_REQUEST_TOKEN CLI_TOKEN_HELP
+#define CLI_LAST_INFO_REQUEST_TOKEN CLI_TOKEN_LICENSE
+
+#define CLI_FIRST_COMPILATION_REQUEST_TOKEN CLI_TOKEN_SYNTAX_ONLY
+#define CLI_LAST_COMPILATION_REQUEST_TOKEN CLI_TOKEN_SOURCE_FILE
+
+#define CLI_FIRST_PRODUCT_OPTION_TOKEN CLI_TOKEN_SYNTAX_ONLY
+#define CLI_LAST_PRODUCT_OPTION_TOKEN CLI_TOKEN_NO_OBJ
+
+#define CLI_FIRST_SINGLE_PRODUCT_OPTION_TOKEN CLI_TOKEN_SYNTAX_ONLY
+#define CLI_LAST_SINGLE_PRODUCT_OPTION_TOKEN CLI_TOKEN_OBJ_ONLY
+
+#define CLI_FIRST_MULTIPLE_PRODUCT_OPTION_TOKEN CLI_TOKEN_AST
+#define CLI_LAST_MULTIPLE_PRODUCT_OPTION_TOKEN CLI_TOKEN_NO_OBJ
+
+#define CLI_FIRST_COMMENT_OPTION_TOKEN CLI_TOKEN_PRESERVE_COMMENTS
+#define CLI_LAST_COMMENT_OPTION_TOKEN CLI_TOKEN_STRIP_COMMENTS
+
+#define CLI_FIRST_CAPABILITY_OPTION_TOKEN CLI_TOKEN_DOLLAR_IDENTIFIERS
+#define CLI_LAST_CAPABILITY_OPTION_TOKEN CLI_TOKEN_NO_LOWLINE_IDENTIFIERS
+
+#define CLI_FIRST_DIAGNOSTICS_OPTION_TOKEN CLI_TOKEN_VERBOSE
+#define CLI_LAST_DIAGNOSTICS_OPTION_TOKEN CLI_TOKEN_ERRANT_SEMICOLONS
+
+
+/* ---------------------------------------------------------------------------
+ * macro CLI_IS_INFO_REQUEST(token)
+ * ---------------------------------------------------------------------------
+ * Returns true if token represents an information request, else false.
+ * ------------------------------------------------------------------------ */
+
+#define CLI_IS_INFO_REQUEST(_token) \
+  ((_token >= CLI_FIRST_INFO_REQUEST_TOKEN) \
+  && (_token <= CLI_LAST_INFO_REQUEST_TOKEN))
+
+
+/* ---------------------------------------------------------------------------
+ * macro CLI_IS_COMPILATION_REQUEST(token)
+ * ---------------------------------------------------------------------------
+ * Returns true if token represents a compilation request, else false.
+ * ------------------------------------------------------------------------ */
+
+#define CLI_IS_COMPILATION_REQUEST(_token) \
+  ((_token >= CLI_FIRST_COMPILATION_REQUEST_TOKEN) \
+  && (_token <= CLI_LAST_COMPILATION_REQUEST_TOKEN))
+
+
+/* ---------------------------------------------------------------------------
+ * macro CLI_IS_PRODUCT_OPTION(token)
+ * ---------------------------------------------------------------------------
+ * Returns true if token represents a product option, else false.
+ * ------------------------------------------------------------------------ */
+
+#define CLI_IS_PRODUCT_OPTION(_token) \
+  ((_token >= CLI_FIRST_PRODUCT_OPTION_TOKEN) \
+  && (_token <= CLI_LAST_PRODUCT_OPTION_TOKEN))
+
+
+/* ---------------------------------------------------------------------------
+ * macro CLI_IS_SINGLE_PRODUCT_OPTION(token)
+ * ---------------------------------------------------------------------------
+ * Returns true if token represents a single product option, else false.
+ * ------------------------------------------------------------------------ */
+
+#define CLI_IS_SINGLE_PRODUCT_OPTION(_token) \
+  ((_token >= CLI_FIRST_SINGLE_PRODUCT_OPTION_TOKEN) \
+  && (_token <= CLI_LAST_SINGLE_PRODUCT_OPTION_TOKEN))
+
+
+/* ---------------------------------------------------------------------------
+ * macro CLI_IS_MULTIPLE_PRODUCT_OPTION(token)
+ * ---------------------------------------------------------------------------
+ * Returns true if token represents a multiple product option, else false.
+ * ------------------------------------------------------------------------ */
+
+#define CLI_IS_MULTIPLE_PRODUCT_OPTION(_token) \
+  ((_token >= CLI_FIRST_MULTIPLE_PRODUCT_OPTION_TOKEN) \
+  && (_token <= CLI_LAST_MULTIPLE_PRODUCT_OPTION_TOKEN))
+
+
+/* ---------------------------------------------------------------------------
+ * macro CLI_IS_COMMENT_OPTION(token)
+ * ---------------------------------------------------------------------------
+ * Returns true if token represents a comment option, else false.
+ * ------------------------------------------------------------------------ */
+
+#define CLI_IS_COMMENT_OPTION(_token) \
+  ((_token >= CLI_FIRST_COMMENT_OPTION_TOKEN) \
+  && (_token <= CLI_LAST_COMMENT_OPTION_TOKEN))
+
+
+/* ---------------------------------------------------------------------------
+ * macro CLI_IS_CAPABILITY_OPTION(token)
+ * ---------------------------------------------------------------------------
+ * Returns true if token represents a comment option, else false.
+ * ------------------------------------------------------------------------ */
+
+#define CLI_IS_CAPABILITY_OPTION(_token) \
+  ((_token >= CLI_FIRST_CAPABILITY_OPTION_TOKEN) \
+  && (_token <= CLI_LAST_CAPABILITY_OPTION_TOKEN))
+
+
+/* ---------------------------------------------------------------------------
+ * macro CLI_IS_DIAGNOSTICS_OPTION(token)
+ * ---------------------------------------------------------------------------
+ * Returns true if token represents a comment option, else false.
+ * ------------------------------------------------------------------------ */
+
+#define CLI_IS_DIAGNOSTICS_OPTION(_token) \
+  ((_token >= CLI_FIRST_DIAGNOSTICS_OPTION_TOKEN) \
+  && (_token <= CLI_LAST_DIAGNOSTICS_OPTION_TOKEN))
+
+
+/* ---------------------------------------------------------------------------
+ * function cli_init(argc, argv)
+ * ---------------------------------------------------------------------------
+ * Initialises the command line lexer.
+ * ------------------------------------------------------------------------ */
+
+void cli_init (int argc, char **argv);
+
+
+/* ---------------------------------------------------------------------------
  * function cli_next_token()
  * ---------------------------------------------------------------------------
  * Reads and consumes the next commmand line argument and returns its token.
@@ -127,79 +250,7 @@ cli_token_t cli_next_token (void);
  * end of input token has been returned by a prior call to cli_next_token().
  * ------------------------------------------------------------------------ */
 
-m2c_string_t cli_last_arg (void);
-
-
-/* ---------------------------------------------------------------------------
- * function cli_is_info_request(token)
- * ---------------------------------------------------------------------------
- * Returns true if token represents an information request, else false.
- * ------------------------------------------------------------------------ */
-
-bool cli_is_info_request (cli_token_t token);
-
-
-/* ---------------------------------------------------------------------------
- * function cli_is_compilation_request(token)
- * ---------------------------------------------------------------------------
- * Returns true if token represents a compilation request, else false.
- * ------------------------------------------------------------------------ */
-
-bool cli_is_compilation_request (cli_token_t token);
-
-
-/* ---------------------------------------------------------------------------
- * function cli_is_product_option(token)
- * ---------------------------------------------------------------------------
- * Returns true if token represents a product option, else false.
- * ------------------------------------------------------------------------ */
-
-bool cli_is_product_option (cli_token_t token);
-
-
-/* ---------------------------------------------------------------------------
- * function cli_is_single_product_option(token)
- * ---------------------------------------------------------------------------
- * Returns true if token represents a single product option, else false.
- * ------------------------------------------------------------------------ */
-
-bool cli_is_single_product_option (cli_token_t token);
-
-
-/* ---------------------------------------------------------------------------
- * function cli_is_multiple_product_option(token)
- * ---------------------------------------------------------------------------
- * Returns true if token represents a multiple product option, else false.
- * ------------------------------------------------------------------------ */
-
-bool cli_is_multiple_product_option (cli_token_t token);
-
-
-/* ---------------------------------------------------------------------------
- * function cli_is_comment_option(token)
- * ---------------------------------------------------------------------------
- * Returns true if token represents a comment option, else false.
- * ------------------------------------------------------------------------ */
-
-bool cli_is_comment_option (cli_token_t token);
-
-
-/* ---------------------------------------------------------------------------
- * function cli_is_capability_option(token)
- * ---------------------------------------------------------------------------
- * Returns true if token represents a capability option, else false.
- * ------------------------------------------------------------------------ */
-
-bool cli_is_capability_option (cli_token_t token);
-
-
-/* ---------------------------------------------------------------------------
- * function cli_is_diagnostics_option(token)
- * ---------------------------------------------------------------------------
- * Returns true if token represents a diagnostics option, else false.
- * ------------------------------------------------------------------------ */
-
-bool cli_is_diagnostics_option (cli_token_t token);
+const char *cli_last_arg (void);
 
 
 #endif /* M2C_CLI_LEXER_H */
