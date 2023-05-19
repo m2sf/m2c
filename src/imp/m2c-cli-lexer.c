@@ -119,8 +119,8 @@ cli_token_t cli_next_token (void) {
   if (argstr[0] == '-') {
     token = match_compiler_switch(argstr);
   }
-  else if (IS_LETTER(argstr[0])) {
-    /* parse filename */
+  else {
+    /* tentatively parse as pathname */
     if (is_valid_pathname(argstr)) {
       token = CLI_TOKEN_SOURCE_FILE;
     }
@@ -128,9 +128,6 @@ cli_token_t cli_next_token (void) {
       /* TO DO : report error */
       token = CLI_TOKEN_INVALID;
     } /* end if */
-  }
-  else /* invalid argument */ {
-    token = CLI_TOKEN_INVALID;
   } /* end if */
     
   index++;
