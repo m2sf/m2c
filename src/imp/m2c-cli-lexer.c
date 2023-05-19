@@ -42,6 +42,8 @@
  * ------------------------------------------------------------------------ */
 
 #include "m2c-cli-lexer.h"
+#include "pathnames.h"
+#include "iso646.h"
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -89,7 +91,7 @@ static cli_args_t cli_arg = { 0, 0, NULL };
 void cli_init (int argc, char **argv) {
   cli_arg.index = 1;
   cli_arg.count = argc;
-  cli_arg.lexeme = argv;
+  cli_arg.argstr = argv;
   initialized = true;
 } /* end cli_init */
 
@@ -103,19 +105,29 @@ void cli_init (int argc, char **argv) {
 static cli_token_t match_compiler_switch (const char *argstr);
 
 cli_token_t cli_next_token (void) {
+  cli_token_t token;
+  unsigned length;
+  char *argstr;
   
   if ((initialized == false) || (cli_arg.index >= cli_arg.count)) {
     return CLI_TOKEN_END_OF_INPUT;
   } /* end if */
   
-  argstr = cli_arg.lexeme[cli_arg.index];
+  argstr = cli_arg.argstr[cli_arg.index];
   length = strlen(argstr);
   
   if (argstr[0] == '-') {
-    /* parse compiler switch */
+    token = match_compiler_switch(argstr);
   }
   else if (IS_LETTER(argstr[0])) {
     /* parse filename */
+    if (is_valid_pathname(argstr)) {
+      token = CLI_TOKEN_SOURCE_FILE;
+    }
+    else /* not a valid pathname */ {
+      /* TO DO : report error */
+      token = CLI_TOKEN_INVALID;
+    } /* end if */
   }
   else /* invalid argument */ {
     token = CLI_TOKEN_INVALID;
