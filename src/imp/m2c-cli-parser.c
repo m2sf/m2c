@@ -89,7 +89,7 @@ cli_parser_status_t cli_parse_args (void) {
     token = parse_info_request(token);
   }
   else if (CLI_IS_COMPILATION_REQUEST(token)) {
-    token = parse_compilation_request(token)
+    token = parse_compilation_request(token);
   }
   else if (token == CLI_TOKEN_END_OF_INPUT) {
     report_missing_source_file();
@@ -193,7 +193,7 @@ cli_token_t parse_compilation_request (cli_token_t token) {
   
   /* diagnostics? */
   if (CLI_IS_DIAGNOSTICS_OPTION(token)) {
-    token = parse_diagnostics(token)
+    token = parse_diagnostics(token);
   } /* end if */
   
   return token;
@@ -220,9 +220,10 @@ cli_token_t parse_products (cli_token_t token) {
   
   /* commentOption? */
   if (CLI_IS_COMMENT_OPTION(token)) {
-    if (CompilerOptions.xlatRequired()) {
-      token = parse_comment_option(token)
-    else {
+    if (m2c_compiler_option_xlat_required()) {
+      token = parse_comment_option(token);
+    }
+    else /*xlat option not set */ {
       report_missing_dependency_for(cli_last_arg(), "--xlat");
       token = cli_next_token();
     } /* end if */
@@ -302,42 +303,42 @@ cli_token_t parse_multiple_products (cli_token_t token) {
     switch (token) {
       /* --ast | */
       case CLI_TOKEN_AST :
-        set_option(CompilerOptions.AstRequired, true);
+        set_option(M2C_COMPILER_OPTION_AST_REQUIRED, true);
         break;
       
       /* --no-ast | */
       case CLI_TOKEN_NO_AST :
-        set_option(CompilerOptions.AstRequired, false);
+        set_option(M2C_COMPILER_OPTION_AST_REQUIRED, false);
         break;
     
       /* --graph | */
       case CLI_TOKEN_GRAPH :
-        set_option(CompilerOptions.GraphRequired, true);
+        set_option(M2C_COMPILER_OPTION_GRAPH_REQUIRED, true);
         break;
       
       /* --no-graph | */
       case CLI_TOKEN_NO_GRAPH :
-        set_option(CompilerOptions.GraphRequired, false);
+        set_option(M2C_COMPILER_OPTION_GRAPH_REQUIRED, false);
         break;
     
       /* --xlat | */
       case CLI_TOKEN_XLAT :
-        set_option(CompilerOptions.XlatRequired, true);
+        set_option(M2C_COMPILER_OPTION_XLAT_REQUIRED, true);
         break;
       
       /* --no-xlat | */
       case CLI_TOKEN_NO_XLAT :
-        set_option(CompilerOptions.XlatRequired, false);
+        set_option(M2C_COMPILER_OPTION_XLAT_REQUIRED, false);
         break;
     
       /* --obj | */
       case CLI_TOKEN_OBJ :
-        set_option(CompilerOptions.ObjRequired, true);
+        set_option(M2C_COMPILER_OPTION_OBJ_REQUIRED, true);
         break;
       
       /* --no-obj | */
       case CLI_TOKEN_NO_OBJ :
-        set_option(CompilerOptions.ObjRequired, false);
+        set_option(M2C_COMPILER_OPTION_OBJ_REQUIRED, false);
         break;
     } /* end switch */
     
@@ -479,7 +480,6 @@ cli_token_t parse_diagnostics (cli_token_t token) {
  * ------------------------------------------------------------------------ */
 
 static void set_option (m2c_compiler_option_t option, bool value) {
-  
   /* check if duplicate */
   if (IS_IN_SET(option_set, option)) {
     report_duplicate_option(cli_last_arg());
