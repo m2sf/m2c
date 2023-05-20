@@ -59,7 +59,7 @@ static const m2c_tokenset_t first_set[] = {
  * Returns the FIRST set for production p,  or NULL if p is invalid.
  * ----------------------------------------------------------------------- */
 
-m2c_tokenset_t FIRST (m2c_production_t p) {
+const m2c_tokenset_t FIRST (m2c_production_t p) {
  
   if (IS_VALID_PRODUCTION(p)) {
     return &first_set[p];
