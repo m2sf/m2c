@@ -327,11 +327,11 @@ deref = {
 }
 
 expressionList = {
-   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '-'
 }
 
 expression = {
-   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '-'
 }
 
 operL1 = {
@@ -339,7 +339,7 @@ operL1 = {
 }
 
 simpleExpression = {
-  NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+  NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '-'
 }
 
 operL2 = {
@@ -347,7 +347,7 @@ operL2 = {
 }
 
 term = {
-  NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND
+  NOT, NumberLiteral, StringLiteral, '{', Ident, '(',
 }
 
 operL3 = {
