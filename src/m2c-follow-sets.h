@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * m2c-first-sets.c                                                          *
+ * m2c-follow-sets.h                                                         *
  *                                                                           *
- * Implementation of FIRST sets module.                                      *
+ * Public interface for FOLLOW sets module.                                  *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -37,36 +37,26 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#ifndef M2C_FOLLOW_SETS_H
+#define M2C_FOLLOW_SETS_H
+
 /* --------------------------------------------------------------------------
  * imports
  * ----------------------------------------------------------------------- */
 
+#include "m2c-token.h"
 #include "m2c-productions.h"
 
 
 /* --------------------------------------------------------------------------
- * FIRST sets
- * ----------------------------------------------------------------------- */
-
-static const m2c_tokenset_t first_set[] = {
-#include "m2c-first-set-literals.h"
-}; /* end first_set */
-
-
-/* --------------------------------------------------------------------------
- * function FIRST(production)
+ * function FOLLOW(production)
  * --------------------------------------------------------------------------
- * Returns the FIRST set for production p,  or NULL if p is invalid.
+ * Returns the FOLLOW set for production p,  or NULL if p is invalid.
  * ----------------------------------------------------------------------- */
 
-m2c_tokenset_t FIRST (m2c_production_t p) {
- 
-  if (IS_VALID_PRODUCTION(p)) {
-    return &first_set[p];
-  }
-  else /* invalid production */ {
-    return NULL;
-  } /* end if */
-} /* end FIRST */
+const m2c_tokenset_t FOLLOW (m2c_production_t p);
+
+
+#endif /* M2C_FOLLOW_SETS_H */
 
 /* END OF FILE */

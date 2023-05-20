@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * m2c-first-sets.c                                                          *
+ * m2c-follow-sets.c                                                         *
  *                                                                           *
- * Implementation of FIRST sets module.                                      *
+ * Implementation of FOLLOW sets module.                                     *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -45,28 +45,28 @@
 
 
 /* --------------------------------------------------------------------------
- * FIRST sets
+ * FOLLOW sets
  * ----------------------------------------------------------------------- */
 
-static const m2c_tokenset_t first_set[] = {
-#include "m2c-first-set-literals.h"
-}; /* end first_set */
+static const m2c_tokenset_t follow_set[] = {
+#include "m2c-follow-set-literals.h"
+}; /* end follow_set */
 
 
 /* --------------------------------------------------------------------------
- * function FIRST(production)
+ * function FOLLOW(production)
  * --------------------------------------------------------------------------
- * Returns the FIRST set for production p,  or NULL if p is invalid.
+ * Returns the FOLLOW set for production p,  or NULL if p is invalid.
  * ----------------------------------------------------------------------- */
 
-m2c_tokenset_t FIRST (m2c_production_t p) {
+const m2c_tokenset_t FOLLOW (m2c_production_t p) {
  
   if (IS_VALID_PRODUCTION(p)) {
-    return &first_set[p];
+    return &follow_set[p];
   }
   else /* invalid production */ {
     return NULL;
   } /* end if */
-} /* end FIRST */
+} /* end FOLLOW */
 
 /* END OF FILE */
