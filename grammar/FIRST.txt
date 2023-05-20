@@ -1,0 +1,405 @@
+FIRST Sets for Modula-2 R10
+
+compilationUnit = {
+  DEFINITION, IMPLEMENTATION, MODULE
+}
+
+definitionModule = {
+  DEFINITION
+}
+
+implementationModule = {
+  IMPLEMENTATION
+}
+  
+import = {
+  IMPORT
+}
+
+definition = {
+  CONST, TYPE, VAR, PROCEDURE, TO 
+}
+
+constDefinition = {
+  '[', Ident
+}
+
+constantBinding = {
+  '['
+}
+
+constDeclaration = {
+  Ident
+}
+
+constExpression = {
+   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+}
+
+typeDefinition = {
+  Ident
+}
+
+aliasType = {
+  ALIAS
+}
+
+qualident = {
+  Ident
+}
+
+subrangeType = {
+  '['
+}
+
+constRange = {
+ '['
+}
+
+enumType = {
+  '('
+}
+
+identList = {
+  Ident
+}
+
+setType = {
+  SET
+}
+
+arrayType = {
+  ARRAY
+}
+
+recordType = {
+  RECORD
+}
+
+recTypeToExtend = {
+  Ident
+}
+
+fieldList = {
+  Ident
+}
+
+pointerType = {
+  POINTER
+}
+
+opaqueType = {
+  OPAQUE
+}
+
+procedureType = {
+  PROCEDURE
+}
+
+formalType = {
+  CONST, VAR, ARRAY, Ident, ARGLIST
+}
+
+nonAttrFormalType = {
+  ARRAY, Ident, ARGLIST
+}
+
+simpleFormalType = {
+  ARRAY, Ident
+}
+
+castingFormalType = {
+  Ident=CAST
+}
+
+variadicFormalType = {
+  ARGLIST
+}
+
+procedureHeader = {
+  PROCEDURE
+}
+
+bindingSpecifier = {
+  NEW, RETAIN, RELEASE, READ, WRITE, Ident
+}
+
+bindableIdent = {
+  Ident
+}
+
+procedureSignature = {
+  Ident
+}
+
+formalParams = {
+  CONST, VAR, Ident
+}
+
+programModule = {
+  MODULE
+}
+
+privateImport = {
+  IMPORT
+}
+
+block = {
+  CONST, TYPE, VAR, PROCEDURE, UNQUALIFIED, TO, BEGIN
+}
+
+implementationModule = {
+  IMPLEMENTATION
+}
+
+possiblyEmptyBlock = {
+  CONST, TYPE, VAR, PROCEDURE, UNQUALIFIED, TO, BEGIN, END
+}
+
+declaration = {
+  CONST, TYPE, VAR, PROCEDURE, UNQUALIFIED, TO
+}
+
+typeDeclaration = {
+  Ident
+}
+
+octetSeqType = {
+  OCTETSEQ
+}
+
+privatePointerType = {
+  POINTER
+}
+
+indeterminateTarget = {
+  RECORD
+}
+
+indeterminateField = {
+  '+'
+}
+
+varDeclaration = {
+  Ident
+}
+
+aliasDeclaration = {
+  UNQUALIFIED
+}
+
+nameSelector = {
+  Ident
+}
+
+statementSeqence = {
+  NEW, RETAIN, RELEASE, Ident, RETURN, COPY, READ, WRITE, IF, CASE,
+  LOOP, WHILE, REPEAT, FOR, TO, EXIT, NOP
+}
+
+statement = {
+  NEW, RETAIN, RELEASE, Ident, RETURN, COPY, READ, WRITE, IF, CASE,
+  LOOP, WHILE, REPEAT, FOR, TO, EXIT, NOP
+}
+
+memMgtOperation = {
+  NEW, RETAIN, RELEASE
+}
+
+newStatement = {
+  NEW
+}
+
+retainStatement = {
+  RETAIN
+}
+
+releaseStatement = {
+  RELEASE
+}
+
+updateOrProcCall = {
+  Ident
+}
+
+incOrDecSuffix = {
+  '++', '--'
+}
+
+returnStatement = {
+  RETURN
+}
+
+copyStatement = {
+  COPY
+}
+
+readStatement = {
+  READ
+}
+
+writeStatement = {
+  WRITE
+}
+
+inputArg = {
+  NEW, Ident
+}
+
+outputArgs = {
+  '#',  NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+}
+
+formattedArgs = {
+  '#'
+}
+
+ifStatement = {
+  IF
+}
+
+caseStatement = {
+  CASE
+}
+
+case = {
+   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+}
+
+caseLabels = {
+   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+}
+
+loopStatement = {
+  LOOP
+}
+
+whileStatement = {
+  WHILE
+}
+
+repeatStatement = {
+  REPEAT
+}
+
+forStatement = {
+  FOR
+}
+
+forLoopVariants = {
+  Ident
+}
+
+iterableExpr = {
+  Ident
+}
+
+valueRange = {
+  '['
+}
+
+designator = {
+  Ident
+}
+
+derefTail = {
+  '^'
+}
+
+subscriptTail = {
+  '['
+}
+
+targetDesignator = {
+  Ident
+}
+
+derefTargetTail = {
+  '^'
+}
+
+bracketTargetTail = {
+  '['
+}
+
+deref = {
+  '^'
+}
+
+expressionList = {
+   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+}
+
+expression = {
+   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+}
+
+operL1 = {
+  '=', '#', '<', '<=', '>', '>=', '==', IN
+}
+
+simpleExpression = {
+  NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+}
+
+operL2 = {
+  '+', '-', OR, '&', '\'
+}
+
+term = {
+  NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND
+}
+
+operL3 = {
+  '*', '/', DIV, MOD, AND
+}
+
+simpleTerm = {
+  NOT, NumberLiteral, StringLiteral, '{', Ident, '('
+}
+
+factor = {
+  NumberLiteral, StringLiteral, '{', Ident, '('
+}
+
+simpleFactor = {
+  NumberLiteral, StringLiteral, '{', Ident, '('
+}
+
+sourceDesignator = {
+  Ident
+}
+
+derefSourceTail = {
+  '^'
+}
+
+bracketSourceTail = {
+  '['
+}
+
+functionCallTail = {
+  '('
+}
+
+structuredValue = {
+  '{'
+}
+
+valueComponent = {
+  expression
+}
+
+toDoList = {
+  TO
+}
+
+trackingRef = {
+  '('
+}
+
+taskToDo = {
+  StringLiteral
+}
+
+[END OF FILE]
