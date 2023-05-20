@@ -387,7 +387,7 @@ structuredValue = {
 }
 
 valueComponent = {
-  expression
+   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '-'
 }
 
 toDoList = {
