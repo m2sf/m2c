@@ -44,14 +44,15 @@
 #include "m2c-cli-lexer.h"
 #include "m2c-compiler-options.h"
 #include "cstring.h"
-#include "console.h"
+
+#include <stdio.h>
 
 
 /* ---------------------------------------------------------------------------
  * properties
  * ------------------------------------------------------------------------ */
 
-static unsigned errCount = 0;
+static unsigned err_count = 0;
 static unsigned option_set = 0;
 static const char *source_file = NULL;
 
@@ -126,7 +127,7 @@ const char *cli_source_file (void) {
  * ------------------------------------------------------------------------ */
 
 unsigned cli_error_count (void) {
-  return error_count;
+  return err_count;
 } /* end cli_error_count */
 
 
@@ -188,7 +189,7 @@ cli_token_t parse_compilation_request (cli_token_t token) {
     token = parse_source_file(token);
   }
   else {
-    repor_missing_source_file();
+    report_missing_source_file();
   } /* end if */
   
   /* diagnostics? */
@@ -299,6 +300,7 @@ cli_token_t parse_single_product (cli_token_t token) {
 
 cli_token_t parse_multiple_products (cli_token_t token) {
 
+  /* ( ast | graph | xlat | obj )+ */
   while (CLI_IS_MULTIPLE_PRODUCT_OPTION(token)) {
     switch (token) {
       /* --ast | */
@@ -422,7 +424,9 @@ cli_token_t parse_capabilities (cli_token_t token) {
  * ------------------------------------------------------------------------ */
 
 cli_token_t parse_source_file (cli_token_t token) {
+  
   source_file = cli_last_arg();
+  
   return cli_next_token();
 } /* end parse_source_file */
 
@@ -480,6 +484,7 @@ cli_token_t parse_diagnostics (cli_token_t token) {
  * ------------------------------------------------------------------------ */
 
 static void set_option (m2c_compiler_option_t option, bool value) {
+
   /* check if duplicate */
   if (IS_IN_SET(option_set, option)) {
     report_duplicate_option(cli_last_arg());
@@ -489,6 +494,7 @@ static void set_option (m2c_compiler_option_t option, bool value) {
     /* remember this option */
     INSERT_INTO_SET(option_set, option);
   } /* end if */
+  
 } /* end set_option */
 
 
@@ -499,8 +505,10 @@ static void set_option (m2c_compiler_option_t option, bool value) {
  * ------------------------------------------------------------------------ */
 
 static void report_invalid_option (const char *argstr) {
+
   printf("invalid option %s\n", argstr);
   err_count++;
+  
 } /* end report_invalid_option */
 
 
@@ -511,8 +519,10 @@ static void report_invalid_option (const char *argstr) {
  * ------------------------------------------------------------------------ */
 
 static void report_duplicate_option (const char *argstr) {
+
   printf("duplicate option %s\n", argstr);
   err_count++;
+  
 } /* end report_duplicate_option */
 
 
@@ -523,8 +533,10 @@ static void report_duplicate_option (const char *argstr) {
  * ------------------------------------------------------------------------ */
 
 static void report_excess_argument (const char *argstr) {
+
   printf("excess argument %s\n", argstr);
   err_count++;
+  
 } /* end report_excess_argument */
 
 
@@ -535,8 +547,10 @@ static void report_excess_argument (const char *argstr) {
  * ------------------------------------------------------------------------ */
 
 static void report_missing_source_file (void) {
+
   printf("missing sourcefile argument\n");
   err_count++;
+  
 } /* end report_missing_source_file */
 
 
@@ -548,8 +562,10 @@ static void report_missing_source_file (void) {
 
 static void report_missing_dependency_for
   (const char *argstr, const char *depstr) {
+  
   printf("option %s only available with option %s\n", argstr, depstr);
   err_count++;
+  
 } /* end report_missing_dependency_for */
 
 
