@@ -33,7 +33,7 @@ constDeclaration = {
 }
 
 constExpression = {
-   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '-'
 }
 
 typeDefinition = {
@@ -247,7 +247,7 @@ inputArg = {
 }
 
 outputArgs = {
-  '#',  NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+  '#',  NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '-'
 }
 
 formattedArgs = {
@@ -263,11 +263,11 @@ caseStatement = {
 }
 
 case = {
-   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '-'
 }
 
 caseLabels = {
-   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+   NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '-'
 }
 
 loopStatement = {
