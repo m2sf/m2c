@@ -1,0 +1,409 @@
+FOLLOW Sets for Modula-2 R10
+
+compilationUnit = {
+  EOF
+}
+
+definitionModule = {
+  EOF
+}
+  
+import = {
+  IMPORT, CONST, TYPE, VAR, PROCEDURE, TO, END
+}
+
+definition = {
+  CONST, TYPE, VAR, PROCEDURE, TO, END 
+}
+
+constDefinition = {
+  ';'
+}
+
+constantBinding = {
+  ';'
+}
+
+constDeclaration = {
+  ';'
+}
+
+constExpression = {
+  ';', '..', ']', OF, ',', ':', '}'
+}
+
+typeDefinition = {
+  ';'
+}
+
+aliasType = {
+  ';'
+}
+
+qualident = {
+  '.', ',', ';', '(', ')', '[', '.*', '^', DO, END
+}
+
+subrangeType = {
+  ';', END
+}
+
+constRange = {
+  OF
+}
+
+enumType = {
+  ';'
+}
+
+identList = {
+  ':', ')', 
+}
+
+setType = {
+  ';'
+}
+
+arrayType = {
+  ';', END
+}
+
+recordType = {
+  ';'
+}
+
+recTypeToExtend = {
+  ','
+}
+
+fieldList = {
+  ';', END
+}
+
+pointerType = {
+  ';'
+}
+
+opaqueType = {
+  ';'
+}
+
+procedureType = {
+  ';', END
+}
+
+formalType = {
+  ';', ')'
+}
+
+nonAttrFormalType = {
+  ';', ')'
+}
+
+simpleFormalType = {
+  ';', ')'
+}
+
+castingFormalType = {
+  ';', ')'
+}
+
+variadicFormalType = {
+  ';', ')'
+}
+
+procedureHeader = {
+  ';'
+}
+
+bindingSpecifier = {
+  ']'
+}
+
+bindableIdent = {
+  ']'
+}
+
+procedureSignature = {
+  ';'
+}
+
+formalParams = {
+  ';', ')'
+}
+
+programModule = {
+  EOF
+}
+
+privateImport = {
+  IMPORT, CONST, TYPE, VAR, PROCEDURE, UNQUALIFIED, TO, BEGIN, END
+}
+
+block = {
+  Ident
+}
+
+implementationModule = {
+  EOF
+}
+
+possiblyEmptyBlock = {
+  Ident
+}
+
+declaration = {
+  CONST, TYPE, VAR, PROCEDURE, UNQUALIFIED, TO, BEGIN
+}
+
+typeDeclaration = {
+  ';'
+}
+
+octetSeqType = {
+  ';'
+}
+
+privatePointerType = {
+  ';'
+}
+
+indeterminateTarget = {
+  ';'
+}
+
+indeterminateField = {
+  END
+}
+
+varDeclaration = {
+  ';'
+}
+
+aliasDeclaration = {
+  ';'
+}
+
+nameSelector = {
+  ';', ','
+}
+
+statementSeqence = {
+  ELSIF, ELSE, END, '|', UNTIL
+}
+
+statement = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+memMgtOperation = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+newStatement = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+retainStatement = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+releaseStatement = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+updateOrProcCall = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+incOrDecSuffix = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+returnStatement = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+copyStatement = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+readStatement = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+writeStatement = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+inputArg = {
+  ',', ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+outputArgs = {
+  ',', ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+formattedArgs = {
+  ',', ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+ifStatement = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+caseStatement = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+case = {
+   '|', ELSE, END
+}
+
+caseLabels = {
+   ',', ':'
+}
+
+loopStatement = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+whileStatement = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+repeatStatement = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+forStatement = {
+  ';', ELSIF, ELSE, END, '|', UNTIL
+}
+
+forLoopVariants = {
+  IN
+}
+
+iterableExpr = {
+  DO
+}
+
+valueRange = {
+  DO
+}
+
+designator = {
+  ':=', Ident=CAPACITY, ';', ELSIF, ELSE, END, '|', UNTIL, '++', '--', '(', ':',
+}
+
+derefTail = {
+  ':=', Ident=CAPACITY, ';', ELSIF, ELSE, END, '|', UNTIL, '++', '--', '(', ':',
+}
+
+subscriptTail = {
+  ':=', Ident=CAPACITY, ';', ELSIF, ELSE, END, '|', UNTIL, '++', '--', '(', ':',
+}
+
+targetDesignator = {
+  ':='
+}
+
+derefTargetTail = {
+  ':='
+}
+
+bracketTargetTail = {
+  ':='
+}
+
+deref = {
+  '^', '.', '[', ':='
+}
+
+expressionList = {
+   ',', ':', ';', '..', ']', ')', '}', OF, ELSIF, ELSE, END, '|', UNTIL, THEN, DO 
+}
+
+expression = {
+   ',', ':', ';', '..', ']', ')', '}', OF, ELSIF, ELSE, END, '|', UNTIL, THEN, DO 
+}
+
+operL1 = {
+  NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND, '-'
+}
+
+simpleExpression = {
+   ',', ':', ';', '..', ']', ')', '}', OF, ELSIF, ELSE, END, '|', UNTIL, THEN, DO 
+}
+
+operL2 = {
+  NOT, NumberLiteral, StringLiteral, '{', Ident, '(', '*', '/', DIV, MOD, AND
+}
+
+term = {
+  '+', '-', OR, '&', '\', ',', ':', ';', '..', ']', ')', '}',
+  OF, ELSIF, ELSE, END, '|', UNTIL, THEN, DO 
+
+}
+
+operL3 = {
+  NOT, NumberLiteral, StringLiteral, '{', Ident, '('
+}
+
+simpleTerm = {
+  '*', '/', DIV, MOD, AND, '+', '-', OR, '&', '\', ',', ':', ';', '..', ']', ')', '}',
+  OF, ELSIF, ELSE, END, '|', UNTIL, THEN, DO
+}
+
+factor = {
+  ',', ':', ';', '..', ']', ')', '}', '*', '/', DIV, MOD, AND, '+', '-', OR, '&', '\',
+  OF, ELSIF, ELSE, END, '|', UNTIL, THEN, DO
+}
+
+simpleFactor = {
+  '::', ',', ':', ';', '..', ']', ')', '}', '*', '/', DIV, MOD, AND, '+', '-', OR, '&',
+  '\', OF, ELSIF, ELSE, END, '|', UNTIL, THEN, DO
+}
+
+sourceDesignator = {
+  '::', ',', ':', ';', '..', ']', ')', '}', '*', '/', DIV, MOD, AND, '+', '-', OR, '&',
+  '\', OF, ELSIF, ELSE, END, '|', UNTIL, THEN, DO
+}
+
+derefSourceTail = {
+  '::', ',', ':', ';', '..', ']', ')', '}', '*', '/', DIV, MOD, AND, '+', '-', OR, '&',
+  '\', OF, ELSIF, ELSE, END, '|', UNTIL, THEN, DO
+}
+
+bracketSourceTail = {
+  '::', ',', ':', ';', '..', ']', ')', '}', '*', '/', DIV, MOD, AND, '+', '-', OR, '&',
+  '\', OF, ELSIF, ELSE, END, '|', UNTIL, THEN, DO
+}
+
+functionCallTail = {
+  '::', ',', ':', ';', '..', ']', ')', '}', '*', '/', DIV, MOD, AND, '+', '-', OR, '&',
+  '\', OF, ELSIF, ELSE, END, '|', UNTIL, THEN, DO
+}
+
+structuredValue = {
+  '::', ',', ':', ';', '..', ']', ')', '}', '*', '/', DIV, MOD, AND, '+', '-', OR, '&',
+  '\', OF, ELSIF, ELSE, END, '|', UNTIL, THEN, DO
+}
+
+valueComponent = {
+  ',', '}'
+}
+
+toDoList = {
+  ';'
+}
+
+trackingRef = {
+  StringLiteral
+}
+
+taskToDo = {
+  ';', END
+}
+
+[END OF FILE]
