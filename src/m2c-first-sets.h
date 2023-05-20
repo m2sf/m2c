@@ -54,7 +54,7 @@
  * Returns the FIRST set for production p,  or NULL if p is invalid.
  * ----------------------------------------------------------------------- */
 
-m2c_tokenset_t FIRST (m2c_production_t p);
+const m2c_tokenset_t FIRST (m2c_production_t p);
 
 
 #endif /* M2C_FIRST_SETS_H */
