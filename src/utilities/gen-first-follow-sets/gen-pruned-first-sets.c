@@ -71,9 +71,11 @@ typedef enum {
   #_caps "\0",
 
 static const char *prod_name[] = {
-  #include "production-data.h
+  #include "production-data.h"
   , "\0"
 }; /* enum_name */
+
+#undef PROD
 
 
 /* --------------------------------------------------------------------------
@@ -248,6 +250,21 @@ static void print_lookup_table (void) {
 
 
 /* --------------------------------------------------------------------------
+ * function str_len(str)
+ * ----------------------------------------------------------------------- */
+
+static unsigned str_len(const char *str) {
+  unsigned index;
+  
+  index = 0;
+  while (str[index] != '\0') {
+    index++;
+  } /* end while */
+  return index;
+} /* end str_len */
+
+
+/* --------------------------------------------------------------------------
  * function print_usage()
  * --------------------------------------------------------------------------
  * Prints usage info to the console.
@@ -279,29 +296,34 @@ static void print_usage (void) {
 
 int main(int argc, const char *argv[]) {
   char *argstr;
+  unsigned len;
   
   init_first_set_table();
   init_pruned_table();
-  
-  if (argc == 0) || (argc > 2) {
+   
+  if ((argc == 1) {
+    argstr = argv[1];
+    len = str_len(argstr);
+    
+    if ((len == 2) && (argstr[0] == '-')) {
+      switch (argstr[1]) {
+        case 'h' :
+          print_usage();
+          break;
+        case 'l' :
+          print_lookup_table();
+          break;
+        case 's' :
+          print_set_literals();
+          break;
+        default :
+          print_usage();
+          return (-1);
+      } /* end switch */
+    }
+    else /* invalid args */ {
     print_usage();
     return (-1);
-  } /* end if */
-  
-  argstr = argv[1];
-    
-  if (argstr[0] == '-') {
-    switch (argstr[1]) {
-      case 'h' :
-        print_usage();
-        break;
-      case 'l' :
-        print_lookup_table();
-        break;
-      case 's' :
-        print_set_literals();
-        break;
-    } /* end switch */
   } /* end if */
   
   return 0;
