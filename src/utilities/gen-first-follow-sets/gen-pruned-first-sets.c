@@ -133,11 +133,11 @@ static unsigned reverse_index_lookup[PRODUCTION_COUNT + 1];
       && m2c_tokenset_subset(_set1, _set2)) \
 
 static bool is_duplicate
-  (m2c_tokenset_t set, unsigned max_index, unsigned *equiv_index) {
+  (m2c_tokenset_t set, unsigned set_index, unsigned *equiv_index) {
   unsigned index;
   m2c_tokenset_t compare_set;
   
-  for (index = 1, index <= max_index, index++) {
+  for (index = 1, index < set_index, index++) {
     compare_set = pruned_first_set_table[index];
     
     if (SETS_MATCH(set, compare_set)) {
