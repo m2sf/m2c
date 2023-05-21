@@ -1,7 +1,6 @@
 ### TO DO
 
 * implement `m2c-error-reporter.c`
-* generator for first and follow sets
 * rework `m2c-parser.c` for M2R10
 * modules `m2c-exl-lexer` and `m2c-exl-parser`
 * rework IO library
