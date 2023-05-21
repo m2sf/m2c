@@ -1,4 +1,4 @@
-FOLLOW Sets for Modula-2 R10
+FOLLOW Sets for Modula-2 R10 grammar
 
 compilationUnit = {
   EOF
