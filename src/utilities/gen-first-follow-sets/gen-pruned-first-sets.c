@@ -50,8 +50,7 @@
  * enum type production_t
  * ----------------------------------------------------------------------- */
 
-#define PROD(_caps, _id, _first, _follow) \
-  P_##_caps
+#define PROD(_caps, _id, _first, _follow) P_ ## _caps
 
 typedef enum {
   #include "production-data.h"
@@ -68,7 +67,7 @@ typedef enum {
  * ----------------------------------------------------------------------- */
 
 #define PROD(_caps, _id, _first, _follow) \
-  #_caps "\0",
+  #_caps
 
 static const char *prod_name[] = {
   #include "production-data.h"
@@ -82,7 +81,7 @@ static const char *prod_name[] = {
  * complete first set table
  * ----------------------------------------------------------------------- */
 
-static *m2c_tokenset_t first_set[PRODUCTION_COUNT];
+static m2c_tokenset_t first_set[PRODUCTION_COUNT];
 
 
 /* --------------------------------------------------------------------------
