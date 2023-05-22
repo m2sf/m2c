@@ -94,7 +94,7 @@ bool m2c_tokenset_element (m2c_tokenset_t set, m2c_token_t token);
  * Returns the number of elements in set.
  * ----------------------------------------------------------------------- */
 
-uint_t m2c_tokenset_element_count (m2c_tokenset_t set);
+unsigned m2c_tokenset_element_count (m2c_tokenset_t set);
 
 
 /* --------------------------------------------------------------------------
