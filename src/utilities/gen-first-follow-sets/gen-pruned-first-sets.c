@@ -50,11 +50,11 @@
  * enum type production_t
  * ----------------------------------------------------------------------- */
 
-#define PROD(_caps, _id, _first, _follow) P_ ## _caps
+#define PROD(_caps, _id, _first, _follow) P_ ## _caps,
 
 typedef enum {
   #include "production-data.h"
-  , P_END_MARKER
+  P_END_MARKER
 } production_t;
 
 #define PRODUCTION_COUNT P_END_MARKER
@@ -66,12 +66,11 @@ typedef enum {
  * string table for production names
  * ----------------------------------------------------------------------- */
 
-#define PROD(_caps, _id, _first, _follow) \
-  #_caps
+#define PROD(_caps, _id, _first, _follow) #_caps,
 
 static const char *prod_name[] = {
   #include "production-data.h"
-  , "\0"
+  "\0"
 }; /* enum_name */
 
 #undef PROD
@@ -93,10 +92,9 @@ static m2c_tokenset_t first_set[PRODUCTION_COUNT];
 static void init_first_set_table (void) {
   
   #define PROD(_caps, _id, _first, _follow) \
-    first_set[P_ ## _caps] = m2c_new_tokenset_from_list(_first)
+    first_set[P_ ## _caps] = m2c_new_tokenset_from_list(_first);
   
   #include "production-data.h"
-  ;
   
   #undef PROD
 } /* init_first_set_table */
