@@ -41,28 +41,56 @@
  * imports
  * ----------------------------------------------------------------------- */
 
+#include "m2c-tokenset.h"
 #include "m2c-productions.h"
+
+#include <stddef.h> /* NULL */
+#include <stdint.h> /* uint8_t */
 
 
 /* --------------------------------------------------------------------------
- * FIRST sets
+ * FIRST set table, pruned
+ * --------------------------------------------------------------------------
+ * Table of first sets with cardinality > 1 and without duplicates.
  * ----------------------------------------------------------------------- */
 
-static const m2c_tokenset_t first_set[] = {
-#include "m2c-first-set-literals.h"
+#define DATA(_prod, _set_literal) _set_literal
+
+static const m2c_tokenset_t *first_set[] = {
+  NULL, /* sentinel for pruned entries */
+  #include "m2c-first-set-literals.h"
 }; /* end first_set */
+
+#undef DATA
+
+
+/* --------------------------------------------------------------------------
+ * FIRST set lookup table
+ * --------------------------------------------------------------------------
+ * Table to map productions to pruned first set table indices.
+ * ----------------------------------------------------------------------- */
+
+typedef uint8_t table_index_t; /* unsigned char if uint8_t is missing */
+
+#define DATA(_prod, _index) _index
+
+static const table_index_t index_table[] = {
+  #include "m2c_first-set-lookup.h"
+}; /* end index_table */
+
+#undef DATA
 
 
 /* --------------------------------------------------------------------------
  * function FIRST(production)
  * --------------------------------------------------------------------------
- * Returns the FIRST set for production p,  or NULL if p is invalid.
+ * Returns the FIRST set of p if p is valid and |FIRST(p)| > 1, else NULL.
  * ----------------------------------------------------------------------- */
 
 const m2c_tokenset_t FIRST (m2c_production_t p) {
  
   if (IS_VALID_PRODUCTION(p)) {
-    return &first_set[p];
+    return first_set[index_table[p]];
   }
   else /* invalid production */ {
     return NULL;

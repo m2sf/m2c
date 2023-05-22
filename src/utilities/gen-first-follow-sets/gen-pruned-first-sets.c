@@ -198,7 +198,9 @@ static void init_pruned_table (void) {
  * function print_set_literals()
  * --------------------------------------------------------------------------
  * Prints the set literals of all sets in the pruned first set table as name/
- * value pairs to the console.
+ * value pairs to the console. Each entry has the format DATA(name, literal),
+ * where name is the name of the production and literal is a literal that re-
+ * presents the production's first set.
  * ----------------------------------------------------------------------- */
 
 #define PREAMBLE \
@@ -233,7 +235,9 @@ static void print_set_literals (void) {
 /* --------------------------------------------------------------------------
  * function print_lookup_table()
  * --------------------------------------------------------------------------
- * Prints the lookup table as name/value pairs to the console.
+ * Prints the  lookup table  as  name/value pairs to the console.  Each entry
+ * has the format DATA(name, index), where name is the name of the production
+ * and index is the production's index in the pruned first set table.
  * ----------------------------------------------------------------------- */
 
 static void print_lookup_table (void) {
