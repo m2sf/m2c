@@ -41,7 +41,7 @@
  * imports
  * ----------------------------------------------------------------------- */
 
-#import "tokenset.h"
+#import "m2c-tokenset.h"
 #import <stdbool.h>
 #import <stdio.h>
 
