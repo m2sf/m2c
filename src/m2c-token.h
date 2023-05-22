@@ -433,6 +433,16 @@ typedef enum {
 
 
 /* --------------------------------------------------------------------------
+ * function m2c_lexeme_for_resword(token)
+ * --------------------------------------------------------------------------
+ * Returns an immutable pointer to a NUL terminated character string with the
+ * lexeme of the resword represented by token, or NULL if token is not valid.
+ * ----------------------------------------------------------------------- */
+
+const char *m2c_lexeme_for_resword (m2c_token_t token);
+
+
+/* --------------------------------------------------------------------------
  * function m2c_lexeme_for_special_symbol(token)
  * --------------------------------------------------------------------------
  * Returns an immutable pointer to a NUL terminated character string with the

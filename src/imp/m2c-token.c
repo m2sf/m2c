@@ -43,7 +43,7 @@
 
 #include "m2c-token.h"
 
-#include <stddef.h>
+#include <stddef.h> /* NULL */
 
 
 /* --------------------------------------------------------------------------
@@ -274,6 +274,27 @@ static const char *special_symbol_lexeme_table[] = {
   "^\0"    /* DEREF */
   
 }; /* end special_symbol_lexeme_table */
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_lexeme_for_resword(token)
+ * --------------------------------------------------------------------------
+ * Returns an immutable pointer to a NUL terminated character string with the
+ * lexeme of the resword represented by token, or NULL if token is not valid.
+ * ----------------------------------------------------------------------- */
+
+const char *m2c_lexeme_for_resword (m2c_token_t token) {
+  const char *lexeme;
+  
+  if (M2C_IS_RESWORD_TOKEN(token)) {
+    lexeme = token_name_table[token];
+    lexeme++; lexeme++; lexeme++;
+    return lexeme;
+  }
+  else /* invalid token */ {
+    return NULL;
+  } /* end if */
+} /* end m2c_name_for_token */
 
 
 /* --------------------------------------------------------------------------

@@ -367,10 +367,10 @@ void m2c_tokenset_print_list (m2c_tokenset_t set) {
       else if (token == TOKEN_CHAR_CODE) {
         printf("character code");
       }
-      else if (m2c_is_resword_token(token)) {
+      else if (M2C_IS_RESWORD_TOKEN(token)) {
         printf("%s", m2c_lexeme_for_resword(token));
       }
-      else if (m2c_is_special_symbol_token(token)) {
+      else if (M2C_IS_SPECIAL_SYMBOL_TOKEN(token)) {
         printf("'%s'", m2c_lexeme_for_special_symbol(token));
       }
       else if (token == TOKEN_EOF) {
