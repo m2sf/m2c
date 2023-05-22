@@ -139,7 +139,14 @@ void m2c_tokenset_print_list (m2c_tokenset_t set);
  * procedure m2c_tokenset_print_literal_struct(ident)
  * --------------------------------------------------------------------------
  * Prints a struct definition for tokenset literals.
- * Format: struct ident { uint_t s0, s1, s2, ..., n };
+ * Format: struct ident { <largest unsigned> s0, s1, ...; short unsigned n };
+ * where type <largest unsigned> depends on platform and implementation file.
+ *
+ *  #  |  platform  | implementation file  |  type used
+ * ----+------------+---------------------------------------------
+ *  1  |   16-bit   |   tokenset.16bit.c   |   unsigned
+ *  2  |   32-bit   |   tokenset.32bit.c   |   unsigned long
+ *  3  |   64-bit   |   tokenset.64bit.c   |   unsigned long long
  * ----------------------------------------------------------------------- */
 
 void m2c_tokenset_print_literal_struct (const char *ident);

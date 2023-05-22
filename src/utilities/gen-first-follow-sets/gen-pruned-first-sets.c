@@ -92,7 +92,7 @@ static m2c_tokenset_t first_set[PRODUCTION_COUNT];
 static void init_first_set_table (void) {
   
   #define PROD(_caps, _id, _first, _follow) \
-    first_set[P_ ## _caps] = m2c_new_tokenset_from_list(_first);
+    first_set[P_ ## _caps] = m2c_new_tokenset_from_list _first ;
   
   #include "production-data.h"
   

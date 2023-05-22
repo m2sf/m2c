@@ -1,5 +1,3 @@
-/* M2C Modula-2 Compiler & Translator
- *
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * M2C Modula-2 Compiler & Translator                                        *
  *                                                                           *
@@ -21,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * m2c-tokenset.c                                                            *
+ * m2c-tokenset.32bit.c                                                      *
  *                                                                           *
- * Implementation of M2C tokenset type.                                      *
+ * Implementation of M2C tokenset type for 32-bit platforms.                 *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -45,9 +43,6 @@
 
 #include "m2c-tokenset.h"
 
-#include "m2-first-set-inits.h"
-#include "m2-follow-set-inits.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -59,16 +54,16 @@
  * Type representing bitmap segments in a tokenset.
  * ----------------------------------------------------------------------- */
 
-typedef unsigned long long segment_t;
+typedef unsigned long segment_t;
 
 
 /* --------------------------------------------------------------------------
  * constant SEGMENT_BITWIDTH
  * --------------------------------------------------------------------------
- * Size of a segment in octets.
+ * Size of a segment in bits.
  * ----------------------------------------------------------------------- */
 
-#define SEGMENT_BITWIDTH (sizeof(segment_t) * 8)
+#define SEGMENT_BITWIDTH 32
 
 
 /* --------------------------------------------------------------------------
@@ -103,7 +98,7 @@ typedef struct m2c_tokenset_opaque_t m2c_tokenset_opaque_t;
  * must be explicitly terminated with 0.
  * ----------------------------------------------------------------------- */
 
-uint_t count_bits_in_set (m2c_tokenset_t set);
+unsigned count_bits_in_set (m2c_tokenset_t set);
 
 m2c_tokenset_t m2c_new_tokenset_from_list (m2c_token_t first_token, ...) {
   m2c_tokenset_t new_set;
@@ -357,19 +352,19 @@ void m2c_tokenset_print_list (m2c_tokenset_t set) {
         } /* end if */
       } /* end if */
       
-      if (token == TOKEN_IDENTIFIER) {
+      if (token == TOKEN_IDENT) {
         printf("identifier");
       }
-      else if (token == TOKEN_STRING) {
+      else if (token == TOKEN_QUOTED_STRING) {
         printf("string");
       }
-      else if (token == TOKEN_INTEGER) {
-        printf("integer");
+      else if (token == TOKEN_WHOLE_NUMBER) {
+        printf("whole number");
       }
-      else if (token == TOKEN_REAL) {
+      else if (token == TOKEN_REAL_NUMBER) {
         printf("real number");
       }
-      else if (token == TOKEN_CHAR) {
+      else if (token == TOKEN_CHAR_CODE) {
         printf("character code");
       }
       else if (m2c_is_resword_token(token)) {
@@ -378,7 +373,7 @@ void m2c_tokenset_print_list (m2c_tokenset_t set) {
       else if (m2c_is_special_symbol_token(token)) {
         printf("'%s'", m2c_lexeme_for_special_symbol(token));
       }
-      else if (token == TOKEN_END_OF_FILE) {
+      else if (token == TOKEN_EOF) {
         printf("<EOF>");
       } /* end if */
     } /* end if */
@@ -393,13 +388,13 @@ void m2c_tokenset_print_list (m2c_tokenset_t set) {
  * procedure m2c_tokenset_print_literal_struct(ident)
  * --------------------------------------------------------------------------
  * Prints a struct definition for tokenset literals.
- * Format: struct ident { unsigned s0, s1, s2, ..., n };
+ * Format: struct ident { unsigned s0, s1, s2, ...; unsigned short n };
  * ----------------------------------------------------------------------- */
 
 void m2c_tokenset_print_literal_struct (const char *ident) {
   unsigned seg_index;
   
-  printf("struct %s { unsigned s0", ident);
+  printf("struct %s { unsigned long s0", ident);
   
   seg_index = 1;
   while (seg_index < SEGMENT_COUNT) {
@@ -407,7 +402,7 @@ void m2c_tokenset_print_literal_struct (const char *ident) {
     seg_index++;
   } /* end while */
   
-  printf(", n; };\n");
+  printf("; unsigned short n; };\n");
   
   printf("typedef struct %s %s;\n", ident, ident);
 } /* m2c_tokenset_print_literal_struct */
@@ -423,27 +418,13 @@ void m2c_tokenset_print_literal_struct (const char *ident) {
 void m2c_tokenset_print_literal (m2c_tokenset_t set) {
   unsigned seg_index;
   
-/* print list head and first segment */
-#if (SEGMENT_BITWIDTH == 64)
-  printf("{ /* bits: */ %#16ullX", set->segment[0]);
-#elif (SEGMENT_BITWIDTH == 32)
-  printf("{ /* bits: */ %#8ullX", set->segment[0]);
-#else
-  printf("{ /* bits: */ 0x%08X", set->segment[0]);
-#endif
-
-/* print remaining segments */
-  seg_index = 1;
-  while (seg_index < SEGMENT_COUNT) {
+  /* print list head and first segment */
+  printf("{ /* bits: */ %8luX", set->segment[0]);
   
-#if (SEGMENT_BITWIDTH == 64)
-    printf(", %#16ullX", set->segment[seg_index]);
-#elif (SEGMENT_BITWIDTH == 32)
-    printf(", %#8ullX", set->segment[seg_index]);
-#else
-    printf(", 0x%08X", set->segment[seg_index]);
-#endif
-
+  /* print remaining segments */
+  seg_index = 1;
+  while (seg_index < SEGMENT_COUNT) {  
+    printf(", %8luX", set->segment[seg_index]);
     seg_index++;
   } /* end while */
   
