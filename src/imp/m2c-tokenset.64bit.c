@@ -419,12 +419,12 @@ void m2c_tokenset_print_literal (m2c_tokenset_t set) {
   unsigned seg_index;
   
 /* print list head and first segment */
-  printf("{ /* bits: */ %16lluX", set->segment[0]);
+  printf("{ /* bits: */ 0x%016llX", set->segment[0]);
 
 /* print remaining segments */
   seg_index = 1;
   while (seg_index < SEGMENT_COUNT) {
-    printf(", %16lluX", set->segment[seg_index]);
+    printf(", 0x%016llX", set->segment[seg_index]);
     seg_index++;
   } /* end while */
   

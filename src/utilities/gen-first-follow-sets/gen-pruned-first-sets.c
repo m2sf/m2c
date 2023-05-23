@@ -164,15 +164,28 @@ static void init_pruned_table (void) {
   m2c_tokenset_t this_set;
   
   pruned_first_set_table[0] = NULL;
+  
   index = 0; pruned_index = 1;
   while (index < PRODUCTION_COUNT) {
     this_set = first_set[index];
     
+    #ifdef DEBUG
+      m2c_tokenset_print_set(prod_name[index], this_set);
+    #endif /* DEBUG */
+    
     if (m2c_tokenset_element_count(this_set) <= 1) {
       pruned_index_lookup[index] = 0;
+      
+      #ifdef DEBUG
+        printf("%s pruned, cardinality=1\n", prod_name[index]);
+      #endif /* DEBUG */
     }
     else if (is_duplicate(this_set, index, &equiv_index)) {
       pruned_index_lookup[index] = equiv_index;
+      
+      #ifdef DEBUG
+        printf("%s pruned, duplicate\n", prod_name[index]);
+      #endif /* DEBUG */
     }
     else {
       pruned_first_set_table[pruned_index] = first_set[index];
@@ -180,6 +193,10 @@ static void init_pruned_table (void) {
       reverse_index_lookup[pruned_index] = index;
       pruned_index++;
     } /* end if */
+    
+    #ifdef DEBUG
+      printf("---------------------------------------------\n");
+    #endif /* DEBUG */
     
     index++;
   } /* end while */
@@ -207,16 +224,22 @@ static void print_set_literals (void) {
   unsigned index;
   m2c_tokenset_t set;
   
+  init_first_set_table();
+  init_pruned_table();
+  
   printf(PREAMBLE);
   
   for (index = 1; index < pruned_production_count; index++ ) {
     
     /* name */
-    printf("DATA(%s, ", prod_name[reverse_index_lookup[index]]);
+    printf("DATA(%s /* name-index: %u */, /* data-index: %u */ (\n    ",
+      prod_name[reverse_index_lookup[index]],
+        reverse_index_lookup[index], index);
     
     /* set literal */
     set = pruned_first_set_table[index];
     m2c_tokenset_print_literal(set);
+    printf("  )\n");
     
     /* separator */
     printf("),\n");
@@ -237,10 +260,14 @@ static void print_set_literals (void) {
 static void print_lookup_table (void) {
   unsigned index;
   
+  init_first_set_table();
+  init_pruned_table();
+  
   printf(PREAMBLE);
   
-  for (index = 0; index < pruned_production_count; index++) {
-    printf("DATA(%s, %u),\n", prod_name[index], pruned_index_lookup[index]);
+  for (index = 0; index < PRODUCTION_COUNT; index++) {
+    printf("DATA(%s /* name-index: %u */, /* data-index: */ %u),\n",
+      prod_name[index], index, pruned_index_lookup[index]);
   } /* end for */
   
   printf(EOF_MARKER);
@@ -270,6 +297,8 @@ static unsigned str_len(const char *str) {
 
 static void print_usage (void) {
   printf("usage info:\n\n");
+  printf("gen-pruned-first-sets option\n\n");
+  printf("options:\n\n");
   printf("-h prints this info.\n");
   printf("-s prints first set literals.\n");
   printf("-l prints first set lookup table.\n\n");
@@ -296,33 +325,33 @@ int main(int argc, const char *argv[]) {
   const char *argstr;
   unsigned len;
   
-  init_first_set_table();
-  init_pruned_table();
-   
-  if (argc == 1) {
-    argstr = argv[1];
-    len = str_len(argstr);
-    
-    if ((len == 2) && (argstr[0] == '-')) {
-      switch (argstr[1]) {
-        case 'h' :
-          print_usage();
-          break;
-        case 'l' :
-          print_lookup_table();
-          break;
-        case 's' :
-          print_set_literals();
-          break;
-        default :
-          print_usage();
-          return (-1);
-      } /* end switch */
-    }
-    else /* invalid args */ {
+  if (argc != 2) {
     print_usage();
     return (-1);
-    } /* end if */
+  } /* end if */
+  
+  argstr = argv[1];
+  len = str_len(argstr);
+  
+  if ((len == 2) && (argstr[0] == '-')) {
+    switch (argstr[1]) {
+      case 'h' :
+        print_usage();
+        break;
+      case 'l' :
+        print_lookup_table();
+        break;
+      case 's' :
+        print_set_literals();
+        break;
+      default :
+        print_usage();
+        return (-1);
+    } /* end switch */
+  }
+  else /* invalid args */ {
+    print_usage();
+    return (-1);
   } /* end if */
   
   return 0;

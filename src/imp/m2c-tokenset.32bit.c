@@ -64,6 +64,7 @@ typedef unsigned long segment_t;
  * ----------------------------------------------------------------------- */
 
 #define SEGMENT_BITWIDTH 32
+#define SEGMENT_MASK 0xFFFFFFFF
 
 
 /* --------------------------------------------------------------------------
@@ -131,7 +132,8 @@ m2c_tokenset_t m2c_new_tokenset_from_list (m2c_token_t first_token, ...) {
     if (token < TOKEN_END_MARK) {
       seg_index = token / SEGMENT_BITWIDTH;
       bit = token % SEGMENT_BITWIDTH;
-      new_set->segment[seg_index] = new_set->segment[seg_index] | (1 << bit);
+      new_set->segment[seg_index] =
+        SEGMENT_MASK & (new_set->segment[seg_index] | (1 << bit));
     } /* end if */
     
     /* get next token in list */
@@ -299,8 +301,7 @@ void m2c_tokenset_print_set (const char *set_name, m2c_tokenset_t set) {
     printf(" ");
   } /* end if */
   
-  count = 0;
-  token = 0;
+  count = 0; token = 0;
   while ((count <= set->elem_count) && (token < TOKEN_END_MARK)) {
     seg_index = token / SEGMENT_BITWIDTH;
     bit = token % SEGMENT_BITWIDTH;
@@ -335,8 +336,7 @@ void m2c_tokenset_print_list (m2c_tokenset_t set) {
     printf("(nil)");
   } /* end if */
   
-  count = 0;
-  token = 0;
+  count = 0; token = 0;
   while ((count <= set->elem_count) && (token < TOKEN_END_MARK)) {
     seg_index = token / SEGMENT_BITWIDTH;
     bit = token % SEGMENT_BITWIDTH;
@@ -419,12 +419,12 @@ void m2c_tokenset_print_literal (m2c_tokenset_t set) {
   unsigned seg_index;
   
   /* print list head and first segment */
-  printf("{ /* bits: */ %8luX", set->segment[0]);
+  printf("{ /* bits: */ 0x%08lX", set->segment[0]);
   
   /* print remaining segments */
   seg_index = 1;
   while (seg_index < SEGMENT_COUNT) {  
-    printf(", %8luX", set->segment[seg_index]);
+    printf(", 0x%08lX", set->segment[seg_index]);
     seg_index++;
   } /* end while */
   
