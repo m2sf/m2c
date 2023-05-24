@@ -35,6 +35,10 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.
  */
 
+/* --------------------------------------------------------------------------
+ * imports
+ * ----------------------------------------------------------------------- */
+
 #include "m2c-parser.h"
 
 #include "m2c-lexer.h"
@@ -67,26 +71,6 @@ typedef struct m2c_parser_context_s *m2c_parser_context_t;
 
 
 /* --------------------------------------------------------------------------
- * private type m2c_nonterminal_f
- * --------------------------------------------------------------------------
- * function pointer type for function to parse a non-terminal symbol.
- * ----------------------------------------------------------------------- */
-
-typedef m2c_token_t (m2c_nonterminal_f) (m2c_parser_context_t);
-
-
-/* --------------------------------------------------------------------------
- * forward declarations of alternative parsing functions.
- * ----------------------------------------------------------------------- */
-
-/* for use with compiler option --variant-records */
-m2c_token_t variant_record_type (m2c_parser_context_t p);
-
-/* for use with compiler option --no-variant-records */
-m2c_token_t extensible_record_type (m2c_parser_context_t p);
-
-
-/* --------------------------------------------------------------------------
  * private type m2c_parser_context_s
  * --------------------------------------------------------------------------
  * Record type to implement parser context.
@@ -96,10 +80,9 @@ struct m2c_parser_context_s {
   /* filename */      const char *filename;
   /* lexer */         m2c_lexer_t lexer;
   /* ast */           m2c_astnode_t ast;
-  /* warning_count */ uint_t warning_count;
-  /* error_count */   uint_t error_count;
   /* status */        m2c_parser_status_t status;
-  /* record_type */   m2c_nonterminal_f *record_type;
+  /* warning_count */ unsigned short warning_count;
+  /* error_count */   unsigned short error_count;
 };
 
 typedef struct m2c_parser_context_s m2c_parser_context_s;
@@ -535,32 +518,67 @@ m2c_token_t definition_module (m2c_parser_context_t p) {
  * private function import()
  * --------------------------------------------------------------------------
  * import :=
- *   ( qualifiedImport | unqualifiedImport ) ';'
+ *   IMPORT libIdent reExport? ( ',' libIdent reExport? )* ';'
  *   ;
+ *
+ * alias libIdent = Ident ;
+ * alias reExport = '+' ;
  * ----------------------------------------------------------------------- */
-
-m2c_token_t qualified_import (m2c_parser_context_t p);
-
-m2c_token_t unqualified_import (m2c_parser_context_t p);
 
 m2c_token_t import (m2c_parser_context_t p) {
   
-  m2c_token_t lookahead = m2c_next_sym(p->lexer);
+  m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("import");
   
-  lookahead = m2c_next_sym(p->lexer);
+  /* IMPORT */
+  lookahead = m2c_consume_sym(p->lexer);
   
-  /* qualifiedImport */
-  if (lookahead == TOKEN_IMPORT) {
-    lookahead = qualified_import(p); /* p->ast holds ast-node */
-  }
-  /* | unqualifiedImport */
-  else if (lookahead == TOKEN_FROM) {
-    lookahead = unqualified_import(p); /* p->ast holds ast-node */
-  }
-  else /* unreachable code */ {
-    /* fatal error -- abort */
+  /* libIdent reExport? */
+  if (match_token(p, TOKEN_IDENT,
+    RESYNC(COMMA_SEMICOLON_IMPORT_DEFINITION_OR_END))) {
+    
+    /* libIdent */
+    ident = m2c_lexer_lookahead_lexeme(p->lexer);
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* reExport? */
+    if (lookahead == TOKEN_PLUS) {
+      lookahead = m2c_consume_sym(p->lexer);
+      
+      /* TO DO: set re-export flag */
+      
+    } /* end if */
+    
+    /* add ident to temporary list */
+    tmplist = m2c_fifo_new_queue(ident);
+    
+    /* (',' libIdent reExport? )* */
+    while (lookahead == TOKEN_COMMA) {
+      
+      /* ',' */
+      lookahead = m2c_consume_sym(p->lexer);
+      
+      /* libIdent */
+      if (match_token(p, TOKEN_IDENT,
+        RESYNC(COMMA_SEMICOLON_IMPORT_DEFINITION_OR_END))) {
+        
+        /* libIdent */
+        ident = m2c_lexer_lookahead_lexeme(p->lexer);
+        lookahead = m2c_consume_sym(p->lexer);
+        
+        /* reExport? */
+        if (lookahead == TOKEN_PLUS) {
+        lookahead = m2c_consume_sym(p->lexer);
+      
+          /* TO DO: set re-export flag */
+              
+        } /* end if */
+      
+        /* add ident to temporary list */
+        m2c_fifo_enqueue(tmplist, ident);
+      } /* end if */
+    } /* end while */
   } /* end if */
   
   /* ';' */
@@ -568,94 +586,12 @@ m2c_token_t import (m2c_parser_context_t p) {
     lookahead = m2c_consume_sym(p->lexer);
   } /* end if */
   
-  /* AST node is passed through in p->ast */
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_IMPORT, tmplist);
+  m2c_fifo_release_queue(tmplist);
   
   return lookahead;
 } /* end import */
-
-
-/* --------------------------------------------------------------------------
- * private function qualified_import()
- * --------------------------------------------------------------------------
- * qualifiedImport :=
- *   IMPORT moduleList
- *   ;
- *
- * moduleList := identList ;
- *
- * astnode: (IMPORT identListNode)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t ident_list (m2c_parser_context_t p);
-
-m2c_token_t qualified_import (m2c_parser_context_t p) {
-  m2c_astnode_t idlist;
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("qualifiedImport");
-  
-  /* IMPORT */
-  lookahead = m2c_consume_sym(p->lexer);
-  
-  /* moduleList */
-  if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(QUALIFIED_IMPORT))) {
-    lookahead = ident_list(p);
-    idlist = p->ast;
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_IMPORT, idlist, NULL);
-  
-  return lookahead;
-} /* end qualified_import */
-
-
-/* --------------------------------------------------------------------------
- * private function unqualified_import()
- * --------------------------------------------------------------------------
- * unqualifiedImport :=
- *   FROM moduleIdent IMPORT identList
- *   ;
- *
- * moduleIdent := Ident ;
- *
- * astnode: (UNQIMP identNode identListNode)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t unqualified_import (m2c_parser_context_t p) {
-  m2c_astnode_t id, idlist;
-  m2c_string_t ident;
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("unqualifiedImport");
-  
-  /* FROM */
-  lookahead = m2c_consume_sym(p->lexer);
-  
-  /* moduleIdent */
-  if (match_token(p, TOKEN_IDENTIFIER,
-      RESYNC(IMPORT_OR_IDENT_OR_SEMICOLON))) {
-    lookahead = m2c_consume_sym(p->lexer);
-    ident = m2c_lexer_current_lexeme(p->lexer);
-
-    /* IMPORT */
-    if (match_token(p, TOKEN_IMPORT, RESYNC(IDENT_OR_SEMICOLON))) {
-      lookahead = m2c_consume_sym(p->lexer);
-      
-      /* moduleList */
-      if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(UNQUALIFIED_IMPORT))) {
-        lookahead = ident_list(p);
-        idlist = p->ast;
-      } /* end if */
-    } /* end if */
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  id = m2c_ast_new_terminal_node(AST_IDENT, ident);
-  p->ast = m2c_ast_new_node(AST_UNQIMP, id, idlist, NULL);
-  
-  return lookahead;
-} /* end unqualified_import */
 
 
 /* --------------------------------------------------------------------------
@@ -2736,6 +2672,42 @@ m2c_token_t module_priority (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end module_priority */
+
+
+/* --------------------------------------------------------------------------
+ * private function private_import()
+ * --------------------------------------------------------------------------
+ * privateImport :=
+ *   IMPORT moduleList
+ *   ;
+ *
+ * moduleList := identList ;
+ *
+ * astnode: (IMPORT identListNode)
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t ident_list (m2c_parser_context_t p);
+
+m2c_token_t qualified_import (m2c_parser_context_t p) {
+  m2c_astnode_t idlist;
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("qualifiedImport");
+  
+  /* IMPORT */
+  lookahead = m2c_consume_sym(p->lexer);
+  
+  /* moduleList */
+  if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(QUALIFIED_IMPORT))) {
+    lookahead = ident_list(p);
+    idlist = p->ast;
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_IMPORT, idlist, NULL);
+  
+  return lookahead;
+} /* end qualified_import */
 
 
 /* --------------------------------------------------------------------------
