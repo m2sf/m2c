@@ -1,1 +1,2 @@
 gcc gen-pruned-first-sets.c -o gen-pruned-first-sets ../../imp/m2c-token.o ../../imp/m2c-tokenset.o
+gcc gen-pruned-follow-sets.c -o gen-pruned-follow-sets ../../imp/m2c-token.o ../../imp/m2c-tokenset.o
