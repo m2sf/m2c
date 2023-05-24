@@ -165,8 +165,8 @@ static void init_pruned_table (void) {
   
   pruned_first_set_table[0] = NULL;
   
-  index = 0; pruned_index = 1;
-  while (index < PRODUCTION_COUNT) {
+  pruned_index = 1;
+  for (index = 0; index < PRODUCTION_COUNT; index++) {
     this_set = first_set[index];
     
     #ifdef DEBUG
@@ -198,7 +198,6 @@ static void init_pruned_table (void) {
       printf("---------------------------------------------\n");
     #endif /* DEBUG */
     
-    index++;
   } /* end while */
   
   pruned_production_count = pruned_index - 1;
@@ -242,7 +241,7 @@ static void print_set_literals (void) {
     printf("  )\n");
     
     /* separator */
-    printf("),\n");
+    printf(")\n");
   } /* end for */
   
   printf(EOF_MARKER);
@@ -266,7 +265,7 @@ static void print_lookup_table (void) {
   printf(PREAMBLE);
   
   for (index = 0; index < PRODUCTION_COUNT; index++) {
-    printf("DATA(%s /* name-index: %u */, /* data-index: */ %u),\n",
+    printf("DATA(%s /* name-index: %u */, /* data-index: */ %u)\n",
       prod_name[index], index, pruned_index_lookup[index]);
   } /* end for */
   
@@ -309,6 +308,17 @@ static void print_usage (void) {
 
 
 /* --------------------------------------------------------------------------
+ * function print_error()
+ * --------------------------------------------------------------------------
+ * Prints error message to stderr.
+ * ----------------------------------------------------------------------- */
+
+static void print_error (const char *msg) {
+  fprintf(stderr, "%s\n\n", msg);
+} /* end print_error */
+
+
+/* --------------------------------------------------------------------------
  * utility program gen-pruned-first-sets
  * --------------------------------------------------------------------------
  * This utility prints a comma delimited list of FIRST set literals to the
@@ -321,13 +331,17 @@ static void print_usage (void) {
  * $ gen-pruned-first-sets -l > pruned-first-set-lookup.h
  * ----------------------------------------------------------------------- */
 
+#define SUCCESS_RETURN_CODE 0
+#define ERROR_RETURN_CODE (-1)
+
 int main(int argc, const char *argv[]) {
   const char *argstr;
   unsigned len;
   
   if (argc != 2) {
+    print_error("invalid number of arguments");
     print_usage();
-    return (-1);
+    return ERROR_RETURN_CODE;
   } /* end if */
   
   argstr = argv[1];
@@ -345,16 +359,18 @@ int main(int argc, const char *argv[]) {
         print_set_literals();
         break;
       default :
+        print_error("invalid argument");
         print_usage();
-        return (-1);
+        return ERROR_RETURN_CODE;
     } /* end switch */
   }
   else /* invalid args */ {
+    print_error("invalid argument");
     print_usage();
-    return (-1);
+    return ERROR_RETURN_CODE;
   } /* end if */
   
-  return 0;
+  return SUCCESS_RETURN_CODE;
 } /* end main */
 
 /* END OF FILE */
