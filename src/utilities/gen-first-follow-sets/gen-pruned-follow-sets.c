@@ -1,0 +1,376 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * M2C Modula-2 Compiler & Translator                                        *
+ *                                                                           *
+ * Copyright (c) 2015-2023 Benjamin Kowarsch                                 *
+ *                                                                           *
+ * @synopsis                                                                 *
+ *                                                                           *
+ * M2C is a portable  Modula-2 to C translator  and  via-C compiler  for the *
+ * bootstrap subset of the revised Modula-2 language described in            *
+ *                                                                           *
+ * https://github.com/m2sf/m2bsk/wiki/Language-Specification                 *
+ *                                                                           *
+ * In translator mode,  M2C translates Modula-2 source files to semantically *
+ * equivalent C source files.  In compiler mode,  it translates the Modula-2 *
+ * source files  to C,  then compiles the resulting C sources  to object and *
+ * executable files using the host system's resident C compiler and linker.  *
+ *                                                                           *
+ * Further information at https://github.com/m2sf/m2c/wiki                   *
+ *                                                                           *
+ * @file                                                                     *
+ *                                                                           *
+ * gen-pruned-follow-sets.c                                                  *
+ *                                                                           *
+ * Utility program to generate a pruned follow set database.                 *
+ *                                                                           *
+ * @license                                                                  *
+ *                                                                           *
+ * M2C is free software:  You can redistribute and modify it under the terms *
+ * of the GNU Lesser General Public License (LGPL)  either version 2.1 or at *
+ * your choice version 3, both published by the Free Software Foundation.    *
+ *                                                                           *
+ * M2C is distributed in the hope it may be useful, but strictly WITHOUT ANY *
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS *
+ * FOR ANY PARTICULAR PURPOSE.  Read the license for more details.           *
+ *                                                                           *
+ * You should have received  a copy of the GNU Lesser General Public License *
+ * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* --------------------------------------------------------------------------
+ * imports
+ * ----------------------------------------------------------------------- */
+
+#import "m2c-tokenset.h"
+#import <stdbool.h>
+#import <stdio.h>
+
+
+/* --------------------------------------------------------------------------
+ * enum type production_t
+ * ----------------------------------------------------------------------- */
+
+#define PROD(_caps, _id, _first, _follow) P_ ## _caps,
+
+typedef enum {
+  #include "production-data.h"
+  P_END_MARKER
+} production_t;
+
+#define PRODUCTION_COUNT P_END_MARKER
+
+#undef PROD
+
+
+/* --------------------------------------------------------------------------
+ * string table for production names
+ * ----------------------------------------------------------------------- */
+
+#define PROD(_caps, _id, _first, _follow) #_caps,
+
+static const char *prod_name[] = {
+  #include "production-data.h"
+  "\0"
+}; /* enum_name */
+
+#undef PROD
+
+
+/* --------------------------------------------------------------------------
+ * complete follow set table
+ * ----------------------------------------------------------------------- */
+
+static m2c_tokenset_t follow_set[PRODUCTION_COUNT];
+
+
+/* --------------------------------------------------------------------------
+ * function init_follow_set_table()
+ * --------------------------------------------------------------------------
+ * Declares and initialises complete follow set table from production-data.h
+ * ----------------------------------------------------------------------- */
+
+static void init_follow_set_table (void) {
+  
+  #define PROD(_caps, _id, _first, _follow) \
+    follow_set[P_ ## _caps] = m2c_new_tokenset_from_list _follow ;
+  
+  #include "production-data.h"
+  
+  #undef PROD
+} /* init_follow_set_table */
+
+
+/* --------------------------------------------------------------------------
+ * pruned follow set table
+ * ----------------------------------------------------------------------- */
+
+static m2c_tokenset_t pruned_follow_set_table[PRODUCTION_COUNT + 1];
+static unsigned pruned_production_count;
+
+
+/* --------------------------------------------------------------------------
+ * pruned index lookup table
+ * ----------------------------------------------------------------------- */
+
+static unsigned pruned_index_lookup[PRODUCTION_COUNT];
+static unsigned reverse_index_lookup[PRODUCTION_COUNT + 1];
+
+
+/* --------------------------------------------------------------------------
+ * function is_duplicate(set, index, equiv_index)
+ * --------------------------------------------------------------------------
+ * Searches the  pruned follow set table  up to max_index for a matching set.
+ * If a matching entry is found, its index is passed back in equiv_index, and
+ * true is returned, otherwise no value is passed and false is returned.
+ * ----------------------------------------------------------------------- */
+
+#define SETS_MATCH(_set1, _set2) \
+  ((m2c_tokenset_element_count(_set1) == \
+      m2c_tokenset_element_count(_set2)) \
+      && m2c_tokenset_subset(_set1, _set2)) \
+
+static bool is_duplicate
+  (m2c_tokenset_t set, unsigned set_index, unsigned *equiv_index) {
+  unsigned index;
+  m2c_tokenset_t compare_set;
+  
+  for (index = 1; index < set_index; index++) {
+    compare_set = pruned_follow_set_table[index];
+    
+    if (SETS_MATCH(set, compare_set)) {
+      /* match */
+      *equiv_index = index;
+      return true;
+    } /* end if */
+  } /* end for */
+  
+  /* no match */
+  return false;
+} /* end is_duplicate */
+
+
+/* --------------------------------------------------------------------------
+ * function init_pruned_table()
+ * --------------------------------------------------------------------------
+ * Initialises the pruned follow set table,  omitting sets of cardinality one
+ * and duplicate sets. Also initialises the pruned index lookup table and the
+ * reverse index lookup table.  Indices of sets with cardinality one are map-
+ * ped to a sentinel nil entry at index zero in the pruned table  and indices
+ * of duplicate sets to the first equivalent entry in the pruned table.
+ * ----------------------------------------------------------------------- */
+
+static void init_pruned_table (void) {
+  unsigned index, pruned_index, equiv_index;
+  m2c_tokenset_t this_set;
+  
+  pruned_follow_set_table[0] = NULL;
+  
+  pruned_index = 1;
+  for (index = 0; index < PRODUCTION_COUNT; index++) {
+    this_set = follow_set[index];
+    
+    #ifdef DEBUG
+      m2c_tokenset_print_set(prod_name[index], this_set);
+    #endif /* DEBUG */
+    
+    if (m2c_tokenset_element_count(this_set) <= 1) {
+      pruned_index_lookup[index] = 0;
+      
+      #ifdef DEBUG
+        printf("%s pruned, cardinality=1\n", prod_name[index]);
+      #endif /* DEBUG */
+    }
+    else if (is_duplicate(this_set, index, &equiv_index)) {
+      pruned_index_lookup[index] = equiv_index;
+      
+      #ifdef DEBUG
+        printf("%s pruned, duplicate\n", prod_name[index]);
+      #endif /* DEBUG */
+    }
+    else {
+      pruned_follow_set_table[pruned_index] = follow_set[index];
+      pruned_index_lookup[index] = pruned_index;
+      reverse_index_lookup[pruned_index] = index;
+      pruned_index++;
+    } /* end if */
+    
+    #ifdef DEBUG
+      printf("---------------------------------------------\n");
+    #endif /* DEBUG */
+    
+  } /* end while */
+  
+  pruned_production_count = pruned_index - 1;
+} /* print_literals */
+
+
+/* --------------------------------------------------------------------------
+ * function print_set_literals()
+ * --------------------------------------------------------------------------
+ * Prints set literals  of all sets  in the pruned follow set table  as name/
+ * value pairs to the console. Each entry has the format DATA(name, literal),
+ * where name is the name of the production and literal is a literal that re-
+ * presents the production's follow set.
+ * ----------------------------------------------------------------------- */
+
+#define PREAMBLE \
+  "/* AUTO-GENERATED by utility gen-pruned-follow-sets * DO NOT EDIT! */\n\n"
+
+#define EOF_MARKER \
+  "\n/* END OF FILE */\n"
+
+static void print_set_literals (void) {
+  unsigned index;
+  m2c_tokenset_t set;
+  
+  init_follow_set_table();
+  init_pruned_table();
+  
+  printf(PREAMBLE);
+  
+  for (index = 1; index < pruned_production_count; index++ ) {
+    
+    /* name */
+    printf("DATA(%s /* name-index: %u */, /* data-index: %u */ (\n    ",
+      prod_name[reverse_index_lookup[index]],
+        reverse_index_lookup[index], index);
+    
+    /* set literal */
+    set = pruned_follow_set_table[index];
+    m2c_tokenset_print_literal(set);
+    printf("  )\n");
+    
+    /* separator */
+    printf(")\n");
+  } /* end for */
+  
+  printf(EOF_MARKER);
+} /* end print_set_literals */
+
+
+/* --------------------------------------------------------------------------
+ * function print_lookup_table()
+ * --------------------------------------------------------------------------
+ * Prints the  lookup table  as  name/value pairs to the console.  Each entry
+ * has the format DATA(name, index), where name is the name of the production
+ * and index is the production's index in the pruned follow set table.
+ * ----------------------------------------------------------------------- */
+
+static void print_lookup_table (void) {
+  unsigned index;
+  
+  init_follow_set_table();
+  init_pruned_table();
+  
+  printf(PREAMBLE);
+  
+  for (index = 0; index < PRODUCTION_COUNT; index++) {
+    printf("DATA(%s /* name-index: %u */, /* data-index: */ %u)\n",
+      prod_name[index], index, pruned_index_lookup[index]);
+  } /* end for */
+  
+  printf(EOF_MARKER);
+} /* end print_lookup_table */
+
+
+/* --------------------------------------------------------------------------
+ * function str_len(str)
+ * ----------------------------------------------------------------------- */
+
+static unsigned str_len(const char *str) {
+  unsigned index;
+  
+  index = 0;
+  while (str[index] != '\0') {
+    index++;
+  } /* end while */
+  return index;
+} /* end str_len */
+
+
+/* --------------------------------------------------------------------------
+ * function print_usage()
+ * --------------------------------------------------------------------------
+ * Prints usage info to the console.
+ * ----------------------------------------------------------------------- */
+
+static void print_usage (void) {
+  printf("usage info:\n\n");
+  printf("gen-pruned-follow-sets option\n\n");
+  printf("options:\n\n");
+  printf("-h prints this info.\n");
+  printf("-s prints follow set literals.\n");
+  printf("-l prints follow set lookup table.\n\n");
+  printf("examples:\n\n");
+  printf("$ gen-pruned-follow-sets -s > pruned-follow-set-literals.h\n");
+  printf("$ gen-pruned-follow-sets -l > pruned-follow-set-lookup.h\n\n");
+} /* end print_usage */
+
+
+/* --------------------------------------------------------------------------
+ * function print_error()
+ * --------------------------------------------------------------------------
+ * Prints error message to stderr.
+ * ----------------------------------------------------------------------- */
+
+static void print_error (const char *msg) {
+  fprintf(stderr, "%s\n\n", msg);
+} /* end print_error */
+
+
+/* --------------------------------------------------------------------------
+ * utility program gen-pruned-follow-sets
+ * --------------------------------------------------------------------------
+ * This utility prints a comma delimited list of FOLLOW set literals to the
+ * console. It should be invoked with output redirection as follows:
+ *
+ * to generate the set literals
+ * $ gen-pruned-follow-sets -s > pruned-follow-set-literals.h
+ *
+ * to generate the lookup table
+ * $ gen-pruned-follow-sets -l > pruned-follow-set-lookup.h
+ * ----------------------------------------------------------------------- */
+
+#define SUCCESS_RETURN_CODE 0
+#define ERROR_RETURN_CODE (-1)
+
+int main(int argc, const char *argv[]) {
+  const char *argstr;
+  unsigned len;
+  
+  if (argc != 2) {
+    print_error("invalid number of arguments");
+    print_usage();
+    return ERROR_RETURN_CODE;
+  } /* end if */
+  
+  argstr = argv[1];
+  len = str_len(argstr);
+  
+  if ((len == 2) && (argstr[0] == '-')) {
+    switch (argstr[1]) {
+      case 'h' :
+        print_usage();
+        break;
+      case 'l' :
+        print_lookup_table();
+        break;
+      case 's' :
+        print_set_literals();
+        break;
+      default :
+        print_error("invalid argument");
+        print_usage();
+        return ERROR_RETURN_CODE;
+    } /* end switch */
+  }
+  else /* invalid args */ {
+    print_error("invalid argument");
+    print_usage();
+    return ERROR_RETURN_CODE;
+  } /* end if */
+  
+  return SUCCESS_RETURN_CODE;
+} /* end main */
+
+/* END OF FILE */

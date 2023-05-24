@@ -132,7 +132,7 @@ typedef enum {
   TOKEN_LPAREN,              /* 63 */
   TOKEN_RPAREN,              /* 64 */
   TOKEN_LBRACKET,            /* 65 */
-  TOKEN_RPRACKET,            /* 66 */
+  TOKEN_RBRACKET,            /* 66 */
   TOKEN_LBRACE,              /* 67 */
   TOKEN_RBRACE,              /* 68 */
 
