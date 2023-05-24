@@ -41,28 +41,56 @@
  * imports
  * ----------------------------------------------------------------------- */
 
+#include "m2c-tokenset.h"
 #include "m2c-productions.h"
+
+#include <stddef.h> /* NULL */
+#include <stdint.h> /* uint8_t */
 
 
 /* --------------------------------------------------------------------------
- * FOLLOW sets
+ * FOLLOW set table, pruned
+ * --------------------------------------------------------------------------
+ * Table of follow sets with cardinality > 1 and without duplicates.
  * ----------------------------------------------------------------------- */
 
-static const m2c_tokenset_t follow_set[] = {
-#include "m2c-follow-set-literals.h"
-}; /* end follow_set */
+#define DATA(_prod, _set_literal) _set_literal,
+
+static const m2c_tokenset_t *follow_set[] = {
+  NULL, /* sentinel for pruned entries */
+  #include "m2c-follow-set-literals.h"
+}; /* end first_set */
+
+#undef DATA
+
+
+/* --------------------------------------------------------------------------
+ * FOLLOW set lookup table
+ * --------------------------------------------------------------------------
+ * Table to map productions to pruned follow set table indices.
+ * ----------------------------------------------------------------------- */
+
+typedef uint8_t table_index_t;   /* unsigned char if uint8_t is missing */
+
+#define DATA(_prod, _index) _index,
+
+static const table_index_t index_table[] = {
+  #include "m2c_follow-set-lookup.h"
+}; /* end index_table */
+
+#undef DATA
 
 
 /* --------------------------------------------------------------------------
  * function FOLLOW(production)
  * --------------------------------------------------------------------------
- * Returns the FOLLOW set for production p,  or NULL if p is invalid.
+ * Returns the FOLLOW set of p if p is valid and |FOLLOW(p)| > 1, else NULL.
  * ----------------------------------------------------------------------- */
 
 const m2c_tokenset_t FOLLOW (m2c_production_t p) {
  
   if (IS_VALID_PRODUCTION(p)) {
-    return &follow_set[p];
+    return follow_set[index_table[p]];
   }
   else /* invalid production */ {
     return NULL;

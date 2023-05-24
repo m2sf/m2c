@@ -54,7 +54,7 @@
  * Table of first sets with cardinality > 1 and without duplicates.
  * ----------------------------------------------------------------------- */
 
-#define DATA(_prod, _set_literal) _set_literal
+#define DATA(_prod, _set_literal) _set_literal,
 
 static const m2c_tokenset_t *first_set[] = {
   NULL, /* sentinel for pruned entries */
@@ -70,9 +70,9 @@ static const m2c_tokenset_t *first_set[] = {
  * Table to map productions to pruned first set table indices.
  * ----------------------------------------------------------------------- */
 
-typedef uint8_t table_index_t; /* unsigned char if uint8_t is missing */
+typedef uint8_t table_index_t;   /* unsigned char if uint8_t is missing */
 
-#define DATA(_prod, _index) _index
+#define DATA(_prod, _index) _index,
 
 static const table_index_t index_table[] = {
   #include "m2c_first-set-lookup.h"
