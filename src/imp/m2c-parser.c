@@ -531,69 +531,82 @@ m2c_token_t definition_module (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t import (m2c_parser_context_t p) {
-  
+  intstr_t ident;
   m2c_token_t lookahead;
+  m2c_fifo_t imp_list, rxp_list;
   
   PARSER_DEBUG_INFO("import");
   
   /* IMPORT */
   lookahead = m2c_consume_sym(p->lexer);
   
+  imp_list = m2c_fifo_new_queue(NULL);
+  rxp_list = m2c_fifo_new_queue(NULL);
+  
   /* libIdent reExport? */
-  if (match_token(p, TOKEN_IDENT,
-    RESYNC(COMMA_SEMICOLON_IMPORT_DEFINITION_OR_END))) {
+  if (match_token(p, TOKEN_IDENT) {
     
     /* libIdent */
     ident = m2c_lexer_lookahead_lexeme(p->lexer);
     lookahead = m2c_consume_sym(p->lexer);
-    
+        
     /* reExport? */
     if (lookahead == TOKEN_PLUS) {
       lookahead = m2c_consume_sym(p->lexer);
       
-      /* TO DO: set re-export flag */
-      
+    /* add ident to re-export list */
+      rxp_list = m2c_fifo_enqueue(rxp_list, ident);
+    }
+    else {
+      rxp_list = m2c_fifo_enqueue(imp_list, ident);
     } /* end if */
+  }
+  else /* resync */ {
+    lookahead =
+      skip_to_token(p, TOKEN_COMMA, TOKEN_SEMICOLON, TOKEN_IMPORT, NULL);
+  } /* end if */
     
-    /* add ident to temporary list */
-    tmplist = m2c_fifo_new_queue(ident);
+  /* (',' libIdent reExport? )* */
+  while (lookahead == TOKEN_COMMA) {
+    /* '.' */
+    lookahead = m2c_consume_sym(p->lexer);
     
-    /* (',' libIdent reExport? )* */
-    while (lookahead == TOKEN_COMMA) {
-      
-      /* ',' */
+    if (match_token(p, TOKEN_IDENT) {
+    
+      /* libIdent */
+      ident = m2c_lexer_lookahead_lexeme(p->lexer);
       lookahead = m2c_consume_sym(p->lexer);
       
-      /* libIdent */
-      if (match_token(p, TOKEN_IDENT,
-        RESYNC(COMMA_SEMICOLON_IMPORT_DEFINITION_OR_END))) {
-        
-        /* libIdent */
-        ident = m2c_lexer_lookahead_lexeme(p->lexer);
-        lookahead = m2c_consume_sym(p->lexer);
-        
-        /* reExport? */
-        if (lookahead == TOKEN_PLUS) {
+      /* reExport? */
+      if (lookahead == TOKEN_PLUS) {
         lookahead = m2c_consume_sym(p->lexer);
       
-          /* TO DO: set re-export flag */
-              
-        } /* end if */
-      
-        /* add ident to temporary list */
-        m2c_fifo_enqueue(tmplist, ident);
+      /* add ident to re-export list */
+        rxp_list = m2c_fifo_enqueue(rxp_list, ident);
+      }
+      else {
+        rxp_list = m2c_fifo_enqueue(imp_list, ident);
       } /* end if */
-    } /* end while */
-  } /* end if */
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token(p, TOKEN_COMMA, TOKEN_SEMICOLON, TOKEN_IMPORT, NULL);
+    } /* end if */
+  } /* end while */
   
   /* ';' */
-  if (match_token(p, TOKEN_SEMICOLON, RESYNC(IMPORT_OR_DEFINITON_OR_END))) {
+  if (match_token(p, TOKEN_SEMICOLON) {
     lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */
+    lookahead = skip_to_token_or_set(p, TOKEN_SEMICOLON, FOLLOW(IMPORT));
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_IMPORT, tmplist);
-  m2c_fifo_release_queue(tmplist);
+  p->ast = m2c_ast_new_node(AST_IMPORT, imp_list, rxp_list);
+  
+  m2c_fifo_release_queue(imp_list);
+  m2c_fifo_release_queue(rxp_list);
   
   return lookahead;
 } /* end import */
