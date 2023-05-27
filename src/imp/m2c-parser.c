@@ -425,10 +425,10 @@ m2c_token_t import (m2c_parser_context_t p);
 m2c_token_t definition (m2c_parser_context_t p);
 
 m2c_token_t definition_module (m2c_parser_context_t p) {
-  m2c_astnode_t id, implist, deflist;
-  m2c_string_t ident1, ident2;
-  m2c_fifo_t tmplist;
+  intstr_t ident1, ident2;
   m2c_token_t lookahead;
+  m2c_fifo_t imp_list, def_list;
+  m2c_astnode_t id, imp_node, def_node;
   
   PARSER_DEBUG_INFO("definitionModule");
   
@@ -438,77 +438,82 @@ m2c_token_t definition_module (m2c_parser_context_t p) {
   /* MODULE */
   if (match_token(p, TOKEN_MODULE, RESYNC(IMPORT_OR_DEFINITON_OR_END))) {
     lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_token(p, TOKEN_IDENT, TOKEN_SEMICOLON);
+  } /* end if */
+  
+  /* moduleIdent */
+  if (match_token(p, TOKEN_IDENT)) {
+    lookahead = m2c_consume_sym(p->lexer);
+    ident1 = m2c_lexer_current_lexeme(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skipt_to_token_or_set(p, TOKEN_SEMICOLON, FIRST(IMPORT));
+  } /* end if */
+  
+  /* ';' */
+  if (match_token(p, TOKEN_SEMICOLON)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skipt_to_set_or_set(p, FIRST(IMPORT), FOLLOW(IMPORT));
+  } /* end if */
+  
+  imp_list = m2c_fifo_new_queue(NULL);
+  
+  /* import* */
+  while (lookahead == TOKEN_IMPORT) {
+    lookahead = import(p);
+    m2c_fifo_enqueue(imp_list, p->ast);
+  } /* end while */
+  
+  def_list = m2c_fifo_new_queue(NULL);
+  
+  /* definition* */
+  while (m2c_tokenset_element(FIRST(DEFINITION), lookahead)) {
+    lookahead = definition(p);
+    m2c_fifo_enqueue(def_list, p->ast);
+  } /* end while */
+  
+  /* END */
+  if (match_token(p, TOKEN_END)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    skip_to_token(p, TOKEN_IDENT);
+  } /* end if */
+  
+  /* moduleIdent */
+  if (match_token(p, TOKEN_IDENT)) {
+    lookahead = m2c_consume_sym(p->lexer);
+    ident1 = m2c_lexer_current_lexeme(p->lexer);
     
-    /* moduleIdent */
-    if (match_token(p, TOKEN_IDENTIFIER,
-        RESYNC(IMPORT_OR_DEFINITON_OR_END))) {
-      lookahead = m2c_consume_sym(p->lexer);
-      ident1 = m2c_lexer_current_lexeme(p->lexer);
-      
-      /* ';' */
-      if (match_token(p, TOKEN_SEMICOLON,
-          RESYNC(IMPORT_OR_DEFINITON_OR_END))) {
-        lookahead = m2c_consume_sym(p->lexer);
-      }
-      else /* resync */ {
-        lookahead = m2c_next_sym(p->lexer);
-      } /* end if */
-    }
-    else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
+    if (ident1 != ident2) {
+      /* TO DO: error -- module identifiers don't match */
     } /* end if */
   }
   else /* resync */ {
-    lookahead = m2c_next_sym(p->lexer);
+    skip_to_token(p, TOKEN_DOT);
   } /* end if */
   
-  tmplist = m2c_fifo_new_queue(NULL);
-
-  /* import* */
-  while ((lookahead == TOKEN_IMPORT) ||
-         (lookahead == TOKEN_FROM)) {
-    lookahead = import(p);
-    m2c_fifo_enqueue(tmplist, p->ast);
-  } /* end while */
-  
-  implist = m2c_ast_new_list_node(AST_IMPLIST, tmplist);
-  m2c_fifo_reset_queue(tmplist);
-  
-  /* definition* */
-  while ((lookahead == TOKEN_CONST) ||
-         (lookahead == TOKEN_TYPE) ||
-         (lookahead == TOKEN_VAR) ||
-         (lookahead == TOKEN_PROCEDURE)) {
-    lookahead = definition(p);
-    m2c_fifo_enqueue(tmplist, p->ast);
-  } /* end while */
-  
-  deflist = m2c_ast_new_list_node(AST_DEFLIST, tmplist);
-  m2c_fifo_release_queue(tmplist);
-  
-  /* END */
-  if (match_token(p, TOKEN_END, FOLLOW(DEFINITION_MODULE))) {
+  /* '.' */
+  if (match_token(p, TOKEN_DOT)) {
     lookahead = m2c_consume_sym(p->lexer);
-    
-    /* moduleIdent */
-    if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(DEFINITION_MODULE))) {
-      lookahead = m2c_consume_sym(p->lexer);
-      ident2 = m2c_lexer_current_lexeme(p->lexer);
-    
-      if (ident1 != ident2) {
-        /* TO DO: report error -- module identifiers don't match */ 
-      } /* end if */
-    
-      /* '.' */
-      if (match_token(p, TOKEN_PERIOD, FOLLOW(DEFINITION_MODULE))) {
-        lookahead = m2c_consume_sym(p->lexer);
-      } /* end if */
-    } /* end if */
+  }
+  else /* resync */ {
+    skip_to_token(p, TOKEN_EOF);
   } /* end if */
-  
+    
   /* build AST node and pass it back in p->ast */
   id = m2c_ast_new_terminal_node(AST_IDENT, ident1);
-  p->ast = m2c_ast_new_node(AST_DEFMOD, id, implist, deflist, NULL);
+  imp_node = m2c_ast_new_term_list_node(AST_IMPORT, imp_list);
+  def_node = m2c_ast_new_term_list_node(AST_IMPORT, def_list);
+  
+  p->ast = m2c_ast_new_node(AST_DEFMOD, id, imp_node, def_node, NULL);
+  
+  m2c_fifo_release(imp_list);
+  m2c_fifo_release(def_list);
   
   return lookahead;
 } /* end definition_module */
@@ -656,22 +661,20 @@ m2c_token_t ident_list (m2c_parser_context_t p) {
  * private function definition()
  * --------------------------------------------------------------------------
  * definition :=
- *   CONST ( constDefinition ';' )* |
- *   TYPE ( typeDefinition ';' )* |
- *   VAR ( varDefinition ';' )* |
- *   procedureHeader ';'
+ *   CONST ( constDefinition ';' )+ |
+ *   TYPE ( typeDefinition ';' )+ |
+ *   VAR ( varDefinition ';' )+ |
+ *   procedureHeader ';' |
+ *   toDoList ';'
  *   ;
  *
- * varDefinition := variableDeclaration ;
+ * varDefinition := identList ':' typeIdent ;
  * ----------------------------------------------------------------------- */
 
 m2c_token_t const_definition (m2c_parser_context_t p);
-
 m2c_token_t type_definition (m2c_parser_context_t p);
-
-m2c_token_t variable_declaration (m2c_parser_context_t p);
-
 m2c_token_t procedure_header (m2c_parser_context_t p);
+m2c_token_t to_do_list (m2c_parser_context_t p);
 
 m2c_token_t definition (m2c_parser_context_t p) {
   m2c_token_t lookahead;
