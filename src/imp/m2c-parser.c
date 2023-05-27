@@ -554,11 +554,12 @@ m2c_token_t import (m2c_parser_context_t p) {
     if (lookahead == TOKEN_PLUS) {
       lookahead = m2c_consume_sym(p->lexer);
       
-    /* add ident to re-export list */
+      /* add ident to re-export list */
       rxp_list = m2c_fifo_enqueue(rxp_list, ident);
     }
     else {
-      rxp_list = m2c_fifo_enqueue(imp_list, ident);
+      /* add ident to import list */
+      imp_list = m2c_fifo_enqueue(imp_list, ident);
     } /* end if */
   }
   else /* resync */ {
@@ -581,11 +582,12 @@ m2c_token_t import (m2c_parser_context_t p) {
       if (lookahead == TOKEN_PLUS) {
         lookahead = m2c_consume_sym(p->lexer);
       
-      /* add ident to re-export list */
+        /* add ident to re-export list */
         rxp_list = m2c_fifo_enqueue(rxp_list, ident);
       }
       else {
-        rxp_list = m2c_fifo_enqueue(imp_list, ident);
+        /* add ident to import list */
+        imp_list = m2c_fifo_enqueue(imp_list, ident);
       } /* end if */
     }
     else /* resync */ {
