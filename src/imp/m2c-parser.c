@@ -1338,7 +1338,7 @@ m2c_token_t subrange_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t type_node, lower_bound, upper_bound;
   
-  PARSER_DEBUG_INFO("derivedOrSubrangeType");
+  PARSER_DEBUG_INFO("subrangeType");
   
   /* '[' */
   lookahead = m2c_consume_sym(p->lexer);
@@ -1544,17 +1544,17 @@ m2c_token_t ident_list (m2c_parser_context_t p) {
  * private function set_type()
  * --------------------------------------------------------------------------
  * setType :=
- *   SET OF countableType
+ *   SET OF enumTypeIdent
  *   ;
  *
- * astnode: (SET typeConstructorNode)
+ * alias enumTypeIdent = typeIdent ;
+ *
+ * astNode: (SET baseType)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t countable_type (m2c_parser_context_t p);
-
 m2c_token_t set_type (m2c_parser_context_t p) {
-  m2c_astnode_t tc;
   m2c_token_t lookahead;
+  m2c_ast_node_t type_node;
   
   PARSER_DEBUG_INFO("setType");
   
@@ -1562,7 +1562,7 @@ m2c_token_t set_type (m2c_parser_context_t p) {
   lookahead = m2c_consume_sym(p->lexer);
   
   /* OF */
-  if (match_token(p, TOKEN_OF, FOLLOW(SET_TYPE))) {
+  if (match_token(p, TOKEN_OF)) {
     lookahead = m2c_consume_sym(p->lexer);
     
     /* countableType */
@@ -1577,68 +1577,6 @@ m2c_token_t set_type (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end set_type */
-
-
-/* --------------------------------------------------------------------------
- * private function countable_type()
- * --------------------------------------------------------------------------
- * countableType :=
- *   range | enumType | countableTypeIdent range?
- *   ;
- *
- * countableTypeIdent := typeIdent ;
- *
- * astnode:
- *  (IDENT ident) | (QUALIDENT q0 q1 q2 ... qN ident) |
- *  (SUBR expr expr (EMPTY)) | (SUBR expr expr identNode) |
- *  (ENUM identListNode)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t countable_type (m2c_parser_context_t p) {
-  m2c_string_t ident;
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("countableType");
-  
-  lookahead = m2c_next_sym(p->lexer);
-  
-  switch (lookahead) {
-  
-    /* range */
-    case TOKEN_LEFT_BRACKET :
-      lookahead = range(p);
-      (* astnode: (SUBR expr expr (EMPTY)) *)
-      break;
-      
-    /* | enumType */
-    case TOKEN_LEFT_PAREN :
-      lookahead = enum_type(p);
-      (* astnode: (ENUM identListNode) *)
-      break;
-      
-    /* | countableTypeIdent range? */
-    case TOKEN_IDENTIFIER :
-      lookahead = qualident(p);
-      /* astnode: (IDENT ident) | (QUALIDENT q0 q1 q2 ... qN ident) */
-      id = p->ast;
-      
-      /* range? */
-      if (lookahead == TOKEN_LEFT_BRACKET) {
-        lookahead = range(p);
-        m2c_ast_replace_subnode(p->ast, 2, id);
-      /* astnode: (SUBR expr expr identNode) */
-      } /* end if */
-      break;
-      
-    default : /* unreachable code */
-      /* fatal error -- abort */
-      exit(-1);
-    } /* end switch */
-  
-  /* AST node is passed through in p->ast */
-  
-  return lookahead;
-} /* end countable_type */
 
 
 /* --------------------------------------------------------------------------
