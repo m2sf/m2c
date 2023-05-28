@@ -1661,7 +1661,6 @@ m2c_token_t field_list_sequence (m2c_parser_context_t p);
 
 m2c_token_t record_type (m2c_parser_context_t p) {
   m2c_astnode_t type_node, list_node;
-  m2c_fifo_t tmp_list;
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("recordType");
@@ -1695,9 +1694,7 @@ m2c_token_t record_type (m2c_parser_context_t p) {
   else /* non-extensible record */ {
     type_node = m2c_ast_empty_node();
   } /* end if */
-  
-  tmp_list = m2c_fifo_new_queue(NULL);
-  
+    
   /* fieldList (';' fieldList)* */
   if (match_token(p, TOKEN_IDENT)) {
     lookahead = field_list_sequence(p);
