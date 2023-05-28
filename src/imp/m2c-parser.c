@@ -804,6 +804,7 @@ m2c_token_t const_definition (m2c_parser_context_t p) {
  * astNode: (BIND ident expr)
  * ----------------------------------------------------------------------- */
 
+m2c_token_t ident (m2c_parser_context_t p);
 m2c_token_t const_expression (m2c_parser_context_t p);
 
 m2c_token_t const_binding (m2c_parser_context_t p) {
@@ -930,10 +931,34 @@ m2c_token_t const_declaration (m2c_parser_context_t p) {
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = new_ast_new_node(AST_CONSTDECL, const_id, type_id, expr);
+  p->ast = m2c_ast_new_node(AST_CONSTDECL, const_id, type_id, expr);
   
   return lookahead;
 } /* end const_declaration */
+
+
+/* --------------------------------------------------------------------------
+ * private function ident()
+ * --------------------------------------------------------------------------
+ * alias ident = StdIdent ;
+ *
+ * astNode: (IDENT "lexeme")
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t ident (m2c_parser_context_t p) {
+  intstr_t lexeme;
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("ident");
+  
+  lookahead = m2c_consume_sym(p->lexer);
+  lexeme = m2c_current_lexeme(p->lexer);
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(IDENT, lexeme);
+  
+  return lookahead;
+} /* end ident */
 
 
 /* --------------------------------------------------------------------------
@@ -1057,15 +1082,10 @@ m2c_token_t type_definition (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t derived_or_subrange_type (m2c_parser_context_t p);
-
 m2c_token_t enum_type (m2c_parser_context_t p);
-
 m2c_token_t set_type (m2c_parser_context_t p);
-
 m2c_token_t array_type (m2c_parser_context_t p);
-
 m2c_token_t pointer_type (m2c_parser_context_t p);
-
 m2c_token_t procedure_type (m2c_parser_context_t p);
 
 m2c_token_t type (m2c_parser_context_t p) {
