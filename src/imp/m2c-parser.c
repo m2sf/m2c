@@ -421,7 +421,6 @@ m2c_token_t compilation_unit (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t import (m2c_parser_context_t p);
-
 m2c_token_t definition (m2c_parser_context_t p);
 
 m2c_token_t definition_module (m2c_parser_context_t p) {
@@ -457,7 +456,7 @@ m2c_token_t definition_module (m2c_parser_context_t p) {
     lookahead = m2c_consume_sym(p->lexer);
   }
   else /* resync */ {
-    lookahead = skipt_to_set_or_set(p, FIRST(IMPORT), FOLLOW(IMPORT));
+    lookahead = skipt_token_or_set(p, TOKEN_IMPORT, FOLLOW(IMPORT));
   } /* end if */
   
   imp_list = m2c_fifo_new_queue(NULL);
@@ -569,7 +568,7 @@ m2c_token_t import (m2c_parser_context_t p) {
     
   /* (',' libIdent reExport? )* */
   while (lookahead == TOKEN_COMMA) {
-    /* '.' */
+    /* ',' */
     lookahead = m2c_consume_sym(p->lexer);
     
     if (match_token(p, TOKEN_IDENT) {
@@ -615,64 +614,6 @@ m2c_token_t import (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function ident_list()
- * --------------------------------------------------------------------------
- * identList :=
- *   Ident ( ',' Ident )*
- *   ;
- *
- * astnode: (IDENTLIST ident0 ident1 ident2 ... identN)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t ident_list (m2c_parser_context_t p) {
-  m2c_string_t ident;
-  m2c_fifo_t tmplist;
-  uint_t line, column;
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("identList");
-  
-  /* Ident */
-  ident = m2c_lexer_lookahead_lexeme(p->lexer);
-  lookahead = m2c_consume_sym(p->lexer);
-  
-  /* add ident to temporary list */
-  tmplist = m2c_fifo_new_queue(ident);
-  
-  /* ( ',' Ident )* */
-  while (lookahead == TOKEN_COMMA) {
-    /* ',' */
-    lookahead = m2c_consume_sym(p->lexer);
-    
-    /* Ident */
-    if (match_token(p, TOKEN_IDENTIFIER, RESYNC(COMMA_OR_SEMICOLON))) {
-      lookahead = m2c_consume_sym(p->lexer);
-      ident = m2c_lexer_current_lexeme(p->lexer);
-      
-      /* check for duplicate identifier */
-      if (m2c_fifo_entry_exists(id_list, ident)) {
-        line = m2c_lexer_current_line(p->lexer);
-        column = m2c_lexer_current_column(p->lexer);
-        report_error_w_offending_lexeme
-          (M2C_ERROR_DUPLICATE_IDENT_IN_IDENT_LIST, p,
-           m2c_lexer_current_lexeme(p->lexer), line, column);
-      }
-      else /* not a duplicate */ {
-        /* add ident to temporary list */
-        m2c_fifo_enqueue(tmplist, ident);
-      } /* end if */
-    } /* end if */
-  } /* end while */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_IDENTLIST, tmplist);
-  m2c_fifo_release_queue(tmplist);
-    
-  return lookahead;
-} /* end ident_list */
-
-
-/* --------------------------------------------------------------------------
  * private function definition()
  * --------------------------------------------------------------------------
  * definition :=
@@ -686,8 +627,9 @@ m2c_token_t ident_list (m2c_parser_context_t p) {
  * varDefinition := identList ':' typeIdent ;
  * ----------------------------------------------------------------------- */
 
-m2c_token_t const_definition (m2c_parser_context_t p);
-m2c_token_t type_definition (m2c_parser_context_t p);
+m2c_token_t const_definition_list (m2c_parser_context_t p);
+m2c_token_t type_definition_list (m2c_parser_context_t p);
+m2c_token_t var_definition_list (m2c_parser_context_t p);
 m2c_token_t procedure_header (m2c_parser_context_t p);
 m2c_token_t to_do_list (m2c_parser_context_t p);
 
@@ -702,50 +644,20 @@ m2c_token_t definition (m2c_parser_context_t p) {
     
     /* CONST */
     case TOKEN_CONST :
-      lookahead = m2c_consume_sym(p->lexer);
-      
-      /* ( constDefinition ';' )* */
-      while (lookahead == TOKEN_IDENTIFIER) {
-        lookahead = const_definition(p); /* p->ast holds ast-node */
-        
-        /* ';' */
-        if (match_token(p, TOKEN_SEMICOLON,
-            RESYNC(DEFINITION_OR_IDENT_OR_SEMICOLON))) {
-          lookahead = m2c_consume_sym(p->lexer);
-        } /* end if */
-      } /* end while */
+      /* (constDefinition ';')+ */
+      lookahead = const_definition_list(p);
       break;
       
     /* | TYPE */
     case TOKEN_TYPE :
-      lookahead = m2c_consume_sym(p->lexer);
-      
-      /* ( typeDefinition ';' )* */
-      while (lookahead == TOKEN_IDENTIFIER) {
-        lookahead = type_definition(p); /* p->ast holds ast-node */
-        
-        /* ';' */
-        if (match_token(p, TOKEN_SEMICOLON,
-            RESYNC(DEFINITION_OR_IDENT_OR_SEMICOLON))) {
-          lookahead = m2c_consume_sym(p->lexer);
-        } /* end if */
-      } /* end while */
+      /* (typeDefinition ';')+ */
+      lookahead = type_definition_list(p);
       break;
       
     /* | VAR */
     case TOKEN_VAR :
-      lookahead = m2c_consume_sym(p->lexer);
-      
-      /* ( varDefinition ';' )* */
-      while (lookahead == TOKEN_IDENTIFIER) {
-        lookahead = variable_declaration(p); /* p->ast holds ast-node */
-        
-        /* ';' */
-        if (match_token(p, TOKEN_SEMICOLON,
-            RESYNC(DEFINITION_OR_IDENT_OR_SEMICOLON))) {
-          lookahead = m2c_consume_sym(p->lexer);
-        } /* end if */
-      } /* end while */
+      /* (varDefinition ';')+ */
+      lookahead = var_definition_list(p);
       break;
       
     /* | procedureHeader */
@@ -753,9 +665,22 @@ m2c_token_t definition (m2c_parser_context_t p) {
       lookahead = procedure_header(p); /* p->ast holds ast-node */
       
       /* ';' */
-      if (match_token(p, TOKEN_SEMICOLON,
-          RESYNC(DEFINITION_OR_SEMICOLON))) {
+      if (match_token(p, TOKEN_SEMICOLON)) {
         lookahead = m2c_consume_sym(p->lexer);
+      else /* resync */ {
+        lookahead = skip_to_set(p, FOLLOW(PROCEDURE_HEADER));
+      } /* end if */
+      break;
+      
+    /* | toDoList */
+    case TOKEN_TO :
+      lookahead = to_do_list(p); /* p->ast holds ast-node */
+      
+      /* ';' */
+      if (match_token(p, TOKEN_SEMICOLON)) {
+        lookahead = m2c_consume_sym(p->lexer);
+      else /* resync */ {
+        lookahead = skip_to_set(p, FOLLOW(PROCEDURE_HEADER));
       } /* end if */
       break;
       
@@ -768,6 +693,67 @@ m2c_token_t definition (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end definition */
+
+/* --------------------------------------------------------------------------
+ * private function const_definition_list()
+ * --------------------------------------------------------------------------
+ * constDefinitionList :=
+ *   constDefinition ';' (constDefinition ';')*
+ *   ;
+ *
+ * astnode: (CONSTDEFLIST constDefNode1 constDefNode2 ... constDefNodeN)
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t const_definition_list (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  m2c_fifo_t def_list;
+  
+  def_list = m2c_fifo_new_queue(NULL);
+  
+  /* constDefinition ';' */
+  
+  /* constDefinition */
+  if (match_token(p, TOKEN_IDENTIFIER)) {
+    lookahead = const_definition(p); /* p->ast holds ast-node */
+    def_list = m2c_fifo_enqueue(def_list, p->ast);
+      
+    /* ';' */
+    if (match_token(p, TOKEN_SEMICOLON)) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_SEMICOLON, FOLLOW(CONST_DEFINITION));
+    } /* end if */
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(CONST_DEFINITION));
+  } /* end if */
+  
+  /* (constDefinition ';')* */
+  
+  /* constDefinition */
+  while (match_token(p, TOKEN_IDENTIFIER)) {
+    lookahead = const_definition(p); /* p-ast holds ast-node */
+    def_list = m2c_fifo_enqueue(def_list, p->ast);
+    
+    /* ';' */
+    if (match_token == TOKEN_SEMICOLON) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_SEMICOLON, FOLLOW(CONST_DEFINITION));
+    } /* end if */
+  } /* end while */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_CONSTDEFLIST, def_list);
+  
+  m2c_fifo_releast(def_list);
+  
+  return lookahead;
+} /* end const_definition_list */
 
 
 /* --------------------------------------------------------------------------
@@ -1101,6 +1087,8 @@ m2c_token_t range (m2c_parser_context_t p) {
  * astnode: (ENUM identListNode)
  * ----------------------------------------------------------------------- */
 
+m2c_token_t ident_list (m2c_parser_context_t p);
+
 m2c_token_t enum_type (m2c_parser_context_t p) {
   m2c_astnode idlist;
   m2c_token_t lookahead;
@@ -1126,6 +1114,67 @@ m2c_token_t enum_type (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end enum_type */
+
+
+/* --------------------------------------------------------------------------
+ * private function ident_list()
+ * --------------------------------------------------------------------------
+ * identList :=
+ *   Ident ( ',' Ident )*
+ *   ;
+ *
+ * astnode: (IDENTLIST ident0 ident1 ident2 ... identN)
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t ident_list (m2c_parser_context_t p) {
+  m2c_string_t ident;
+  m2c_fifo_t tmplist;
+  uint_t line, column;
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("identList");
+  
+  /* Ident */
+  ident = m2c_lexer_lookahead_lexeme(p->lexer);
+  lookahead = m2c_consume_sym(p->lexer);
+  
+  /* add ident to temporary list */
+  tmplist = m2c_fifo_new_queue(ident);
+  
+  /* ( ',' Ident )* */
+  while (lookahead == TOKEN_COMMA) {
+    /* ',' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* Ident */
+    if (match_token(p, TOKEN_IDENTIFIER)) {
+      lookahead = m2c_consume_sym(p->lexer);
+      ident = m2c_lexer_current_lexeme(p->lexer);
+      
+      /* check for duplicate identifier */
+      if (m2c_fifo_entry_exists(id_list, ident)) {
+        line = m2c_lexer_current_line(p->lexer);
+        column = m2c_lexer_current_column(p->lexer);
+        report_error_w_offending_lexeme
+          (M2C_ERROR_DUPLICATE_IDENT_IN_IDENT_LIST, p,
+           m2c_lexer_current_lexeme(p->lexer), line, column);
+      }
+      else /* not a duplicate */ {
+        /* add ident to temporary list */
+        m2c_fifo_enqueue(tmplist, ident);
+      } /* end if */
+    }
+    else /* resync */ {
+      lookahead = skip_to_token_or_set(p, TOKEN_COMMA, FOLLOW(IDENT_LIST));
+    } /* end if */
+  } /* end while */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_IDENTLIST, tmplist);
+  m2c_fifo_release_queue(tmplist);
+    
+  return lookahead;
+} /* end ident_list */
 
 
 /* --------------------------------------------------------------------------
