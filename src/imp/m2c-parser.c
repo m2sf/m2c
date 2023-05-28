@@ -1724,8 +1724,6 @@ m2c_token_t record_type (m2c_parser_context_t p) {
 /* --------------------------------------------------------------------------
  * private function field_list_sequence()
  * --------------------------------------------------------------------------
- * For use with compiler option --no-variant-records.
- *
  * fieldListSequence :=
  *   fieldList ( ';' fieldList )*
  *   ;
@@ -1774,37 +1772,75 @@ m2c_token_t field_list_sequence (m2c_parser_context_t p) {
  * private function field_list()
  * --------------------------------------------------------------------------
  * fieldList :=
- *   identList ':' type
+ *   identList ':' ( typeIdent | subrangeType | arrayType | procedureType )
  *   ;
  *
- * astnode: (FIELDLIST identListNode typeConstructorNode)
+ * astNode: (FIELDLIST identListNode typeNode)
  * ----------------------------------------------------------------------- */
 
-/* TO DO: add discrete first and follow set for fieldList */
-
 m2c_token_t field_list (m2c_parser_context_t p) {
-  m2c_astnode_t idlist, tc;
   m2c_token_t lookahead;
+  m2c_astnode_t type_node, list_node;
     
   PARSER_DEBUG_INFO("fieldList");
   
   /* IdentList */
   lookahead = ident_list(p);
-  idlist = p->ast;
+  list_node = p->ast;
   
   /* ':' */
-  if (match_token(p, TOKEN_COLON, FOLLOW(VARIABLE_DECLARATION))) {
+  if (match_token(p, TOKEN_COLON)) {
     lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_token(p,
+      TOKEN_IDENT, TOKEN_LBRACKET, TOKEN_ARRAY, TOKEN_PROCEDURE, NULL);
+  } /* end if */
     
     /* type */
     if (match_set(p, FIRST(TYPE), FOLLOW(VARIABLE_DECLARATION))) {
       lookahead = type(p);
       tc = p->ast;
     } /* end if */
+  }
+  else /**/ {
+    lookahead = skip_to_set(p, FOLLOW(VARIABLE_DECLARATION));
+  } /* end if */
+  
+  /* typeIdent | subrangeType | arrayType | procedureType */
+  if (match_token_list(p,
+    TOKEN_IDENT, TOKEN_LBRACKET, TOKEN_ARRAY, TOKEN_PROCEDURE, NULL)) {
+    
+    switch (lookahead) {
+      case TOKEN_ARRAY :
+        lookahead = array_type(p);
+        break;
+        
+      case TOKEN_PROCEDURE :
+        lookahead = procedure_type(p);
+        break;
+        
+      case TOKEN_IDENT :
+        lookahead = qualident(p);
+        break;
+        
+      case TOKEN_LBRACKET :
+        lookahead = subrange_type(p);
+        break;
+        
+      default :
+        /* fatal error -- abort */
+        exit (-1);
+    } /* end switch */
+    type_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(FIELD_LIST));
+    type_node = m2c_ast_empty_node();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_FIELDLIST, idlist, tc, NULL);
+  p->ast = m2c_ast_new_node(AST_FIELDLIST, list_node, type_node, NULL);
   
   return lookahead;
 } /* end field_list */
