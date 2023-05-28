@@ -1316,59 +1316,89 @@ m2c_token_t qualident (m2c_parser_context_t p) {
 } /* end qualident */
 
 
-
 /* --------------------------------------------------------------------------
- * private function derived_or_subrange_type()
+ * private function subrange_type()
  * --------------------------------------------------------------------------
- * derivedOrSubrangeType :=
- *   typeIdent range? | range
+ * subrangeType :=
+ *   constRange OF countableType
  *   ;
  *
- * typeIdent := qualident ;
+ * constRange :=
+ *   '[' lowerBound '..' upperBound ']'
+ *   ;
+ *
+ * alias countableType = typeIdent ;
+ *
+ * alias upperBound, lowerBound = constExpression ;
+ *
+ * astNode: (SUBR baseType lowerBound upperBound)
  * ----------------------------------------------------------------------- */
-
-m2c_token_t qualident (m2c_parser_context_t p);
 
 m2c_token_t range (m2c_parser_context_t p);
 
-m2c_token_t derived_or_subrange_type (m2c_parser_context_t p) {
-  m2c_astnode_t id;
+m2c_token_t subrange_type (m2c_parser_context_t p) {
+  m2c_astnode_t type_node;
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("derivedOrSubrangeType");
   
-  lookahead = m2c_next_sym(p->lexer);
+  /* '[' */
+  lookahead = m2c_consume_sym(p->lexer);
   
-  if (match_set(p, FIRST(DERIVED_OR_SUBRANGE_TYPE),
-      FOLLOW(DERIVED_OR_SUBRANGE_TYPE))) {
-    
-    /* typeIdent range? */
-    if (lookahead == TOKEN_IDENTIFIER) {
-      
-      /* typeIdent */
-      lookahead = qualident(p);
-      /* astnode: (IDENT ident) | (QUALIDENT q0 q1 q2 ... qN ident) */
-      id = p->ast;
-      
-      /* range? */
-      if (lookahead == TOKEN_LEFT_BRACKET) {
-        lookahead = range(p);
-        m2c_ast_replace_subnode(p->ast, 2, id);
-        /* astnode: (SUBR lower upper identNode) */
-      } /* end if */
-    }
-    /* | range */
-    else if (lookahead == TOKEN_LEFT_BRACKET) {
-      lookahead = range(p);
-      /* astnode: (SUBR lower upper (EMPTY)) */
-    }
-    else /* unreachable code */ {
-      /* fatal error -- abort */
-      exit(-1);
-    } /* end if */
+  /* lowerBound */
+  if (match_set(p, FIRST(EXPRESSION))) {
+    lookahead = expression(p);
+    lower_bound = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_DOT_DOT, FIRST(EXPRESSION));
+    lower_bound = m2c_ast_empty_node();
   } /* end if */
   
-  /* AST node is passed through in p->ast */
+  /* '..' */
+  if (match_token(p, TOKEN_DOT_DOT)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FIRST(EXPRESSION));
+  } /* end if */
+  
+  /* upperBound */
+  if (match_set(p, FIRST(EXPRESSION))) {
+    lookahead = expression(p);
+    upper_bound = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_token(p, TOKEN_RBRACKET, TOKEN_OF, NULL);
+    upper_bound = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* ']' */
+  if (match_token(p, TOKEN_RBRACKET)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_token(p, TOKEN_OF, TOKEN_IDENT, NULL);
+  } /* end if */
+  
+  /* OF */
+  if (match_token(p, TOKEN_OF)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_IDENT, FOLLOW(SUBRANGE_TYPE));
+  } /* end if */
+  
+  /* countableType */
+  if (match_token(p, TOKEN_IDENT)) {
+    lookahead = qualident(p);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(SUBRANGE_TYPE));
+  } /* end if */
+    
+  /* build AST node and pass back in p->ast */
+  p->ast = m2c_ast_new_node(AST_SUBR, type_node, lower_bound, upper_bound);
   
   return lookahead;
 } /* end derived_or_subrange_type */
