@@ -2063,35 +2063,49 @@ m2c_token_t formal_type (m2c_parser_context_t p) {
  * private function formal_type()
  * --------------------------------------------------------------------------
  * formalType :=
- *   simpleFormalType | attributedFormalType
+ *   ( CONST | VAR )? nonAttrFormalType
  *   ;
+ *
+ * astNode: formalTypeNode
  * ----------------------------------------------------------------------- */
 
-m2c_token_t simple_formal_type (m2c_parser_context_t p);
-
-m2c_token_t attributed_formal_type (m2c_parser_context_t p);
+m2c_token_t non_attr_formal_type (m2c_parser_context_t p);
 
 m2c_token_t formal_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
+  m2c_ast_node_t type_node;
   
   PARSER_DEBUG_INFO("formalType");
   
   lookahead = m2c_next_sym(p->lexer);
   
-  /* simpleFormalType */
-  if ((lookahead == TOKEN_ARRAY) || (lookahead == TOKEN_IDENTIFIER)) {
-    lookahead = simple_formal_type(p);
+  /* (CONST | VAR)? */
+  if ((lookahead == TOKEN_CONST) {
+    /* CONST */
+    lookahead = m2c_consume_sym(p->lexer);
+    node_type = AST_CONSTP;
   }
-  /* | attributedFormalType */
-  else if ((lookahead == TOKEN_CONST) || (lookahead == TOKEN_VAR)) {
-    lookahead = attributed_formal_type(p);
+  else if (lookahead == TOKEN_VAR) {
+    /* VAR */
+    lookahead = m2c_consume_sym(p->lexer);
+    node_type = AST_VARP;
   }
-  else /* unreachable code */ {
-    /* fatal error -- abort */
-    exit(-1);
+  else /* no attribute */
+    node_type = ;
   } /* end if */
   
-  /* AST node is passed through in p->ast */
+  /* nonAttrFormalType */
+  if (match_set(p, FIRST(NON_ATTR_FORMAL_TYPE))) {
+    lookahead = non_attr_formal_type(p);
+    type_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(FORMAL_TYPE));
+    type_node = m2c_ast_empty_node();
+  } /* end if */
+    
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(node_type, type_node, NULL);
   
   return lookahead;
 } /* end formal_type */
