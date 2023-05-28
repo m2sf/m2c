@@ -1334,11 +1334,9 @@ m2c_token_t qualident (m2c_parser_context_t p) {
  * astNode: (SUBR baseType lowerBound upperBound)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t range (m2c_parser_context_t p);
-
 m2c_token_t subrange_type (m2c_parser_context_t p) {
-  m2c_astnode_t type_node;
   m2c_token_t lookahead;
+  m2c_astnode_t type_node, lower_bound, upper_bound;
   
   PARSER_DEBUG_INFO("derivedOrSubrangeType");
   
@@ -1405,68 +1403,23 @@ m2c_token_t subrange_type (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function range()
- * --------------------------------------------------------------------------
- * range :=
- *   '[' constExpression '..' constExpression ']'
- *   ;
- *
- * astnode: (SUBR exprNode exprNode (EMPTY))
- * ----------------------------------------------------------------------- */
-
-m2c_token_t range (m2c_parser_context_t p) {
-  m2c_astnode_t lower, upper, empty;
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("range");
-  
-  /* '[' */
-  lookahead = m2c_consume_sym(p->lexer);
-  
-  /* constExpression */
-  if (match_set(p, FIRST(EXPRESSION), FOLLOW(RANGE))) {
-    lookahead = const_expression(p);
-    lower = p->ast;
-    
-    /* '..' */
-    if (match_token(p, TOKEN_RANGE, FOLLOW(RANGE))) {
-      lookahead = m2c_consume_sym(p->lexer);
-      
-      /* constExpression */
-      if (match_set(p, FIRST(EXPRESSION), FOLLOW(RANGE))) {
-        lookahead = const_expression(p);
-        upper = p->ast;
-        
-        /* ']' */
-        if (match_token(p, TOKEN_RIGHT_BRACKET, FOLLOW(RANGE))) {
-          lookahead = m2c_consume_sym(p->lexer);
-        } /* end if */
-      } /* end if */
-    } /* end if */
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  empty = m2c_ast_empty_node();
-  p->ast = m2c_ast_new_node(AST_SUBR, lower, upper, empty, NULL);
-  
-  return lookahead;
-} /* end range */
-
-
-/* --------------------------------------------------------------------------
  * private function enum_type()
  * --------------------------------------------------------------------------
  * enumType :=
- *   '(' identList ')'
+ *   '(' ( '+' enumTypeToExtend ',' )? identList ')'
  *   ;
  *
- * astnode: (ENUM identListNode)
+ * alias enumTypeToExtend = enumTypeIdent ;
+ *
+ * alias enumTypeIdent = typeIdent ;
+ *
+ * astNode: (ENUM baseType enumValues)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t ident_list (m2c_parser_context_t p);
 
 m2c_token_t enum_type (m2c_parser_context_t p) {
-  m2c_astnode idlist;
+  m2c_astnode type_node, list_node;
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("enumType");
@@ -1474,19 +1427,52 @@ m2c_token_t enum_type (m2c_parser_context_t p) {
   /* '(' */
   lookahead = m2c_consume_sym(p->lexer);
   
-  /* identList */
-  if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(ENUM_TYPE))) {
-    lookahead = ident_list(p);
-    idlist = p->ast;
+  /* ('+' enumTypeToExtend ',')? */
+  if (lookahead == TOKEN_PLUS) {
+    /* '+' */
+    lookahead = m2c_consume_sym(p->lexer);
     
-    /* ')' */
-    if (match_token(p, TOKEN_RIGHT_PAREN, FOLLOW(ENUM_TYPE))) {
-      lookahead = m2c_consume_sym(p->lexer);
+    /* enumTypeToExtend */
+    if (match_token(p, TOKEN_IDENT)) {
+      lookahead = qualident(p);
+      type_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_token(p, TOKEN_COMMA, TOKEN_IDENT, NULL);
+      type_node = m2c_ast_empty_node();
     } /* end if */
+    
+    /* ',' */
+    if (match_token(p, TOKEN_COMMA)) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead = skip_to_token(p, TOKEN_IDENT);
+    } /* end if */
+  }
+  else {
+    type_node = m2c_ast_empty_node();
   } /* end if */
   
+  /* identList */
+  if (match(p, TOKEN_IDENT)) {
+    lookahead = ident_list(p);
+    list_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_RPAREN, FOLLOW(ENUM_TYPE));
+  } /* end if */
+  
+  /* ')' */
+  if (match_token(p, TOKEN_RPAREN)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(ENUM_TYPE));
+  } /* end if */
+    
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_ENUM, idlist, NULL);
+  p->ast = m2c_ast_new_node(AST_ENUM, type_node, list_node, NULL);
   
   return lookahead;
 } /* end enum_type */
