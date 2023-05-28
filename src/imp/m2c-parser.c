@@ -1944,20 +1944,19 @@ m2c_token_t opaque_type (m2c_parser_context_t p) {
  * private function procedure_type()
  * --------------------------------------------------------------------------
  * procedureType :=
- *   PROCEDURE ( '(' ( formalType ( ',' formalType )* )? ')' )?
- *   ( ':' returnedType )?
+ *   PROCEDURE
+ *   ( '(' formalType ( ',' formalType )* ')' )? ( ':' returnedType )?
  *   ;
  *
- * returnedType := typeIdent ;
+ * alias returnedType = typeIdent ;
  *
- * astnode: (PROCTYPE formalTypeListNode returnedTypeNode)
+ * astNode: (PROCTYPE qualidentNode formalTypeNode+)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t formal_type (m2c_parser_context_t p);
 
 m2c_token_t procedure_type (m2c_parser_context_t p) {
-  m2c_astnode_t ftlist, rtype;
-  m2c_fifo_t tmplist;
+  m2c_astnode_t type_node, list_node;
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("procedureType");
@@ -1965,81 +1964,99 @@ m2c_token_t procedure_type (m2c_parser_context_t p) {
   /* PROCEDURE */
   lookahead = m2c_consume_sym(p->lexer);
   
-  tmplist = m2c_fifo_new_queue(NULL);
-  
-  /* ( '(' ( formalType ( ',' formalType )* )? ')' )? */
-  if (lookahead == TOKEN_LEFT_PAREN) {
+  /* ( '(' formalTypeList ')' )? */
+  if (lookahead == TOKEN_LPAREN) {
     /* '(' */
     lookahead = m2c_consume_sym(p->lexer);
     
-    /* formalType */
-    if (lookahead != TOKEN_RIGHT_PAREN) {
-      if (match_set(p, FIRST(FORMAL_TYPE), RESYNC(COMMA_OR_RIGHT_PAREN))) {
-        lookahead = formal_type(p);
-        m2c_fifo_enqueue(tmplist, p->ast);
-      }
-      else /* resync */ {
-        lookahead = m2c_next_sym(p->lexer);
-      } /* end if */
-      
-      /* ( ',' formalType )* */
-      while (lookahead == TOKEN_COMMA) {
-        /* ',' */
-        lookahead = m2c_consume_sym(p->lexer);
-      
-        /* formalType */
-        if (match_set(p, FIRST(FORMAL_TYPE), RESYNC(COMMA_OR_RIGHT_PAREN))) {
-          lookahead = formal_type(p);
-          m2c_fifo_enqueue(tmplist, p->ast);
-        }
-        else /* resync */ {
-          lookahead = m2c_next_sym(p->lexer);
-        } /* end if */
-      } /* end while */
+    /* formalTypeList */
+    if (match_set(p, FIRST(FORMAL_TYPE))) {
+      lookahead = formal_type_list(p);
+      list_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token(p, TOKEN_RPAREN, TOKEN_COLON, TOKEN_IDENT, NULL);
+      list_node = m2c_ast_empty_node();
     } /* end if */
     
     /* ')' */
-    if (match_token(p, TOKEN_RIGHT_PAREN, RESYNC(COLON_OR_SEMICOLON))) {
+    if (match_token(p, TOKEN_RPAREN)) {
       lookahead = m2c_consume_sym(p->lexer);
     }
     else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
+      lookahead = skip_to_token(p, TOKEN_COLON, TOKEN_IDENT, NULL);
     } /* end if */
+  }
+  else /* no formal type list */ {
+    list_node = m2c_ast_empty_node();
   } /* end if */
   
-  /* ( ':' returnedType )? */
-  if (lookahead == TOKEN_COLON) {
+  /* (':' returnType)? */
+  if (lookahead == TOKEN_COLON)) {
     /* ':' */
     lookahead = m2c_consume_sym(p->lexer);
     
-    /* returnedType */
-    if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(PROCEDURE_TYPE))) {
+    /* returnType */
+    if (match_token(p, TOKEN_IDENT)) {
       lookahead = qualident(p);
-      rtype = p->ast;
+      type_node = p->ast;
     }
     else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
+      lookahead = skip_to_set(p, FOLLOW(TYPE_DEFINITION));
+      type_node = m2c_ast_empty_node();
     } /* end if */
   }
-  else {
-    rtype = m2c_ast_empty_node();
+  else /* no return type */ {
+    type_node = m2c_ast_empty_node();
   } /* end if */
-  
-  /* build formal type list node */
-  if (m2c_fifo_entry_count(tmplist) > 0) {
-    ftlist = m2c_ast_new_list_node(AST_FTYPELIST, tmplist);
-  }
-  else /* no formal type list */ {
-    ftlist = m2c_ast_empty_node();
-  } /* end if */
-  
-  m2c_fifo_release(tmplist);
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_PROCTYPE, ftlist, rtype, NULL);
+  p->ast = m2c_ast_new_node(AST_PROCTYPE, type_node, list_node, NULL);
   
   return lookahead;
 } /* end procedure_type */
+
+
+/* --------------------------------------------------------------------------
+ * private function formal_type_list()
+ * --------------------------------------------------------------------------
+ * formalTypeList :=
+ *   formalType ( ',' formalType )*
+ *   ;
+ *
+ * astNode: (FTYPELIST formalTypeNode+)
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t formal_type (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  m2c_fifo_t tmp_list;
+  
+  PARSER_DEBUG_INFO("formalTypeList");
+  
+  /* formalType */
+  lookahead = formal_type(p);
+  tmp_list = m2c_fifo_new_queue(p->ast);
+  
+  while (lookahead == TOKEN_COMMA) {
+    /* ',' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* formalType */
+    if (match_set(p, FIRST(FORMAL_TYPE))) {
+      lookahead = formal_type(p);
+      m2c_fifo_enqueue(tmp_list, p->ast);
+    }
+    else /* resync */ {
+      lookahead = skip_to_token(p, TOKEN_COMMA, TOKEN_RPAREN, NULL);
+    } /* end if */
+  } /* end while */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_FTYPELIST, tmp_list, NULL);
+  
+  return lookahead;
+} /* end if */
 
 
 /* --------------------------------------------------------------------------
