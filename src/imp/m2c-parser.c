@@ -1273,18 +1273,18 @@ m2c_token_t alias_type (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t qualident (m2c_parser_context_t p) {
-  m2c_string_t ident, qident;
-  m2c_fifo_t tmplist;
+  m2c_string_t first_ident, tail_ident;
+  m2c_fifo_t lex_list;
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("qualident");
   
   /* Ident */
   lookahead = m2c_consume_sym(p->lexer);
-  ident = m2c_lexer_current_lexeme(p->lexer);
+  first_ident = m2c_lexer_current_lexeme(p->lexer);
   
   /* add ident to temporary list */
-  tmplist = m2c_fifo_new_queue(ident);
+  lex_list = m2c_fifo_new_queue(first_ident);
   
   /* ( '.' Ident )* */
   while (lookahead == TOKEN_PERIOD) {
@@ -1294,20 +1294,23 @@ m2c_token_t qualident (m2c_parser_context_t p) {
     /* Ident */
     if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(QUALIDENT))) {
       lookahead = m2c_consume_sym(p->lexer);
-      qident = m2c_lexer_current_lexeme(p->lexer);
-      m2c_fifo_enqueue(tmplist, qident);
+      tail_ident = m2c_lexer_current_lexeme(p->lexer);
+      m2c_fifo_enqueue(lex_list, tail_ident);
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(QUALIDENT));
     } /* end if */
   } /* end while */
   
   /* build AST node and pass it back in p->ast */
   if (m2c_fifo_entry_count(tmplist) == 1) {
-    p->ast = m2c_ast_new_terminal_node(AST_IDENT, ident, NULL);
+    p->ast = m2c_ast_new_terminal_node(AST_IDENT, first_ident, NULL);
   }
   else {
-    p->ast = m2c_ast_new_terminal_list_node(AST_QUALIDENT, tmplist);
+    p->ast = m2c_ast_new_terminal_list_node(AST_QUALIDENT, lex_list);
   } /* end if */
   
-  m2c_fifo_release(tmplist);
+  m2c_fifo_release(lex_list);
   
   return lookahead;
 } /* end qualident */
