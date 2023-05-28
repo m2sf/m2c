@@ -1891,6 +1891,56 @@ m2c_token_t pointer_type (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
+ * private function opaque_type()
+ * --------------------------------------------------------------------------
+ * opaqueType :=
+ *   OPAQUE ('[' allocSize ']')?;
+ *
+ * alias allocSize = constExpression ;
+ *
+ * astNode: (OPAQUE size)
+ * ----------------------------------------------------------------------- */
+ 
+m2c_token_t opaque_type (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  m2c_astnode_t type_node;
+  
+  PARSER_DEBUG_INFO("opaqueType");
+  
+  /* OPAQUE */
+  lookahead = m2c_consume_sym(p);
+  
+  /* '[' */
+  if (lookahead == TOKEN_LBRACKET) {
+    lookahead = m2c_consume_sym(p->lexer);
+  
+    /* allocSize */
+    if (match_set(p, FIRST(EXPRESSION))) {
+      lookahead = expression(p);
+      size_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_RBRACKET, FOLLOW(TYPE_DEFINITION));
+        size_node = m2c_ast_empty_node();
+    } /* end if */
+  
+  /* ']' */
+  if (match_token(p, TOKEN_RBRACKET)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(TYPE_DEFINITION));
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_OPAQUE, size_node, NULL);
+  
+  return lookahead;
+} /* end pointer_type */
+
+
+/* --------------------------------------------------------------------------
  * private function procedure_type()
  * --------------------------------------------------------------------------
  * procedureType :=
