@@ -1399,7 +1399,7 @@ m2c_token_t subrange_type (m2c_parser_context_t p) {
   p->ast = m2c_ast_new_node(AST_SUBR, type_node, lower_bound, upper_bound);
   
   return lookahead;
-} /* end derived_or_subrange_type */
+} /* end subrange_type */
 
 
 /* --------------------------------------------------------------------------
@@ -1419,7 +1419,7 @@ m2c_token_t subrange_type (m2c_parser_context_t p) {
 m2c_token_t ident_list (m2c_parser_context_t p);
 
 m2c_token_t enum_type (m2c_parser_context_t p) {
-  m2c_astnode type_node, list_node;
+  m2c_ast_node_t type_node, list_node;
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("enumType");
