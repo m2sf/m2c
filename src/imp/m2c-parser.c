@@ -804,6 +804,8 @@ m2c_token_t const_definition (m2c_parser_context_t p) {
  * astNode: (BIND ident expr)
  * ----------------------------------------------------------------------- */
 
+m2c_token_t const_expression (m2c_parser_context_t p);
+
 m2c_token_t const_binding (m2c_parser_context_t p) {
   intstr_t ident;
   m2c_token_t lookahead;
@@ -868,6 +870,70 @@ m2c_token_t const_binding (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end const_binding */
+
+
+/* --------------------------------------------------------------------------
+ * private function const_declaration()
+ * --------------------------------------------------------------------------
+ * constDeclaration :=
+ *   ident ( ':' typeIdent )? '=' constExpression
+ *   ;
+ *
+ * alias constExpression = expression ;
+ *
+ * astNode: (CONST constId typeId expr)
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t const_declaration (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  m2c_ast_node_t const_id, type_id, expr;
+  
+  PARSER_DEBUG_INFO("constDeclaration");
+  
+  /* ident */
+  lookahead = ident(p);
+  const_id = p->ast;
+  
+  /* (':' typeIdent)? */
+  if (lookahead == TOKEN_COLON) {
+    /* ':' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* typeIdent */
+    if (match_token(p, TOKEN_IDENT)) {
+      lookahead = ident(p);
+      type_id = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_token_or_set(p, TOKEN_EQUAL, FIRST(EXPRESSION));
+      type_id = NULL;
+    } /* end if */
+  } /* end if */
+  
+  /* '=' */
+  if (match_token(p, TOKEN_EQUAL)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead =
+      skip_to_set_or_set(p, FIRST(EXPRESSION), FOLLOW(CONST_DECLARATION));
+  } /* end if */
+  
+  /* constExpression */
+  if (match_set(p, FIRST(EXPRESSION))) {
+    lookahead = const_expression(p);
+    expr = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(CONST_DECLARATION));
+    expr = NULL;
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = new_ast_new_node(AST_CONSTDECL, const_id, type_id, expr);
+  
+  return lookahead;
+} /* end const_declaration */
 
 
 /* --------------------------------------------------------------------------
