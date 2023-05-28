@@ -1643,26 +1643,25 @@ m2c_token_t array_type (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function extensible_record_type()
+ * private function record_type()
  * --------------------------------------------------------------------------
- * For use with compiler option --no-variant-records.
- *
- * recordType := extensibleRecordType ;
- *
- * extensibleRecordType :=
- *   RECORD ( '(' baseType ')' )? fieldListSequence END
+ * recordType :=
+ *   RECORD ( '(' recTypeToExtend ')' )?
+ *   fieldList ( ';' fieldList )* END
  *   ;
  *
- * baseType := typeIdent ;
+ * recTypeToExtend = typeIdent | NIL ;
  *
- * astnode:
- *  (RECORD fieldListSeqNode) | (EXTREC baseTypeNode fieldListSeqNode)
+ * alias fieldList = varOrFieldDeclaration ;
+ *
+ * astNode: (RECORD baseType fieldListSeq)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t field_list_sequence (m2c_parser_context_t p);
 
-m2c_token_t extensible_record_type (m2c_parser_context_t p) {
-  m2c_astnode_t basetype, flseq;
+m2c_token_t record_type (m2c_parser_context_t p) {
+  m2c_astnode_t type_node, list_node;
+  m2c_fifo_t tmp_list;
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("recordType");
@@ -1670,70 +1669,59 @@ m2c_token_t extensible_record_type (m2c_parser_context_t p) {
   /* RECORD */
   lookahead = m2c_consume_sym(p->lexer);
   
-  /* ( '(' baseType ')' )? */
-  if (lookahead == TOKEN_LEFT_PAREN) {
+  /* ( '(' recTypeToExtend ')' )? */
+  if (lookahead == TOKEN_LPAREN) {
     /* '(' */
     lookahead = m2c_consume_sym(p->lexer);
     
-    /* baseType */
-    if (match_token(p, TOKEN_IDENTIFIER,
-        FIRST(FIELD_LIST_SEQUENCE))) {
+    /* typeIdent | NIL */
+    if (match_token(p, TOKEN_IDENT))
       lookahead = qualident(p);
-      basetype = p->ast;
-      
-      /* ')' */
-      if (match_token(p, TOKEN_RIGHT_PAREN,
-          FIRST(FIELD_LIST_SEQUENCE))) {
-        lookahead = m2c_consume_sym(p->lexer);
-      }
-      else /* resync */ {
-        lookahead = m2c_next_sym(p->lexer);
-      } /* end if */
+      type_node = p->ast;
     }
-    else  /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
+    else /* resync */ {
+      lookahead = skip_to_token_or_set(p, TOKEN_RPAREN, FIRST(FIELD_LIST));
+      type_node = m2c_ast_empty_node();
+    } /* end if */
+    
+    /* ')' */
+    if (match_token(p, TOKEN_RPAREN)) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FIRST(FIELD_LIST));
     } /* end if */
   }
-  else {
-    basetype = NULL;
+  else /* non-extensible record */ {
+    type_node = m2c_ast_empty_node();
   } /* end if */
   
-  /* check for empty field list sequence */
-  if (lookahead == TOKEN_END) {
-
-      /* empty field list sequence warning */
-      m2c_emit_warning_w_pos
-        (M2C_EMPTY_FIELD_LIST_SEQ,
-         m2c_lexer_lookahead_line(p->lexer),
-         m2c_lexer_lookahead_column(p->lexer));
-      p->warning_count++;
-      
-      /* END */
-      lookahead = m2c_consume_sym(p->lexer);
-  }
+  tmp_list = m2c_fifo_new_queue(NULL);
   
-  /* fieldListSequence */
-  else if (match_set(p, FIRST(FIELD_LIST_SEQUENCE),
-           FOLLOW(EXTENSIBLE_RECORD_TYPE))) {
+  /* fieldList (';' fieldList)* */
+  if (match_token(p, TOKEN_IDENT)) {
     lookahead = field_list_sequence(p);
-    flseq = p->ast;
-    
-    /* END */
-    if (match_token(p, TOKEN_END, FOLLOW(EXTENSIBLE_RECORD_TYPE))) {
-      lookahead = m2c_consume_sym(p->lexer);
-    } /* end if */
+    list_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead =
+      skip_to_token_or_set(p, TOKEN_END, FOLLOW(FIELD_LIST_SEQUENCE));
+    list_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* END */
+  if (match_token(p, TOKEN_END)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(FIELD_LIST_SEQUENCE));
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  if (basetype == NULL) {
-    p->ast = m2c_ast_new_node(AST_RECORD, flseq, NULL);
-  }
-  else {
-    p->ast = m2c_ast_new_node(AST_EXTREC, basetype, flseq, NULL);
-  } /* end if */
+  p->ast = m2c_ast_new_node(AST_RECORD, type_node, list_node, NULL);
   
   return lookahead;
-} /* end extensible_record_type */
+} /* end record_type */
 
 
 /* --------------------------------------------------------------------------
@@ -1849,371 +1837,6 @@ m2c_token_t field_list (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end field_list */
-
-
-/* --------------------------------------------------------------------------
- * private function variant_record_type()
- * --------------------------------------------------------------------------
- * For use with compiler option --variant-records.
- *
- * recordType := variantRecordType ;
- *
- * variantRecordType :=
- *   RECORD variantFieldListSeq END
- *   ;
- *
- * astnode: (RECORD fieldListSeqNode) | (VRNTREC variantFieldListSeqNode)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t variant_field_list_seq (m2c_parser_context_t p);
-
-m2c_token_t variant_record_type (m2c_parser_context_t p) {
-  m2c_astnode_t flseq;
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("recordType");
-  
-  /* RECORD */
-  lookahead = m2c_consume_sym(p->lexer);
-  
-  /* check for empty field list sequence */
-  if (lookahead == TOKEN_END) {
-
-      /* empty field list sequence warning */
-      m2c_emit_warning_w_pos
-        (M2C_EMPTY_FIELD_LIST_SEQ,
-         m2c_lexer_lookahead_line(p->lexer),
-         m2c_lexer_lookahead_column(p->lexer));
-      p->warning_count++;
-      
-      /* END */
-      lookahead = m2c_consume_sym(p->lexer);
-  }
-  /* variantFieldListSeq */
-  else if(match_set(p, FIRST(VARIANT_FIELD_LIST_SEQ),
-          FOLLOW(VARIANT_RECORD_TYPE))) {
-    lookahead = variant_field_list_seq(p);
-    flseq = p->ast;
-    
-    /* END */
-    if (match_token(p, TOKEN_END, FOLLOW(VARIANT_RECORD_TYPE))) {
-      lookahead = m2c_consume_sym(p->lexer);
-    } /* end if */
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  if (m2c_ast_nodetype(flseq) == AST_VFLISTSEQ) {
-    p->ast = m2c_ast_new_node(AST_VRNTREC, flseq, NULL);
-  }
-  else /* not variant field list sequence */ {
-    p->ast = m2c_ast_new_node(AST_RECORD, flseq, NULL);
-  } /* end if */
-  
-  return lookahead;
-} /* end variant_record_type */
-
-
-/* --------------------------------------------------------------------------
- * private function variant_field_list_seq()
- * --------------------------------------------------------------------------
- * For use with compiler option --variant-records.
- *
- * variantFieldListSeq :=
- *   variantFieldList ( ';' variantFieldList )*
- *   ;
- *
- * astnode:
- *  (FIELDLISTSEQ fieldListNode+) | (VFLISTSEQ anyFieldListNode+)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t variant_field_list (m2c_parser_context_t p);
-
-m2c_token_t variant_field_list_seq (m2c_parser_context_t p) {
-  m2c_fifo_t tmplist;
-  m2c_token_t lookahead;
-  uint_t line_of_semicolon, column_of_semicolon;
-  bool variant_fieldlist_found = false;
-  
-  PARSER_DEBUG_INFO("variantFieldListSeq");
-  
-  /* variantFieldList */
-  lookahead = variant_field_list(p);
-  tmplist = m2c_fifo_new_queue(p->ast);
-  
-  if (m2c_ast_nodetype(p->ast) == AST_VFLIST) {
-    variant_fieldlist_found = true;
-  } /* end if */
-  
-  /* ( ';' variantFieldList )* */
-  while (lookahead == TOKEN_SEMICOLON) {
-    /* ';' */
-    line_of_semicolon = m2c_lexer_lookahead_line(p->lexer);
-    column_of_semicolon = m2c_lexer_lookahead_column(p->lexer);
-    lookahead = m2c_consume_sym(p->lexer);
-    
-    /* check if semicolon occurred at the end of a field list sequence */
-    if (m2c_tokenset_element(FOLLOW(VARIANT_FIELD_LIST_SEQ), lookahead)) {
-    
-      if (m2c_option_errant_semicolon()) {
-        /* treat as warning */
-        m2c_emit_warning_w_pos
-          (M2C_SEMICOLON_AFTER_FIELD_LIST_SEQ,
-           line_of_semicolon, column_of_semicolon);
-        p->warning_count++;
-      }
-      else /* treat as error */ {
-        m2c_emit_error_w_pos
-          (M2C_SEMICOLON_AFTER_FIELD_LIST_SEQ,
-           line_of_semicolon, column_of_semicolon);
-        p->error_count++;
-      } /* end if */
-      
-      /* print source line */
-      if (m2c_option_verbose()) {
-        m2c_print_line_and_mark_column(p->lexer,
-          line_of_semicolon, column_of_semicolon);
-      } /* end if */
-    
-      /* leave field list sequence loop to continue */
-      break;
-    } /* end if */
-    
-    /* variantFieldList */
-    if (match_set(p, FIRST(VARIANT_FIELD_LIST),
-        FOLLOW(VARIANT_FIELD_LIST))) {
-      lookahead = variant_field_list(p);
-      m2c_fifo_enqueue(tmplist, p->ast);
-      
-      if (m2c_ast_nodetype(p->ast) == AST_VFLIST) {
-        variant_fieldlist_found = true;
-      } /* end if */
-    } /* end if */
-  } /* end while */
-  
-  /* build AST node and pass it back in p->ast */
-  if (variant_fieldlist_found) {
-    p->ast = m2c_ast_new_list_node(AST_VFLISTSEQ, tmplist);
-  }
-  else /* not variant field list */ {
-    p->ast = m2c_ast_new_list_node(AST_FIELDLISTSEQ, tmplist);
-  } /* end if */
-  
-  m2c_fifo_release(tmplist);
-  
-  return lookahead;
-} /* end variant_field_list_seq */
-
-
-/* --------------------------------------------------------------------------
- * private function variant_field_list()
- * --------------------------------------------------------------------------
- * For use with compiler option --variant-records.
- *
- * variantFieldList :=
- *   fieldList | variantFields
- *   ;
- * ----------------------------------------------------------------------- */
-
-m2c_token_t variant_fields (m2c_parser_context_t p);
-
-m2c_token_t variant_field_list (m2c_parser_context_t p) {
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("variantFieldList");
-  
-  lookahead = m2c_next_sym(p->lexer);
-  
-  /* fieldList */
-  if (lookahead == TOKEN_IDENTIFIER) {
-    lookahead = field_list(p);
-  }
-  /* | variantFields */
-  else if (lookahead == TOKEN_CASE) {
-    lookahead = variant_fields(p);
-  }
-  else /* unreachable code */ {
-    /* fatal error -- abort */
-      exit(-1);
-  } /* end if */
-  
-  /* AST node is passed through in p->ast */
-  
-  return lookahead;
-} /* end variant_field_list */
-
-
-/* --------------------------------------------------------------------------
- * private function variant_fields()
- * --------------------------------------------------------------------------
- * For use with compiler option --variant-records.
- *
- * variantFields :=
- *   CASE Ident? ':' typeIdent OF
- *   variant ( '|' variant )*
- *   ( ELSE fieldListSequence )?
- *   END
- *   ;
- *
- * astnode:
- *  (VFLIST caseIdentNode caseTypeNode variantListNode fieldListSeqNode)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t variant (m2c_parser_context_t p);
-
-m2c_token_t variant_fields (m2c_parser_context_t p) {
-  m2c_astnode_t caseid, typeid, vlist, flseq;
-  m2c_fifo_t tmplist;
-  m2c_string_t ident;
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("variantFields");
-  
-  /* CASE */
-  lookahead = m2c_consume_sym(p->lexer);
-  
-  /* Ident? */
-  if (lookahead == TOKEN_IDENTIFIER) {
-    lookahead = m2c_consume_sym(p->lexer);
-    ident = m2c_lexer_current_lexeme(p->lexer);
-    caseid = m2c_ast_new_terminal_node(AST_IDENT, ident);
-  }
-  else {
-    caseid = m2c_ast_empty_node();
-  } /* end if */
-  
-  /* ':' */
-  if (match_token(p, TOKEN_COLON, RESYNC(ELSE_OR_END))) {
-    lookahead = m2c_consume_sym(p->lexer);
-    
-    /* typeIdent */
-    if (match_token(p, TOKEN_IDENTIFIER, RESYNC(ELSE_OR_END))) {
-      lookahead = m2c_consume_sym(p->lexer);
-      ident = m2c_lexer_current_lexeme(p->lexer);
-      typeid = m2c_ast_new_terminal_node(AST_IDENT, ident);
-    
-      /* OF */
-      if (match_token(p, TOKEN_OF, RESYNC(ELSE_OR_END))) {
-        lookahead = m2c_consume_sym(p->lexer);
-      
-        /* variant */
-        if (match_set(p, FIRST(VARIANT), RESYNC(ELSE_OR_END))) {
-          lookahead = variant(p);
-          tmplist = m2c_fifo_new_queue(p->ast);
-        
-          /* ( '|' variant )* */
-          while (lookahead == TOKEN_BAR) {
-          
-            /* '|' */
-            lookahead = m2c_consume_sym(p->lexer);
-          
-            /* variant */
-            if (match_set(p, FIRST(VARIANT), RESYNC(ELSE_OR_END))) {
-              lookahead = variant(p);
-              m2c_fifo_enqueue(tmplist, p->ast);
-            } /* end if */
-          } /* end while */
-        } /* end if */
-      } /* end if */
-    } /* end if */
-  } /* end if */
-  
-  /* resync */
-  lookahead = m2c_next_sym(p->lexer);
-    
-  /* ( ELSE fieldListSequence )? */
-  if (lookahead == TOKEN_ELSE) {
-  
-    /* ELSE */
-    lookahead = m2c_consume_sym(p->lexer);
-  
-    /* check for empty field list sequence */
-    if (lookahead == TOKEN_END) {
-
-        /* empty field list sequence warning */
-        m2c_emit_warning_w_pos
-          (M2C_EMPTY_FIELD_LIST_SEQ,
-           m2c_lexer_lookahead_line(p->lexer),
-           m2c_lexer_lookahead_column(p->lexer));
-        p->warning_count++;
-    }
-    /* fieldListSequence */
-    else if (match_set(p,
-             FIRST(FIELD_LIST_SEQUENCE), FOLLOW(VARIANT_FIELDS))) {
-      lookahead = field_list_sequence(p);
-      flseq = p->ast;
-    }
-    else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
-    } /* end if */
-  }
-  else {
-    flseq = m2c_ast_empty_node();
-  } /* end if */
-  
-  /* END */
-  if (match_token(p, TOKEN_END, FOLLOW(VARIANT_FIELDS))) {
-    lookahead = m2c_consume_sym(p->lexer);
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  vlist = m2c_ast_new_list_node(AST_VARIANTLIST, tmplist);
-  p->ast = m2c_ast_new_node(AST_VFLIST, caseid, typeid, vlist, flseq, NULL);
-  m2c_fifo_release(tmplist);
-  
-  return lookahead;
-} /* end variant_fields */
-
-
-/* --------------------------------------------------------------------------
- * private function variant()
- * --------------------------------------------------------------------------
- * For use with compiler option --variant-records.
- *
- * variant :=
- *   caseLabelList ':' variantFieldListSeq
- *   ;
- *
- * astnode: (VARIANT caseLabelListNode fieldListSeqNode)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t case_label_list (m2c_parser_context_t p);
-
-m2c_token_t variant (m2c_parser_context_t p) {
-  m2c_astnode_t cllist, flseq;
-  m2c_token_t lookahead;
-    
-  PARSER_DEBUG_INFO("variant");
-  
-  /* caseLabelList */
-  lookahead = case_label_list(p);
-  cllist = p->ast;
-  
-  /* ':' */
-  if (match_token(p, TOKEN_COLON, FOLLOW(VARIANT))) {
-    lookahead = m2c_consume_sym(p->lexer);
-    
-    /* check for empty field list sequence */
-    if (m2c_tokenset_element(FOLLOW(VARIANT), lookahead)) {
-
-        /* empty field list sequence warning */
-        m2c_emit_warning_w_pos
-          (M2C_EMPTY_FIELD_LIST_SEQ,
-           m2c_lexer_lookahead_line(p->lexer),
-           m2c_lexer_lookahead_column(p->lexer));
-           p->warning_count++;
-    }
-    /* variantFieldListSeq */
-    else if (match_set(p, FIRST(VARIANT_FIELD_LIST_SEQ), FOLLOW(VARIANT))) {
-      lookahead = variant_field_list_seq(p);
-      flseq = p->ast;
-    } /* end if */
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_VARIANT, cllist, flseq, NULL);
-  
-  return lookahead;
-} /* end variant */
 
 
 /* --------------------------------------------------------------------------
