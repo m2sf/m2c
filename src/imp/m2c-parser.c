@@ -1489,19 +1489,19 @@ m2c_token_t enum_type (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t ident_list (m2c_parser_context_t p) {
-  m2c_string_t ident;
-  m2c_fifo_t tmplist;
+  intstr_t lexeme;
+  m2c_fifo_t tmp_list;
   uint_t line, column;
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("identList");
   
   /* Ident */
-  ident = m2c_lexer_lookahead_lexeme(p->lexer);
   lookahead = m2c_consume_sym(p->lexer);
+  lexeme = m2c_lexer_current_lexeme(p->lexer);
   
   /* add ident to temporary list */
-  tmplist = m2c_fifo_new_queue(ident);
+  tmp_list = m2c_fifo_new_queue(lexeme);
   
   /* ( ',' Ident )* */
   while (lookahead == TOKEN_COMMA) {
@@ -1511,19 +1511,19 @@ m2c_token_t ident_list (m2c_parser_context_t p) {
     /* Ident */
     if (match_token(p, TOKEN_IDENTIFIER)) {
       lookahead = m2c_consume_sym(p->lexer);
-      ident = m2c_lexer_current_lexeme(p->lexer);
+      lexeme = m2c_lexer_current_lexeme(p->lexer);
       
       /* check for duplicate identifier */
-      if (m2c_fifo_entry_exists(id_list, ident)) {
+      if (m2c_fifo_entry_exists(tmp_list, lexeme)) {
         line = m2c_lexer_current_line(p->lexer);
         column = m2c_lexer_current_column(p->lexer);
         report_error_w_offending_lexeme
           (M2C_ERROR_DUPLICATE_IDENT_IN_IDENT_LIST, p,
-           m2c_lexer_current_lexeme(p->lexer), line, column);
+           lexeme, line, column);
       }
       else /* not a duplicate */ {
         /* add ident to temporary list */
-        m2c_fifo_enqueue(tmplist, ident);
+        m2c_fifo_enqueue(tmp_list, lexeme);
       } /* end if */
     }
     else /* resync */ {
@@ -1532,9 +1532,10 @@ m2c_token_t ident_list (m2c_parser_context_t p) {
   } /* end while */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_IDENTLIST, tmplist);
-  m2c_fifo_release_queue(tmplist);
-    
+  p->ast = m2c_ast_new_node(AST_IDENTLIST, tmp_list);
+  
+  m2c_fifo_release_queue(tmp_list);
+  
   return lookahead;
 } /* end ident_list */
 
