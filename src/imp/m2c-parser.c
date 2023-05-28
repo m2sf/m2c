@@ -1031,42 +1031,44 @@ m2c_token_t type_definition_list (m2c_parser_context_t p) {
  * private function type_definition()
  * --------------------------------------------------------------------------
  * typeDefinition :=
- *   Ident ( '=' type )?
+ *   ident '=' type
  *   ;
  *
- * astnode: (TYPEDEF identNode typeConstructorNode)
+ * astNode: (TYPE identNode typeNode)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t type (m2c_parser_context_t p);
 
 m2c_token_t type_definition (m2c_parser_context_t p) {
-  m2c_astnode_t id, tc;
-  m2c_string_t ident;
   m2c_token_t lookahead;
+  m2c_astnode_t ident_node, type_node;
     
   PARSER_DEBUG_INFO("typeDefinition");
   
   /* Ident */
-  lookahead = m2c_consume_sym(p->lexer);
-  ident = m2c_lexer_current_lexeme(p->lexer);
+  lookahead = ident(p);
+  ident_node = p->ast;
   
-  /* ( '=' type )? */
-  if (lookahead == TOKEN_EQUAL) {
+  /* '=' */
+  if (match_token(p, TOKEN_EQUAL)) {
     lookahead = m2c_consume_sym(p->lexer);
-    
-    /* type */
-    if (match_set(p, FIRST(TYPE), FOLLOW(TYPE_DEFINITION))) {
-      lookahead = type(p);
-      tc = p->ast;
-    } /* end if */
   }
-  else {
-    tc = m2c_ast_empty_node();
+  else /* resync */ {
+    lookahead = skip_to_set(p, FIRST(TYPE));
+  } /* end if */
+  
+  /* type */
+  if (match_set(p, FIRST(TYPE)) {
+    lookahead = type(p);
+    type_node = p->ast;
+  }
+  else /* resync */ {
+    lokahead = skip_to_set(p, FOLLOW(TYPE_DEFINITION));
+    type_node = m2c_ast_empty_node();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  id = m2c_ast_new_terminal_node(AST_IDENT, ident);
-  p->ast = m2c_ast_new_node(AST_TYPEDEF, id, tc, NULL);
+  p->ast = m2c_ast_new_node(AST_TYPEDEF, idend_node, type_node);
   
   return lookahead;
 } /* end type_definition */
