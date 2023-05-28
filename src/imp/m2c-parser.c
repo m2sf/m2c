@@ -1564,16 +1564,23 @@ m2c_token_t set_type (m2c_parser_context_t p) {
   /* OF */
   if (match_token(p, TOKEN_OF)) {
     lookahead = m2c_consume_sym(p->lexer);
-    
-    /* countableType */
-    if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(SET_TYPE))) {
-      lookahead = countable_type(p);
-      tc = p->ast;
-    } /* end if */
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_IDENT, FOLLOW(SET_TYPE));
+  } /* end if */
+  
+  /* enumTypeIdent */
+  if (match_token(p, TOKEN_IDENT)) {
+    lookahead = qualident(p);
+    type_node = p->ast;  
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(SET_TYPE));
+    type_node = m2c_ast_empty_node();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_SET, tc, NULL);
+  p->ast = m2c_ast_new_node(AST_SET, type_node);
   
   return lookahead;
 } /* end set_type */
@@ -1583,58 +1590,54 @@ m2c_token_t set_type (m2c_parser_context_t p) {
  * private function array_type()
  * --------------------------------------------------------------------------
  * arrayType :=
- *   ARRAY countableType ( ',' countableType )* OF type
+ *   ARRAY valueCount OF typeIdent
  *   ;
  *
- * astnode: (ARRAY indexTypeListNode arrayBaseTypeNode)
+ * alias valueCount = constExpression ;
+ *
+ * astNode: (ARRAY baseType valueCount )
  * ----------------------------------------------------------------------- */
 
 m2c_token_t array_type (m2c_parser_context_t p) {
-  m2c_astnode_t idxlist, basetype;
-  m2c_fifo_t tmplist;
   m2c_token_t lookahead;
+  m2c_astnode_t type_node, value_node;
   
   PARSER_DEBUG_INFO("arrayType");
   
   /* ARRAY */
   lookahead = m2c_consume_sym(p->lexer);
   
-  /* countableType */
-  if (match_set(p, FIRST(COUNTABLE_TYPE), FOLLOW(ARRAY_TYPE))) {
-    lookahead = countable_type(p);
-    tmplist = m2c_fifo_new_queue(p->ast);
-    
-    /* ( ',' countableType )* */
-    while (lookahead == TOKEN_COMMA) {
-      /* ',' */
-      lookahead = m2c_consume_sym(p->lexer);
-      
-      if (match_set(p, FIRST(COUNTABLE_TYPE), RESYNC(TYPE_OR_COMMA_OR_OF))) {
-        lookahead = countable_type(p);
-        m2c_fifo_enqueue(tmplist, p->ast);
-      }
-      else /* resync */ {
-        lookahead = m2c_next_sym(p->lexer);
-      } /* end if */
-    } /* end while */
-
-    /* OF */
-    if (match_token(p, TOKEN_OF, FOLLOW(ARRAY_TYPE))) {
-      lookahead = m2c_consume_sym(p->lexer);
+  /* valueCount */
+  if (match_set(p, FIRST(EXPRESSION))) {
+    lookahead = expression(p);
+    value_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_token(p, TOKEN_OF, TOKEN_IDENT, NULL);
+    value_node = m2c_ast_empty_node();
+  } /* end if */
   
-      /* type */
-      if (match_set(p, FIRST(TYPE), FOLLOW(ARRAY_TYPE))) {
-        lookahead = type(p);
-        basetype = p->ast;
-      } /* end if */
-    } /* end if */
+  /* OF */
+  if (match_token(p, TOKEN_OF)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_IDENT, FOLLOW(ARRAY_TYPE));
+  } /* end if */
+  
+  /* typeIdent */
+  if (match_token(p, TOKEN_IDENT)) {
+    lookahead = qualident(p);
+    type_node = p->ast;  
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(ARRAY_TYPE));
+    type_node = m2c_ast_empty_node();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  idxlist = m2c_ast_new_list_node(AST_INDEXLIST, tmplist);
-  p->ast = m2c_ast_new_node(AST_ARRAY, idxlist, basetype, NULL);
-  m2c_fifo_release_queue(tmplist);
-  
+  p->ast = m2c_ast_new_node(AST_ARRAY, type_node, value_node, NULL);
+    
   return lookahead;
 } /* end array_type */
 
