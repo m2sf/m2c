@@ -1847,101 +1847,18 @@ m2c_token_t field_list (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function case_label_list()
- * --------------------------------------------------------------------------
- * caseLabelList :=
- *   caseLabels ( ',' caseLabels )*
- *   ;
- *
- * astnode : (CLABELLIST caseLabelsNode+)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t case_labels (m2c_parser_context_t p);
-
-m2c_token_t case_label_list (m2c_parser_context_t p) {
-  m2c_fifo_t tmplist;
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("caseLabelList");
-  
-  /* caseLabels */
-  lookahead = case_labels(p);
-  tmplist = m2c_fifo_new_queue(p->ast);
-  
-  /* ( ',' caseLabels )* */
-  while (lookahead == TOKEN_COMMA) {
-    /* ',' */
-    lookahead = m2c_consume_sym(p->lexer);
-    
-    /* caseLabels */
-    if (match_set(p, FIRST(CASE_LABELS), FOLLOW(CASE_LABEL_LIST))) {
-      lookahead = case_labels(p);
-      m2c_fifo_enqueue(tmplist, p->ast);
-    } /* end if */
-  } /* end while */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_list_node(AST_CLABELLIST, tmplist);
-  m2c_fifo_release(tmplist);
-  
-  return lookahead;
-} /* end case_label_list */
-
-
-/* --------------------------------------------------------------------------
- * private function case_labels()
- * --------------------------------------------------------------------------
- * caseLabels :=
- *   constExpression ( '..' constExpression )?
- *   ;
- *
- * astnode: (CLABELS exprNode exprNode)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t case_labels (m2c_parser_context_t p) {
-  m2c_astnode_t lower, upper;
-  m2c_token_t lookahead;
-    
-  PARSER_DEBUG_INFO("caseLabels");
-  
-  /* constExpression */
-  lookahead = const_expression(p);
-  lower = p->ast;
-  
-  /* ( '..' constExpression )? */
-  if (lookahead == TOKEN_RANGE) {
-    lookahead = m2c_consume_sym(p->lexer);
-    
-    /* constExpression */
-    if (match_set(p, FIRST(EXPRESSION), FOLLOW(CASE_LABELS))) {
-      lookahead = const_expression(p);
-      upper = p->ast;
-    } /* end if */
-  }
-  else {
-    upper = m2c_ast_empty_node();
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  m2c_ast_new_node(AST_CLABELS, lower, upper, NULL);
-  
-  return lookahead;
-} /* end case_labels */
-
-
-/* --------------------------------------------------------------------------
  * private function pointer_type()
  * --------------------------------------------------------------------------
  * pointerType :=
- *   POINTER TO type
+ *   POINTER TO typeIdent
  *   ;
  *
- * astnode: (POINTER typeConstructorNode)
+ * astNode: (POINTER qualidentNode)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t pointer_type (m2c_parser_context_t p) {
-  m2c_astnode_t tc;
   m2c_token_t lookahead;
+  m2c_astnode_t type_node;
   
   PARSER_DEBUG_INFO("pointerType");
   
@@ -1949,18 +1866,25 @@ m2c_token_t pointer_type (m2c_parser_context_t p) {
   lookahead = m2c_consume_sym(p->lexer);
   
   /* TO */
-  if (match_token(p, TOKEN_TO, FOLLOW(POINTER_TYPE))) {
+  if (match_token(p, TOKEN_TO)) {
     lookahead = m2c_consume_sym(p->lexer);
-    
-    /* type */
-    if (match_set(p, FIRST(TYPE), FOLLOW(POINTER_TYPE))) {
-      lookahead = type(p);
-      tc = p->ast;
-    } /* end if */
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_IDENT, FOLLOW(POINTER_TYPE));
+  } /* end if */
+  
+  /* typeIdent */
+  if (match_(p, FIRST(TYPE))) {
+      lookahead = qualident(p);
+      type_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(POINTER_TYPE));
+    type_node = m2c_ast_empty_type();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_POINTER, tc, NULL);
+  p->ast = m2c_ast_new_node(AST_POINTER, type_node, NULL);
   
   return lookahead;
 } /* end pointer_type */
