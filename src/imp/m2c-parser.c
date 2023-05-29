@@ -2437,8 +2437,10 @@ m2c_token_t var_definition (m2c_parser_context_t p) {
  * private function procedure_header()
  * --------------------------------------------------------------------------
  * procedureHeader :=
- *   PROCEDURE procedureSignature
+ *   PROCEDURE ( '[' bindingSpecifier ']' )? procedureSignature
  *   ;
+ *
+ * astnode: (PROCDECL bindSpecNode signatureNode)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t procedure_signature (m2c_parser_context_t p);
@@ -2451,12 +2453,46 @@ m2c_token_t procedure_header (m2c_parser_context_t p) {
   /* PROCEDURE */
   lookahead = m2c_consume_sym(p->lexer);
   
+  /* ( '[' bindingSpecifier ']' )? */
+  if (lookahead == TOKEN_LBRACKET) {
+    /* '[' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* bindingSpecifier */
+    if (match_set(p, FIRST(BINDING_SPECIFIER))) {
+      lookahead = binding_specifier(p);
+      bind_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_RBRACKET, FIRST(PROCEDURE_SIGNATURE));
+      bind_node = m2c_ast_empty_node();
+    } /* end if */
+    
+    /* ']' */
+    if (match_token(p, TOKEN_RBRACKET)) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FIRST(PROCEDURE_SIGNATURE));
+    } /* end if */
+  }
+  else /* no binding specifier */ {
+    bind_node = m2c_ast_empty_node();
+  } /* end if */
+  
   /* procedureSignature */
   if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(PROCEDURE_HEADER))) {
     lookahead = procedure_signature(p);
+    psig_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(PROCEDURE_HEADER));
+    psig_node = m2c_ast_empty_node();
   } /* end if */
   
-  /* AST node is passed through in p->ast */
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_PROCDECL, bind_node, psig_node, NULL);
   
   return lookahead;
 } /* end procedure_header */
