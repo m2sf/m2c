@@ -2447,6 +2447,7 @@ m2c_token_t procedure_signature (m2c_parser_context_t p);
 
 m2c_token_t procedure_header (m2c_parser_context_t p) {
   m2c_token_t lookahead;
+  m2c_astnode_t bind_node, psig_node;
   
   PARSER_DEBUG_INFO("procedureHeader");
   
