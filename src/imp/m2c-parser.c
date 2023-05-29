@@ -2715,8 +2715,6 @@ m2c_token_t implementation_module (m2c_parser_context_t p) {
  * astnode: (IMPMOD identNode priorityNode importListNode blockNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t module_priority (m2c_parser_context_t p);
-
 m2c_token_t block (m2c_parser_context_t p);
 
 m2c_token_t program_module (m2c_parser_context_t p) {
@@ -2798,38 +2796,6 @@ m2c_token_t program_module (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end program_module */
-
-
-/* --------------------------------------------------------------------------
- * private function module_priority()
- * --------------------------------------------------------------------------
- * modulePriority :=
- *   '[' constExpression ']'
- *   ;
- * ----------------------------------------------------------------------- */
-
-m2c_token_t module_priority (m2c_parser_context_t p) {
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("modulePriority");
-  
-  /* '[' */
-  lookahead = m2c_consume_sym(p->lexer);
-  
-  /* constExpression */
-  if (match_set(p, FIRST(EXPRESSION), FOLLOW(MODULE_PRIORITY))) {
-    lookahead = const_expression(p);
-    
-    /* ']' */
-    if (match_token(p, TOKEN_RIGHT_BRACKET, FOLLOW(MODULE_PRIORITY))) {
-      lookahead = m2c_consume_sym(p->lexer);
-    } /* end if */
-  } /* end if */
-  
-  /* AST node is passed through in p->ast */
-  
-  return lookahead;
-} /* end module_priority */
 
 
 /* --------------------------------------------------------------------------
@@ -2966,11 +2932,8 @@ m2c_token_t block (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t type_declaration (m2c_parser_context_t p);
-
 m2c_token_t variable_declaration (m2c_parser_context_t p);
-
 m2c_token_t procedure_declaration (m2c_parser_context_t p);
-
 m2c_token_t module_declaration (m2c_parser_context_t p);
 
 m2c_token_t declaration (m2c_parser_context_t p) {
@@ -3344,156 +3307,6 @@ m2c_token_t procedure_declaration (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function module_declaration()
- * --------------------------------------------------------------------------
- * moduleDeclaration :=
- *   MODULE moduleIdent modulePriority? ';'
- *   import* export? block moduleIdent
- *   ;
- *
- * astnode:
- *  (MODDECL identNode prioNode importListNode exportListNode blockNode)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t export (m2c_parser_context_t p);
-
-m2c_token_t module_declaration (m2c_parser_context_t p) {
-  m2c_astnode_t id, prio, implist, exp, body;
-  m2c_fifo_t tmplist;
-  m2c_string_t ident1, ident2;
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("moduleDeclaration");
-  
-  /* MODULE */
-  lookahead = m2c_consume_sym(p->lexer);
-  
-  /* moduleIdent */
-  if (match_token(p, TOKEN_IDENTIFIER, RESYNC(IMPORT_OR_BLOCK))) {
-    lookahead = m2c_consume_sym(p->lexer);
-    ident1 = m2c_lexer_current_lexeme(p->lexer);
-    
-    /* modulePriority? */
-    if (lookahead == TOKEN_LEFT_BRACKET) {
-      lookahead = module_priority(p);
-      prio = p->ast;
-    }
-    else /* no module priority */ {
-      prio = m2c_ast_empty_node();
-    } /* end while */
-    
-    /* ';' */
-    if (match_token(p, TOKEN_SEMICOLON, RESYNC(IMPORT_OR_BLOCK))) {
-      lookahead = m2c_consume_sym(p->lexer);
-    }
-    else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
-    } /* end if */
-  }
-  else /* resync */ {
-    lookahead = m2c_next_sym(p->lexer);
-  } /* end if */
-  
-  tmplist = m2c_fifo_new_queue(NULL);
-  
-  /* import* */
-  while ((lookahead == TOKEN_IMPORT) ||
-         (lookahead == TOKEN_FROM)) {
-    lookahead = import(p);
-    m2c_fifo_enqueue(tmplist, p->ast);
-  } /* end while */
-  
-  if (m2c_fifo_entry_count(tmplist) > 0) {
-    implist = m2c_ast_new_list_node(AST_IMPLIST, tmplist);
-  }
-  else /* no import list */ {
-    implist = m2c_ast_empty_node();
-  } /* end if */
-  
-  m2c_fifo_release(tmplist);
-  
-  /* export? */
-  if (lookahead == TOKEN_EXPORT) {
-    lookahead = export(p);
-    exp = p->ast;
-  }
-  else /* no export list */ {
-    exp = m2c_ast_empty_node();
-  } /* end while */
-  
-  /* block */
-  if (match_set(p, FIRST(BLOCK), FOLLOW(MODULE_DECLARATION))) {
-    lookahead = block(p);
-    body = p->ast;
-    
-    /* moduleIdent */
-    if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(MODULE_DECLARATION))) {
-      lookahead = m2c_consume_sym(p->lexer);
-      module_ident_end = m2c_lexer_current_lexeme(p->lexer);
-      
-      if (ident1 != ident2) {
-        /* TO DO: report error -- module identifiers don't match */ 
-      } /* end if */
-    } /* end if */
-  } /* end if */  
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_MODDECL, id, prio, implist, exp, body, NULL);
-  
-  return lookahead;
-} /* end module_declaration */
-
-
-/* --------------------------------------------------------------------------
- * private function export()
- * --------------------------------------------------------------------------
- * export :=
- *   EXPORT QUALIFIED? identList ';'
- *   ;
- *
- * astnode: (EXPORT identListNode) | (QUALEXP identListNode)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t export (m2c_parser_context_t p) {
-  m2c_astnode_t idlist;
-  m2c_token_t lookahead;
-  bool qualified = false;
-  
-  PARSER_DEBUG_INFO("export");
-  
-  /* EXPORT */
-  lookahead = m2c_consume_sym(p->lexer);
-    
-  /* QUALIFIED? */
-  if (lookahead == TOKEN_QUALIFIED) {
-    lookahead = m2c_consume_sym(p->lexer);
-    qualified = true;
-  } /* end if */
-  
-  /* identList */
-  if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(EXPORT))) {
-    lookahead = ident_list(p);
-    idlist = p->ast;
-    
-    /* ';' */
-    if (match_token(p, TOKEN_SEMICOLON, FOLLOW(EXPORT))) {
-      lookahead = m2c_consume_sym(p->lexer);
-    } /* end if */
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  if (qualified) {
-    p->ast = m2c_ast_new_node(AST_QUALEXP, idlist, NULL);
-  }
-  else /* unqualified */ {
-    p->ast = m2c_ast_new_node(AST_EXPORT, idlist, NULL);
-  } /* end if */
-  
-  return lookahead;
-} /* end export */
-
-
-/* --------------------------------------------------------------------------
  * private function statement_sequence()
  * --------------------------------------------------------------------------
  * statementSequence :=
@@ -3577,21 +3390,12 @@ m2c_token_t statement_sequence (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t assignment_or_proc_call (m2c_parser_context_t p);
-
 m2c_token_t return_statement (m2c_parser_context_t p);
-
-m2c_token_t with_statement (m2c_parser_context_t p);
-
 m2c_token_t if_statement (m2c_parser_context_t p);
-
 m2c_token_t case_statement (m2c_parser_context_t p);
-
 m2c_token_t loop_statement (m2c_parser_context_t p);
-
 m2c_token_t while_statement (m2c_parser_context_t p);
-
 m2c_token_t repeat_statement (m2c_parser_context_t p);
-
 m2c_token_t for_statement (m2c_parser_context_t p);
 
 m2c_token_t statement (m2c_parser_context_t p) {
@@ -3798,68 +3602,6 @@ m2c_token_t return_statement (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end return_statement */
-
-
-/* --------------------------------------------------------------------------
- * private function with_statement()
- * --------------------------------------------------------------------------
- * withStatement :=
- *   WITH designator DO statementSequence END
- *   ;
- *
- * astnode: (WITH designatorNode statementSeqNode)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t with_statement (m2c_parser_context_t p) {
-  m2c_astnode_t desig, stmtseq;
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("withStatement");
-  
-  /* WITH */
-  lookahead = m2c_consume_sym(p->lexer);
-  
-  /* designator */
-  if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(WITH_STATEMENT))) {
-    lookahead = designator(p);
-    desig = p->ast;
-    
-    /* DO */
-    if (match_token(p, TOKEN_DO, FOLLOW(WITH_STATEMENT))) {
-      lookahead = m2c_consume_sym(p->lexer);
-      
-      /* check for empty statement sequence */
-      if (lookahead == TOKEN_END) {
-    
-        /* empty statement sequence warning */
-        m2c_emit_warning_w_pos
-          (M2C_EMPTY_STMT_SEQ,
-           m2c_lexer_lookahead_line(p->lexer),
-           m2c_lexer_lookahead_column(p->lexer));
-        p->warning_count++;
-             
-        /* END */
-        lookahead = m2c_consume_sym(p->lexer);
-      }
-      /* statementSequence */
-      else if (match_set(p, FIRST(STATEMENT_SEQUENCE),
-               FOLLOW(WITH_STATEMENT))) {
-        lookahead = statement_sequence(p);
-        stmtseq = p->ast;
-        
-        /* END */
-        if (match_token(p, TOKEN_END, FOLLOW(WITH_STATEMENT))) {
-          lookahead = m2c_consume_sym(p->lexer);
-        } /* end if */
-      } /* end if */
-    } /* end if */
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_WITH, desig, stmtseq, NULL);
-  
-  return lookahead;
-} /* end with_statement */
 
 
 /* --------------------------------------------------------------------------
