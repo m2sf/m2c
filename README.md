@@ -54,7 +54,7 @@ M2C is licensed under the GNU Lesser General Public License (LGPL) both v.2.1 an
 
 ### Prerequisites ###
 
-M2C is written in a subset of the C99 standard of C.
+Compiling M2C requires a C compiler that supports the C99 standard of C.
 
 **There are no dependencies on any third party libraries.**
 
@@ -66,7 +66,7 @@ M2C will compile and run on any target system supported by the host-compiler.
 However, the [file system access](https://github.com/m2sf/m2c/tree/main/src/lib/filesys)
 and [pathname parsing](https://github.com/m2sf/m2c/tree/main/src/lib/pathnames) libraries
 are platform dependent. Implementations for AmigaOS, DOS/Windows, POSIX/Unix
-and VMS are provided and may need adaptation for other platforms.
+and VMS are provided. Adaptation may be needed for other platforms.
 
 
 ### Development Languages ###
