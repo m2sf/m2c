@@ -2483,7 +2483,7 @@ m2c_token_t procedure_header (m2c_parser_context_t p) {
   } /* end if */
   
   /* procedureSignature */
-  if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(PROCEDURE_HEADER))) {
+  if (match_token(p, TOKEN_IDENTIFIER)) {
     lookahead = procedure_signature(p);
     psig_node = p->ast;
   }
