@@ -2256,11 +2256,11 @@ m2c_token_t casting_formal_type (m2c_parser_context_t p) {
     /* OCTETSEQ */
     if (lookahead = TOKEN_OCTETSEQ) {
       lookahead = m2c_consume_sym(p->lexer);
-      type_node = m2c_ast_new_node(AST_CASTOCTSEQ, NULL);
+      type_node = m2c_ast_new_node(AST_OCTSEQ, NULL);
     }
     /* | ADDRESS */
     else {
-      type_node = m2c_ast_new_node(AST_CASTADDR, NULL);
+      type_node = m2c_ast_new_node(AST_ADDR, NULL);
     } /* end if */
   }
   else /* resync */ {
@@ -2273,6 +2273,51 @@ m2c_token_t casting_formal_type (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end casting_formal_type */
+
+
+/* --------------------------------------------------------------------------
+ * private function variadic_formal_type()
+ * --------------------------------------------------------------------------
+ * variadicFormalType :=
+ *   ARGLIST OF simpleFormalType
+ *   ;
+ *
+ * astNode: 
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t variadic_formal_type (m2c_parser_context_t p) {
+  intstr_t lexeme;
+  m2c_token_t lookahead;
+  m2c_astnode_t type_node;
+  
+  PARSER_DEBUG_INFO("variadicFormalType");
+  
+  /* ARGLIST */
+  lookahead = m2c_consume_sym(p->lexer);
+  
+  /* OF */
+  if (match_token(p, TOKEN_OF)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FIRST(SIMPLE_FORMAL_TYPE));
+  } /* end if */
+  
+  /* simpleFormalType */
+  if (match_set(p, FIRST(SIMPLE_FORMAL_TYPE))) {
+    lookahead = simple_formal_type(p);
+    type_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(VARIADIC_FORMAL_TYPE));
+    type_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_VARGP, type_node, NULL);
+  
+  return lookahead;
+} /* end variadic_formal_type */
 
 
 /* --------------------------------------------------------------------------
