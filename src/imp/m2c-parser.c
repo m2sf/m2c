@@ -2282,7 +2282,7 @@ m2c_token_t casting_formal_type (m2c_parser_context_t p) {
  *   ARGLIST OF simpleFormalType
  *   ;
  *
- * astNode: 
+ * astNode: (VARGP formalTypeNode)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t variadic_formal_type (m2c_parser_context_t p) {
