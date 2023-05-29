@@ -2112,6 +2112,60 @@ m2c_token_t formal_type (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
+ * private function non_attr_formal_type()
+ * --------------------------------------------------------------------------
+ * nonAttrFormalType :=
+ *   simpleFormalType | castingFormalType | variadicFormalType
+ *   ;
+ *
+ * astnode:
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t non_attr_formal_type (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("nonAttrFormalType");
+  
+  lookahead = m2c_next_sym(p->lexer);
+  
+  /* simpleFormalType | castingFormalType | variadicFormalType */
+  switch (lookahead) {
+    /* ARGLIST */
+    case TOKEN_ARGLIST :
+      lookahead = variadic_formal_type(p);
+      break;
+    
+    /* ARRAY */
+    case TOKEN_ARRAY :
+      lookahead = simple_formal_type(p);
+      break;
+      
+    /* CAST | Ident */
+    case TOKEN_IDENT :
+      lexeme = m2c_lookahead_lexeme(p->lexer);
+      
+      /* CAST */
+      if (lexeme == m2c_res_ident(RESIDENT_CAST)) {
+        lookahead = casting_formal_type(p);
+      }
+      /* Ident */
+      else {
+        lookahead = simple_formal_type(p);
+      } /* end if */
+      break;
+    
+    default :
+    /* fatal error -- abort */
+    return (-1);
+  } /* end switch */
+  
+  /* AST node is passed through in p->ast */
+  
+  return lookahead;
+} /* end non_attr_formal_type */
+
+
+/* --------------------------------------------------------------------------
  * private function simple_formal_type()
  * --------------------------------------------------------------------------
  * simpleFormalType :=
@@ -2123,9 +2177,9 @@ m2c_token_t formal_type (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t simple_formal_type (m2c_parser_context_t p) {
-  m2c_astnode_t id;
   m2c_token_t lookahead;
-  bool open_array = false;
+  m2c_astnode_t type_node;
+  bool open_array;
   
   PARSER_DEBUG_INFO("simpleFormalType");
   
@@ -2133,30 +2187,42 @@ m2c_token_t simple_formal_type (m2c_parser_context_t p) {
   
   /* ( ARRAY OF )? */
   if (lookahead == TOKEN_ARRAY) {
+    /* ARRAY */
     lookahead = m2c_consume_sym(p->lexer);
     open_array = true;
     
     /* OF */
-    if (match_token(p, TOKEN_OF, FOLLOW(SIMPLE_FORMAL_TYPE))) {
+    if (match_token(p, TOKEN_OF)) {
       lookahead = m2c_consume_sym(p->lexer);
     }
     else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_IDENT, FOLLOW(SIMPLE_FORMAL_TYPE));
     } /* end if */
+  }
+  else /* not an open array */ {
+    open_array = false;
+  } /* end if */
+    
+  /* typeIdent */
+  if (match_token(p, TOKEN_IDENTIFIER)) {
+    lookahead = qualident(p);
+    type_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(SIMPLE_FORMAL_TYPE));
+    type_node = m2c_ast_empty_node();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
   
-  /* typeIdent */
-  if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(SIMPLE_FORMAL_TYPE))) {
-    lookahead = qualident(p);
-    id = p->ast;
-    /* astnode: (IDENT ident) | (QUALIDENT q0 q1 q2 ... qN ident) */
-  } /* end if */
-  
   if (open_array) {
-    p->ast = m2c_ast_new_node(AST_OPENARRAY, id, NULL);
     /* astnode: (OPENARRAY identNode) */
+    p->ast = m2c_ast_new_node(AST_OPENARRAY, type_node, NULL);
+  }
+  else {
+    /* astnode: (IDENT ident) | (QUALIDENT q0 q1 q2 ... qN ident) */
+    p->ast = type_node;
   } /* end if */
   
   return lookahead;
