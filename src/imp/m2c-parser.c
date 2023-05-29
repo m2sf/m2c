@@ -2321,6 +2321,72 @@ m2c_token_t variadic_formal_type (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
+ * private function var_definition_list()
+ * --------------------------------------------------------------------------
+ * varDefinitionList :=
+ *   varDefinition ';' (varDefinition ';')*
+ *   ;
+ *
+ * astnode: (VARDEFLIST varDefNode1 varDefNode2 ... varDefNodeN)
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t var_definition (m2c_parser_context_t p);
+
+m2c_token_t var_definition_list (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  m2c_fifo_t def_list;
+  
+  PARSER_DEBUG_INFO("varDefinitionList");
+
+  def_list = m2c_fifo_new_queue(NULL);
+  
+  /* varDefinition ';' */
+  
+  /* varDefinition */
+  if (match_token(p, TOKEN_IDENTIFIER)) {
+    lookahead = var_definition(p); /* p->ast holds ast-node */
+    def_list = m2c_fifo_enqueue(def_list, p->ast);
+      
+    /* ';' */
+    if (match_token(p, TOKEN_SEMICOLON)) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_SEMICOLON, FOLLOW(VAR_DEFINITION));
+    } /* end if */
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(VAR_DEFINITION));
+  } /* end if */
+  
+  /* (varDefinition ';')* */
+  
+  /* varDefinition */
+  while (match_token(p, TOKEN_IDENTIFIER)) {
+    lookahead = var_definition(p); /* p-ast holds ast-node */
+    def_list = m2c_fifo_enqueue(def_list, p->ast);
+    
+    /* ';' */
+    if (match_token == TOKEN_SEMICOLON) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_SEMICOLON, FOLLOW(VAR_DEFINITION));
+    } /* end if */
+  } /* end while */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_VARDEFLIST, def_list);
+  
+  m2c_fifo_releast(def_list);
+  
+  return lookahead;
+} /* end var_definition_list */
+
+
+/* --------------------------------------------------------------------------
  * private function var_definition()
  * --------------------------------------------------------------------------
  * varDefinition :=
