@@ -2321,6 +2321,53 @@ m2c_token_t variadic_formal_type (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
+ * private function var_definition()
+ * --------------------------------------------------------------------------
+ * varDefinition :=
+ *   identList ':' typeIdent
+ *   ;
+ *
+ * astNode: (VARDECL idlist typeId)
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t var_definition (m2c_parser_context_t p) {
+  intstr_t lexeme;
+  m2c_token_t lookahead;
+  m2c_astnode_t list_node, type_node;
+  
+  PARSER_DEBUG_INFO("varDefinition");
+  
+  /* identList */
+  lookahead = ident_list(p);
+  list_node = p->ast;
+  
+  /* ':' */
+  if (match_token(p, TOKEN_COLON)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead =
+      skip_to_token_or_set(p, TOKEN_IDENT, FOLLOW(VAR_DEFINITION));
+  } /* end if */
+  
+  /* typeIdent */
+  if (match_token(p, TOKEN_IDENT)) {
+    lookahead = qualident(p);
+    type_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(VAR_DEFINITION));
+    type_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_VARDECL, list_node, type_node, NULL);
+  
+  return lookahead;
+} /* end var_definition */
+
+
+/* --------------------------------------------------------------------------
  * private function procedure_header()
  * --------------------------------------------------------------------------
  * procedureHeader :=
