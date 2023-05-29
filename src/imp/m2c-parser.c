@@ -2230,55 +2230,49 @@ m2c_token_t simple_formal_type (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function attributed_formal_type()
+ * private function casting_formal_type()
  * --------------------------------------------------------------------------
- * attributedFormalType :=
- *   ( CONST | VAR ) simpleFormalType
+ * castingFormalType :=
+ *   CAST ( OCTETSEQ | ADDRESS )
  *   ;
  *
- * astnode: (CONSTP simpleFormalTypeNode) | (VARP simpleFormalTypeNode)
+ * astNode: (CASTP OctetSeq ) | (CASTP Address)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t attributed_formal_type (m2c_parser_context_t p) {
-  m2c_astnode_t sftype;
+m2c_token_t casting_formal_type (m2c_parser_context_t p) {
+  intstr_t lexeme;
   m2c_token_t lookahead;
-  bool const_attr = false;
+  m2c_astnode_t type_node;
   
-  PARSER_DEBUG_INFO("attributedFormalType");
+  PARSER_DEBUG_INFO("castingFormalType");
   
-  lookahead = m2c_next_sym(p->lexer);
+  /* CAST */
+  lookahead = m2c_consume_sym(p->lexer);
   
-  /* CONST */
-  if (lookahead == TOKEN_CONST) {
-    lookahead = m2c_consume_sym(p->lexer);
-    const_attr = true;
+  /* OCTETSEQ | ADDRESS */
+  lexeme = m2c_res_ident(RESIDENT_ADDRESS);
+  if (match_token_or_lexeme(p, TOKEN_OCTETSEQ, lexeme)) {
+    
+    /* OCTETSEQ */
+    if (lookahead = TOKEN_OCTETSEQ) {
+      lookahead = m2c_consume_sym(p->lexer);
+      type_node = m2c_ast_new_node(AST_CASTOCTSEQ, NULL);
+    }
+    /* | ADDRESS */
+    else {
+      type_node = m2c_ast_new_node(AST_CASTADDR, NULL);
+    } /* end if */
   }
-  /* | VAR */
-  else if (lookahead == TOKEN_VAR) {
-    lookahead = m2c_consume_sym(p->lexer);
-  }
-  else /* unreachable code */ {
-    /* fatal error -- abort */
-    exit(-1);
-  } /* end if */
-  
-  /* simpleFormalType */
-  if (match_set(p, FIRST(SIMPLE_FORMAL_TYPE),
-      FOLLOW(ATTRIBUTED_FORMAL_TYPE))) {
-    lookahead = simple_formal_type(p);
-    sftype = p->ast;
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(CASTING_FORMALTYPE));
+    type_node = m2c_ast_empty_node();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  if (const_attr) {
-    p->ast = m2c_ast_new_node(AST_CONSTP, sftype, NULL);
-  }
-  else {
-    p->ast = m2c_ast_new_node(AST_VARP, sftype, NULL);
-  } /* end if */
+  p->ast = m2c_ast_new_node(AST_CASTP, type_node, NULL);
   
   return lookahead;
-} /* end attributed_formal_type */
+} /* end casting_formal_type */
 
 
 /* --------------------------------------------------------------------------
