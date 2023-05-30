@@ -1048,8 +1048,6 @@ m2c_token_t type_definition_list (m2c_parser_context_t p) {
  * astNode: (TYPE identNode typeNode)
  * ----------------------------------------------------------------------- */
 
-#define public_type(_p) type(DEF_MODULE, _p)
-
 m2c_token_t type (m2c_parser_context_t p);
 
 m2c_token_t type_definition (m2c_parser_context_t p) {
@@ -1072,7 +1070,7 @@ m2c_token_t type_definition (m2c_parser_context_t p) {
   
   /* type */
   if (match_set(p, FIRST(TYPE)) {
-    lookahead = public_type(p);
+    lookahead = type(p);
     type_node = p->ast;
   }
   else /* resync */ {
@@ -1093,15 +1091,26 @@ m2c_token_t type_definition (m2c_parser_context_t p) {
  * Parses rule type or privateType depending on moduleContext, constructs its
  * AST node, passes it back in p->ast and returns the new lookahead symbol.
  *
+ * definition module context:
+ *
  * type :=
  *   aliasType | derivedType | subrangeType | enumType | setType |
- *   arrayType | recordType | pointerType | opaqueType | procedureType )
+ *   arrayType | recordType | pointerType | opaqueType | procedureType
  *   ;
+ *
+ * program module context:
+ *
+ * type :=
+ *   aliasType | derivedType | subrangeType | enumType | setType |
+ *   arrayType | recordType | pointerType | procedureType
+ *   ;
+ *
+ * implementation module context:
  *
  * privateType :=
  *   aliasType | derivedType | subrangeType | enumType | setType |
  *   arrayType | recordType | octetSeqType | privatePointerType |
- *   procedureType )
+ *   procedureType
  *   ;
  *
  * astNode: aliasTypeNode | derivedTypeNode | subrangeTypeNode |
@@ -1119,7 +1128,7 @@ m2c_token_t pointer_type (m2c_parser_context_t p);
 m2c_token_t private_pointer_type (m2c_parser_context_t p);
 m2c_token_t procedure_type (m2c_parser_context_t p);
 
-m2c_token_t type (module_context_t module_context, m2c_parser_context_t p) {
+m2c_token_t type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("type");
@@ -1140,7 +1149,7 @@ m2c_token_t type (module_context_t module_context, m2c_parser_context_t p) {
       
     /* | octetseqType */
     case TOKEN_OCTETSEQ :
-      if (module_context == IMP_MODULE) {
+      if (p->module_context == IMP_MODULE) {
         lookahead = octetseq_type(p); /* p->ast holds ast-node */
       }
       else {
@@ -1151,7 +1160,7 @@ m2c_token_t type (module_context_t module_context, m2c_parser_context_t p) {
       
     /* | opaqueType */
     case TOKEN_OPAQUE :
-      if (module_context == DEF_MODULE) {
+      if (p->module_context == DEF_MODULE) {
         lookahead = opaque_type(p); /* p->ast holds ast-node */
       }
       else {
@@ -1162,7 +1171,7 @@ m2c_token_t type (module_context_t module_context, m2c_parser_context_t p) {
     
     /* | pointerType | privatePointerType */
     case TOKEN_POINTER :
-      if ((module_context != IMP_MODULE)) {
+      if ((p->module_context != IMP_MODULE)) {
         lookahead = pointer_type(p); /* p->ast holds ast-node */
       }
       else /* IMP_MODULE */ {
@@ -2925,9 +2934,15 @@ m2c_token_t private_import (m2c_parser_context_t p) {
 /* --------------------------------------------------------------------------
  * private function block()
  * --------------------------------------------------------------------------
+ * Parses rule block or privateBlock depending on module context,  constructs
+ * its AST node, passes it in p->ast and returns the new lookahead symbol.
+ *
  * block :=
- *   declaration* ( BEGIN statementSequence )? END
+ *   declaration* BEGIN statementSequence END
  *   ;
+ *
+ * privateBlock :=
+ *   privateDeclaration* ( BEGIN statementSequence )? END
  *
  * astnode: (BLOCK declarationListNode statementSeqNode)
  * ----------------------------------------------------------------------- */
@@ -2935,12 +2950,8 @@ m2c_token_t private_import (m2c_parser_context_t p) {
 m2c_token_t declaration (m2c_parser_context_t p);
 m2c_token_t statement_sequence (m2c_parser_context_t p);
 
-
-
-
 m2c_token_t block (m2c_parser_context_t p) {
   m2c_token_t lookahead;
-  m2c_fifo_t tmp_list;
   m2c_astnode_t list_node, sseq_node;
   
   PARSER_DEBUG_INFO("block");
@@ -2948,13 +2959,14 @@ m2c_token_t block (m2c_parser_context_t p) {
   lookahead = m2c_next_sym(p->lexer);
   
   tmp_list = m2c_fifo_new_queue(NULL);
-  
-  /* declaration* */
+    
+  /* declaration */
   while (m2c_tokenset_element(FIRST(DECLARATION), lookahead)) {
     lookahead = declaration(p);
     m2c_fifo_enqueue(tmp_list, p->ast);
   } /* end while */
   
+  /* construct declaration list node */
   if (m2c_fifo_entry_count(tmplist) > 0) {
     list_node = m2c_ast_new_list_node(AST_DECLLIST, tmp_list);
   }
@@ -2964,40 +2976,26 @@ m2c_token_t block (m2c_parser_context_t p) {
   
   m2c_fifo_release(tmp_list);
   
-  /* ( BEGIN statementSequence )? */
-  if (lookahead == TOKEN_BEGIN) {
+  /* BEGIN */
+  if (match_token(p, TOKEN_BEGIN)) {
     lookahead = m2c_consume_sym(p->lexer);
-    
-    /* check for empty statement sequence */
-    if ((m2c_tokenset_element(FOLLOW(STATEMENT_SEQUENCE), lookahead))) {
-    
-        /* print warning */
-        m2c_emit_warning_w_pos
-          (M2C_EMPTY_STMT_SEQ,
-           m2c_lexer_lookahead_line(p->lexer),
-           m2c_lexer_lookahead_column(p->lexer));
-        p->warning_count++;
-    }
-    /* statementSequence */
-    else if (match_set(p, FIRST(STATEMENT_SEQUENCE), FOLLOW(STATEMENT))) {
-      lookahead = statement_sequence(p);
-      stmtseq = p->ast;
-    }
-    else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
-    } /* end if */
   }
-  else /* no statement sequence */ {
-    stmtseq = m2c_ast_empty_node();
+  else /* resync */ {
+    lookahead = skip_to_set(p, FIRST(STATEMENT_SEQUENCE));
   } /* end if */
   
-  /* END */
-  if (match_token(p, TOKEN_END, FOLLOW(BLOCK))) {
-    lookahead = m2c_consume_sym(p->lexer);
+  /* statementSequence */
+  if (match_set(p, FIRST(STATEMENT_SEQUENCE))) {
+    lookahead = statement_sequence(p);
+    sseq_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(BLOCK));
+    sseq_node = m2c_ast_empty_node();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_BLOCK, decllist_node, stmtseq, NULL);
+  p->ast = m2c_ast_new_node(AST_BLOCK, list_node, sseq_node, NULL);
   
   return lookahead;
 } /* end block */
