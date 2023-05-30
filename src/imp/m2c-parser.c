@@ -69,8 +69,9 @@
  * ----------------------------------------------------------------------- */
 
 typedef enum {
-  PUBLIC,   /* definition module context */
-  PRIVATE   /* implementation and program module context */
+  DEF_MODULE,   /* DEFINITION MODULE */
+  IMP_MODULE,   /* IMPLEMENATION MODULE */
+  PGM_MODULE    /* (*PROGRAM*) MODULE */
 } m2c_module_context_t;
 
 
@@ -90,12 +91,13 @@ typedef struct m2c_parser_context_s *m2c_parser_context_t;
  * ----------------------------------------------------------------------- */
 
 struct m2c_parser_context_s {
-  /* filename */      const char *filename;
-  /* lexer */         m2c_lexer_t lexer;
-  /* ast */           m2c_astnode_t ast;
-  /* status */        m2c_parser_status_t status;
-  /* warning_count */ unsigned short warning_count;
-  /* error_count */   unsigned short error_count;
+  /* filename */         const char *filename;
+  /* lexer */            m2c_lexer_t lexer;
+  /* ast */              m2c_astnode_t ast;
+  /* module_context */   m2c_module_context_t module_context;
+  /* status */           m2c_parser_status_t status;
+  /* warning_count */    unsigned short warning_count;
+  /* error_count */      unsigned short error_count;
 };
 
 typedef struct m2c_parser_context_s m2c_parser_context_s;
@@ -151,21 +153,13 @@ void m2c_parse_file
   } /* end if */
   
   /* init context */
+  p->module_context = 0;
   p->filename = filename;
   p->ast = NULL;
   p->warning_count = 0;
   p->error_count = 0;
   p->status = 0;
-  
-  if (m2c_option_variant_records()) {
-    /* install function to parse variant records */
-    p->record_type = variant_record_type;
-  }
-  else /* extensible records */ {
-    /* install function to parse extensible records */
-    p->record_type = extensible_record_type;
-  } /* end if */
-  
+    
   /* parse and build AST */
   parse_start_symbol(srctype, p);
   line_count = m2c_lexer_lookahead_line(p->lexer);
@@ -393,14 +387,17 @@ m2c_token_t compilation_unit (m2c_parser_context_t p) {
   
   switch (lookahead) {
     case TOKEN_DEFINITION :
+      p->module_context = DEF_MODULE;
       lookahead = definition_module(p);
       break;
       
     case TOKEN_IMPLEMENTATION :
+      p->module_context = IMP_MODULE;
       lookahead = implementation_module(p);
       break;
       
     case TOKEN_MODULE:
+      p->module_context = PGM_MODULE;
       lookahead = program_module(p);
       break;
   } /* end switch */
@@ -606,7 +603,8 @@ m2c_token_t import (m2c_parser_context_t p) {
     }
     else /* resync */ {
       lookahead =
-        skip_to_token(p, TOKEN_COMMA, TOKEN_SEMICOLON, TOKEN_IMPORT, NULL);
+        skip_to_token_list
+          (p, TOKEN_COMMA, TOKEN_SEMICOLON, TOKEN_IMPORT, NULL);
     } /* end if */
   } /* end while */
   
@@ -619,7 +617,7 @@ m2c_token_t import (m2c_parser_context_t p) {
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_IMPORT, imp_list, rxp_list);
+  p->ast = m2c_ast_new_node(AST_IMPORT, imp_list, rxp_list, NULL);
   
   m2c_fifo_release_queue(imp_list);
   m2c_fifo_release_queue(rxp_list);
@@ -638,8 +636,6 @@ m2c_token_t import (m2c_parser_context_t p) {
  *   procedureHeader ';' |
  *   toDoList ';'
  *   ;
- *
- * varDefinition := identList ':' typeIdent ;
  * ----------------------------------------------------------------------- */
 
 m2c_token_t const_definition_list (m2c_parser_context_t p);
@@ -768,7 +764,7 @@ m2c_token_t const_definition_list (m2c_parser_context_t p) {
   } /* end while */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_CONSTDEFLIST, def_list);
+  p->ast = m2c_ast_new_node(AST_CONSTDEFLIST, def_list, NULL);
   
   m2c_fifo_releast(def_list);
   
@@ -882,7 +878,7 @@ m2c_token_t const_binding (m2c_parser_context_t p) {
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = new_ast_new_node(AST_BIND, id_node, expr_node);
+  p->ast = new_ast_new_node(AST_BIND, id_node, expr_node, NULL);
   
   return lookahead;
 } /* end const_binding */
@@ -946,7 +942,7 @@ m2c_token_t const_declaration (m2c_parser_context_t p) {
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_CONSTDECL, const_id, type_id, expr);
+  p->ast = m2c_ast_new_node(AST_CONSTDECL, const_id, type_id, expr, NULL);
   
   return lookahead;
 } /* end const_declaration */
@@ -970,7 +966,7 @@ m2c_token_t ident (m2c_parser_context_t p) {
   lexeme = m2c_current_lexeme(p->lexer);
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(IDENT, lexeme);
+  p->ast = m2c_ast_new_terminal_node(IDENT, lexeme);
   
   return lookahead;
 } /* end ident */
@@ -1052,7 +1048,7 @@ m2c_token_t type_definition_list (m2c_parser_context_t p) {
  * astNode: (TYPE identNode typeNode)
  * ----------------------------------------------------------------------- */
 
-#define public_type(_p) type(PUBLIC, _p)
+#define public_type(_p) type(DEF_MODULE, _p)
 
 m2c_token_t type (m2c_parser_context_t p);
 
@@ -1144,7 +1140,7 @@ m2c_token_t type (module_context_t module_context, m2c_parser_context_t p) {
       
     /* | octetseqType */
     case TOKEN_OCTETSEQ :
-      if (module_context == PRIVATE) {
+      if (module_context == IMP_MODULE) {
         lookahead = octetseq_type(p); /* p->ast holds ast-node */
       }
       else {
@@ -1155,7 +1151,7 @@ m2c_token_t type (module_context_t module_context, m2c_parser_context_t p) {
       
     /* | opaqueType */
     case TOKEN_OPAQUE :
-      if (module_context == PUBLIC) {
+      if (module_context == DEF_MODULE) {
         lookahead = opaque_type(p); /* p->ast holds ast-node */
       }
       else {
@@ -1166,10 +1162,10 @@ m2c_token_t type (module_context_t module_context, m2c_parser_context_t p) {
     
     /* | pointerType | privatePointerType */
     case TOKEN_POINTER :
-      if (module_context == PUBLIC) {
+      if ((module_context != IMP_MODULE)) {
         lookahead = pointer_type(p); /* p->ast holds ast-node */
       }
-      else /* PRIVATE */ {
+      else /* IMP_MODULE */ {
         lookahead = private_pointer_type(p); /* p->ast holds ast-node */
       } /* end if */
       break;
@@ -2939,35 +2935,34 @@ m2c_token_t private_import (m2c_parser_context_t p) {
 m2c_token_t declaration (m2c_parser_context_t p);
 m2c_token_t statement_sequence (m2c_parser_context_t p);
 
+
+
+
 m2c_token_t block (m2c_parser_context_t p) {
-  m2c_astnode_t decllist, stmtseq;
-  m2c_fifo_t tmplist;
   m2c_token_t lookahead;
+  m2c_fifo_t tmp_list;
+  m2c_astnode_t list_node, sseq_node;
   
   PARSER_DEBUG_INFO("block");
   
   lookahead = m2c_next_sym(p->lexer);
   
-  tmplist = m2c_fifo_new_queue(NULL);
+  tmp_list = m2c_fifo_new_queue(NULL);
   
   /* declaration* */
-  while ((lookahead == TOKEN_CONST) ||
-         (lookahead == TOKEN_TYPE) ||
-         (lookahead == TOKEN_VAR) ||
-         (lookahead == TOKEN_PROCEDURE) ||
-         (lookahead == TOKEN_MODULE)) {
+  while (m2c_tokenset_element(FIRST(DECLARATION), lookahead)) {
     lookahead = declaration(p);
-    m2c_fifo_enqueue(tmplist, p->ast);
+    m2c_fifo_enqueue(tmp_list, p->ast);
   } /* end while */
   
   if (m2c_fifo_entry_count(tmplist) > 0) {
-    decllist = m2c_ast_new_list_node(AST_DECLLIST, tmplist);
+    list_node = m2c_ast_new_list_node(AST_DECLLIST, tmp_list);
   }
   else /* no declarations */ {
-    decllist = m2c_ast_empty_node();
+    list_node = m2c_ast_empty_node();
   } /* end if */
   
-  m2c_fifo_release(tmplist);
+  m2c_fifo_release(tmp_list);
   
   /* ( BEGIN statementSequence )? */
   if (lookahead == TOKEN_BEGIN) {
