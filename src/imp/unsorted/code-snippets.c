@@ -1,4 +1,13 @@
 /* --------------------------------------------------------------------------
+ * private type m2c_nonterminal_f
+ * --------------------------------------------------------------------------
+ * function pointer type for function to parse a non-terminal symbol.
+ * ----------------------------------------------------------------------- */
+
+typedef m2c_token_t (m2c_nonterminal_f) (m2c_parser_context_t);
+
+
+/* --------------------------------------------------------------------------
  * private function str_match(str1, str2)
  * --------------------------------------------------------------------------
  * Returns true character strings str1 and str2 match, otherwise false.

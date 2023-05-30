@@ -85,19 +85,28 @@ typedef struct m2c_parser_context_s *m2c_parser_context_t;
 
 
 /* --------------------------------------------------------------------------
+ * private type m2c_nonterminal_f
+ * --------------------------------------------------------------------------
+ * function pointer type for function to parse a non-terminal symbol.
+ * ----------------------------------------------------------------------- */
+
+typedef m2c_token_t (m2c_nonterminal_f) (m2c_parser_context_t);
+
+
+/* --------------------------------------------------------------------------
  * private type m2c_parser_context_s
  * --------------------------------------------------------------------------
  * Record type to implement parser context.
  * ----------------------------------------------------------------------- */
 
 struct m2c_parser_context_s {
-  /* filename */         const char *filename;
-  /* lexer */            m2c_lexer_t lexer;
-  /* ast */              m2c_astnode_t ast;
-  /* module_context */   m2c_module_context_t module_context;
-  /* status */           m2c_parser_status_t status;
-  /* warning_count */    unsigned short warning_count;
-  /* error_count */      unsigned short error_count;
+  /* filename */            const char *filename;
+  /* lexer */               m2c_lexer_t lexer;
+  /* ast */                 m2c_astnode_t ast;
+  /* module_context */      m2c_module_context_t module_context;
+  /* status */              m2c_parser_status_t status;
+  /* warning_count */       unsigned short warning_count;
+  /* error_count */         unsigned short error_count;
 };
 
 typedef struct m2c_parser_context_s m2c_parser_context_s;
@@ -2815,6 +2824,10 @@ m2c_token_t program_module (m2c_parser_context_t p) {
   
   PARSER_DEBUG_INFO("programModule");
   
+  /* install handlers for block and declaration */
+  p->parse_block = block;
+  p->parse_declaration = declaration;
+  
   /* MODULE */
   lookahead = m2c_consume_sym(p->lexer);
   
@@ -2934,15 +2947,9 @@ m2c_token_t private_import (m2c_parser_context_t p) {
 /* --------------------------------------------------------------------------
  * private function block()
  * --------------------------------------------------------------------------
- * Parses rule block or privateBlock depending on module context,  constructs
- * its AST node, passes it in p->ast and returns the new lookahead symbol.
- *
  * block :=
  *   declaration* BEGIN statementSequence END
  *   ;
- *
- * privateBlock :=
- *   privateDeclaration* ( BEGIN statementSequence )? END
  *
  * astnode: (BLOCK declarationListNode statementSeqNode)
  * ----------------------------------------------------------------------- */
@@ -3034,6 +3041,72 @@ m2c_token_t implementation_module (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end implementation_module */
+
+
+/* --------------------------------------------------------------------------
+ * private function private_block()
+ * --------------------------------------------------------------------------
+ * privateBlock :=
+ *   privateDeclaration* ( BEGIN statementSequence )? END
+ *
+ * astnode: (BLOCK declarationListNode statementSeqNode)
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t private_block (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  m2c_astnode_t list_node, sseq_node, empty_node;
+  
+  PARSER_DEBUG_INFO("privateBlock");
+  
+  lookahead = m2c_next_sym(p->lexer);
+  
+  empty_node = m2c_ast_empty_node();
+  tmp_list = m2c_fifo_new_queue(NULL);
+    
+  /* privateDeclaration */
+  while (m2c_tokenset_element(FIRST(DECLARATION), lookahead)) {
+    lookahead = declaration(p);
+    m2c_fifo_enqueue(tmp_list, p->ast);
+  } /* end while */
+  
+  /* construct declaration list node */
+  if (m2c_fifo_entry_count(tmplist) > 0) {
+    list_node = m2c_ast_new_list_node(AST_DECLLIST, tmp_list);
+  }
+  else /* no declarations */ {
+    list_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  m2c_fifo_release(tmp_list);
+  
+  /* ( BEGIN statementSequence )? */
+  if (lookahead == TOKEN_BEGIN)) {
+    /* BEGIN */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* statementSequence */
+    if (match_set(p, FIRST(STATEMENT_SEQUENCE))) {
+      lookahead = statement_sequence(p);
+      sseq_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(BLOCK));
+      sseq_node = m2c_ast_empty_node();
+    } /* end if */
+  }
+  else /* no module initialisation */ {
+    sseq_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  if ((list_node == empty_node) && (sseq_node == empty_node)) {
+    /* TO DO: warning -- empty implementation module */
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_BLOCK, list_node, sseq_node, NULL);
+  
+  return lookahead;
+} /* end private_block */
 
 
 /* --------------------------------------------------------------------------
