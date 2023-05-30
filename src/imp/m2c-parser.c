@@ -2899,9 +2899,11 @@ m2c_token_t program_module (m2c_parser_context_t p) {
 
 m2c_token_t private_import (m2c_parser_context_t p) {
   m2c_token_t lookahead;
-  m2c_astnode_t list_node;
+  m2c_astnode_t list_node, empty_node;
   
   PARSER_DEBUG_INFO("privateImport");
+  
+  empty_node = m2c_ast_empty_node();
   
   /* IMPORT */
   lookahead = m2c_consume_sym(p->lexer);
@@ -2913,11 +2915,11 @@ m2c_token_t private_import (m2c_parser_context_t p) {
   }
   else /* resync */ {
     lookahead = skip_to_set(p, FOLLOW(PRIVATE_IMPORT));
-    list_node = m2c_ast_empty_node();
+    list_node = empty_node;
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_IMPORT, list_node, NULL);
+  p->ast = m2c_ast_new_node(AST_IMPORT, list_node, empty_node, NULL);
   
   return lookahead;
 } /* end private_import */
