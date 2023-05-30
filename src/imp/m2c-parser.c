@@ -3331,7 +3331,7 @@ m2c_token_t type_declaration (m2c_parser_context_t p) {
  *   ;
  *
  * astnode:
- *  (PRIVPTR targetNode)
+ *  (POINTER identNode) | (PRIVPTR targetNode)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t private_pointer_type (m2c_parser_context_t p) {
@@ -3379,7 +3379,7 @@ m2c_token_t private_pointer_type (m2c_parser_context_t p) {
   p->ast = m2c_ast_new_node(PRIVPTR tgt_node, NULL);
    
   return lookahead;
-} /* end var_size_record_type */
+} /* end private_pointer_type */
 
 
 /* --------------------------------------------------------------------------
