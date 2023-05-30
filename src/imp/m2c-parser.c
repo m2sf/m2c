@@ -837,7 +837,7 @@ m2c_token_t const_binding (m2c_parser_context_t p) {
     ident = m2c_current_lexeme(p->lexer);
     
     if ((ident == m2c_res_ident(RESIDENT_COLLATION))
-      || (ident == m2c_res_ident(RESIDENT_TLIMIT)))
+      || (ident == m2c_res_ident(RESIDENT_TLIMIT))) {
       lookahead = ident(p);
       id_node = p->ast;
     }
@@ -1674,7 +1674,7 @@ m2c_token_t record_type (m2c_parser_context_t p) {
     lookahead = m2c_consume_sym(p->lexer);
     
     /* typeIdent | NIL */
-    if (match_token(p, TOKEN_IDENT))
+    if (match_token(p, TOKEN_IDENT)) {
       lookahead = qualident(p);
       type_node = p->ast;
     }
@@ -1797,16 +1797,6 @@ m2c_token_t field_list (m2c_parser_context_t p) {
       TOKEN_IDENT, TOKEN_LBRACKET, TOKEN_ARRAY, TOKEN_PROCEDURE, NULL);
   } /* end if */
     
-    /* type */
-    if (match_set(p, FIRST(TYPE), FOLLOW(VARIABLE_DECLARATION))) {
-      lookahead = type(p);
-      tc = p->ast;
-    } /* end if */
-  }
-  else /**/ {
-    lookahead = skip_to_set(p, FOLLOW(VARIABLE_DECLARATION));
-  } /* end if */
-  
   /* typeIdent | subrangeType | arrayType | procedureType */
   if (match_token_list(p,
     TOKEN_IDENT, TOKEN_LBRACKET, TOKEN_ARRAY, TOKEN_PROCEDURE, NULL)) {
@@ -2944,7 +2934,6 @@ m2c_token_t private_import (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t declaration (m2c_parser_context_t p);
-
 m2c_token_t statement_sequence (m2c_parser_context_t p);
 
 m2c_token_t block (m2c_parser_context_t p) {
