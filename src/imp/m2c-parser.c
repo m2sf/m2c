@@ -2056,7 +2056,7 @@ m2c_token_t formal_type (m2c_parser_context_t p) {
   p->ast = m2c_ast_new_node(AST_FTYPELIST, tmp_list, NULL);
   
   return lookahead;
-} /* end if */
+} /* end formal_type */
 
 
 /* --------------------------------------------------------------------------
@@ -2503,68 +2503,75 @@ m2c_token_t procedure_header (m2c_parser_context_t p) {
  * private function procedure_signature()
  * --------------------------------------------------------------------------
  * procedureSignature :=
- *   Ident ( '(' formalParamList? ')' ( ':' returnedType )? )?
+ *   Ident ( '(' formalParamList ')' )? ( ':' returnedType )?
  *   ;
  *
- * astnode: (PROCDEF identNode formalParamListNode returnTypeNode)
+ * astnode: (PSIG identNode formalParamListNode returnTypeNode)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t formal_param_list (m2c_parser_context_t p);
 
 m2c_token_t procedure_signature (m2c_parser_context_t p) {
-  m2c_astnode_t id, fplist, rtype;
-  m2c_string_t ident;
   m2c_token_t lookahead;
+  m2c_astnode_t id_node, list_node, type_node;
   
   PARSER_DEBUG_INFO("procedureSignature");
   
   /* Ident */
-  lookahead = m2c_consume_sym(p->lexer);
-  ident = m2c_lexer_current_lexeme(p->lexer);
-  id = m2c_ast_new_terminal_node(AST_IDENT, ident);
-  
-  /* ( '(' formalParamList? ')' ( ':' returnedType )? )? */
+  lookahead = ident(p);
+  id_node = p->ast;
+    
+  /* ( '(' formalParams ')' )? */
   if (lookahead == TOKEN_LEFT_PAREN) {
     
     /* '(' */
     lookahead = m2c_consume_sym(p->lexer);
     
-    /* formalParamList? */
-    if ((lookahead == TOKEN_IDENTIFIER) ||
-        (lookahead == TOKEN_VAR)) {
+    /* formalParamList */
+    if (match_set(p, FIRST(FORMAL_PARAMS))) {
       lookahead = formal_param_list(p);
-      fplist = p->ast;
+      list_node = p->ast;
     }
-    else {
-      fplist = m2c_ast_empty_node();
+    else /* resync */ {
+      lookahead =
+        skip_to_token(p, TOKEN_RPAREN, TOKEN_COLON, TOKEN_IDENT, NULL);
+      list_node = m2c_ast_empty_node();
     } /* end if */
-    
+        
     /* ')' */
-    if (match_token(p, TOKEN_RIGHT_PAREN, FOLLOW(PROCEDURE_TYPE))) {
+    if (match_token(p, TOKEN_RPAREN)) {
       lookahead = m2c_consume_sym(p->lexer);
     }
     else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_IDENT, FOLLOW(PROCEDURE_SIGNATURE));
     } /* end if */
+  }
+  else /* no formal parameter list */ {
+    list_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* ( ':' returnedType )? */
+  if (lookahead == TOKEN_COLON) {
+    /* ':' */
+    lookahead = m2c_consume_sym(p->lexer);
     
-    /* ( ':' returnedType )? */
-    if (lookahead == TOKEN_COLON) {
-      /* ':' */
-      lookahead = m2c_consume_sym(p->lexer);
-    
-      /* returnedType */
-      if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(PROCEDURE_TYPE))) {
-        lookahead = qualident(p);
-        rtype = p->ast;
-      } /* end if */
+    /* returnedType */
+    if (match_token(p, TOKEN_IDENTIFIER)) {
+      lookahead = qualident(p);
+      type_node = p->ast;
     }
-    else {
-      rtype = m2c_ast_empty_node();
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(PROCEDURE_TYPE));
+      type_node = m2c_ast_empty_node();
     } /* end if */
+  }
+  else /* no return type */ {
+    type_node = m2c_ast_empty_node();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_PROCDEF, id, fplist, rtype, NULL);
+  p->ast = m2c_ast_new_node(AST_PSIG, id_node, list_node, type_node, NULL);
   
   return lookahead;
 } /* end procedure_signature */
@@ -2583,60 +2590,34 @@ m2c_token_t procedure_signature (m2c_parser_context_t p) {
 m2c_token_t formal_params (m2c_parser_context_t p);
 
 m2c_token_t formal_param_list (m2c_parser_context_t p) {
-  m2c_fifo_t tmplist;
   m2c_token_t lookahead;
-  uint_t line_of_semicolon, column_of_semicolon;
+  m2c_fifo_t param_list;
   
   PARSER_DEBUG_INFO("formalParamList");
   
   /* formalParams */
   lookahead = formal_params(p);
-  tmplist = m2c_fifo_new_queue(p->ast);
+  param_list = m2c_fifo_new_queue(p->ast);
   
-  /* ( ';' formalParams )* */
-  while (lookahead == TOKEN_SEMICOLON) {
+  /* (';' formalParams)* */
+  while (match_token(p, TOKEN_SEMICOLON)) {
     /* ';' */
-    line_of_semicolon = m2c_lexer_lookahead_line(p->lexer);
-    column_of_semicolon = m2c_lexer_lookahead_column(p->lexer);
     lookahead = m2c_consume_sym(p->lexer);
     
-    /* check if semicolon occurred at the end of a formal parameter list */
-    if (lookahead == TOKEN_RIGHT_PAREN) {
-    
-      if (m2c_option_errant_semicolon()) {
-        /* treat as warning */
-        m2c_emit_warning_w_pos
-          (M2C_SEMICOLON_AFTER_FORMAL_PARAM_LIST,
-           line_of_semicolon, column_of_semicolon);
-        p->warning_count++;
-      }
-      else /* treat as error */ {
-        m2c_emit_error_w_pos
-          (M2C_SEMICOLON_AFTER_FORMAL_PARAM_LIST,
-           line_of_semicolon, column_of_semicolon);
-        p->error_count++;
-      } /* end if */
-      
-      /* print source line */
-      if (m2c_option_verbose()) {
-        m2c_print_line_and_mark_column(p->lexer,
-          line_of_semicolon, column_of_semicolon);
-      } /* end if */
-    
-      /* leave field list sequence loop to continue */
-      break;
-    } /* end if */
-    
-    /* formalParams */
-    if (match_set(p, FIRST(FORMAL_PARAMS), FOLLOW(FORMAL_PARAMS))) {
+    if (match_set(p, FIRST(FORMAL_PARAMS))) {
       lookahead = formal_params(p);
-      m2c_fifo_enqueue(tmplist, p->ast);
+      param_list = m2c_fifo_enqueue(def_list, p->ast);
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_SEMICOLON, FOLLOW(FORMAL_PARAMS));
     } /* end if */
   } /* end while */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_list_node(AST_FPARAMLIST, tmplist);
-  m2c_fifo_release(tmplist);
+  p->ast = m2c_ast_new_node(AST_FPARAMLIST, param_list);
+  
+  m2c_fifo_releast(param_list);
   
   return lookahead;
 } /* end formal_param_list */
@@ -2646,131 +2627,68 @@ m2c_token_t formal_param_list (m2c_parser_context_t p) {
  * private function formal_params()
  * --------------------------------------------------------------------------
  * formalParams :=
- *   simpleFormalParams | attribFormalParams
+ *   ( CONST | VAR )? identList ':' nonAttrFormalType
  *   ;
+ *
+ * astNode: (FPARAMS attr idlist ftype)
  * ----------------------------------------------------------------------- */
-
-m2c_token_t simple_formal_params (m2c_parser_context_t p);
-
-m2c_token_t attrib_formal_params (m2c_parser_context_t p);
 
 m2c_token_t formal_params (m2c_parser_context_t p) {
   m2c_token_t lookahead;
+  m2c_astnode_t attr_node, list_node, type_node;
   
   PARSER_DEBUG_INFO("formalParams");
   
   lookahead = m2c_next_sym(p->lexer);
-  
-  /* simpleFormalParams */
-  if (lookahead == TOKEN_IDENTIFIER) {
-    lookahead = simple_formal_params(p);
+    
+  /* (CONST | VAR)? */
+  if (lookahead == TOKEN_CONST) {
+    lookahead = m2c_consume_sym(p->lexer);
+    attr_node = m2c_ast_new_node(AST_CONSTP, NULL);
   }
-  /* | attribFormalParams */
-  else if ((lookahead == TOKEN_CONST) || (lookahead == TOKEN_VAR)) {
-    lookahead = attrib_formal_params(p);
+  else if (lookahead == TOKEN_VAR) {
+    lookahead = m2c_consume_sym(p->lexer);
+    attr_node = m2c_ast_new_node(AST_VARP, NULL);
   }
-  else /* unreachable code */ {
-    /* fatal error -- abort */
-      exit(-1);
+  else /* no attribute */ {
+    attr_node = m2c_ast_empty_node();
   } /* end if */
   
-  /* AST node is passed through in p->ast */
+  /* identList */
+  if (match_token(p, TOKEN_IDENT)) {
+    lookahead = ident_list(p);
+    list_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead =
+      skip_to_token_or_set(p, TOKEN_COLON, FIRST(NON_ATTR_FORMAL_TYPE));
+    list_node = m2c_ast_node_empty();
+  } /* end if */
+  
+  /* ':' */
+  if (match_token(p, TOKEN_COLON)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FIRST(NON_ATTR_FORMAL_TYPE));
+  } /* end if */
+  
+  /* nonAttrFormalType */
+  if (match_set(p, FIRST(NON_ATTR_FORMAL_TYPE))) {
+    lookahead = non_attr_formal_type(p);
+    type_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(NON_ATTR_FORMAL_TYPE));
+    type_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast =
+    m2c_ast_new_node(AST_FPARAMS, attr_node, list_node, type_node, NULL);
   
   return lookahead;
 } /* end formal_params */
-
-
-/* --------------------------------------------------------------------------
- * private function simple_formal_params()
- * --------------------------------------------------------------------------
- * simpleFormalParams :=
- *   identList ':' simpleFormalType
- *   ;
- *
- * astnode: (FPARAMS identListNode simpleFormalTypeNode)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t simple_formal_params (m2c_parser_context_t p) {
-  m2c_astnode_t idlist, sftype;
-  m2c_token_t lookahead;
-    
-  PARSER_DEBUG_INFO("simpleFormalParams");
-  
-  /* IdentList */
-  lookahead = ident_list(p);
-  idlist = p->ast;
-  
-  /* ':' */
-  if (match_token(p, TOKEN_COLON, FOLLOW(SIMPLE_FORMAL_PARAMS))) {
-    lookahead = m2c_consume_sym(p->lexer);
-    
-    /* formalType */
-    if (match_set(p, FIRST(FORMAL_TYPE), FOLLOW(SIMPLE_FORMAL_PARAMS))) {
-      lookahead = simple_formal_type(p);
-      sftype = p->ast;
-    } /* end if */
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_FPARAMS, idlist, sftype, NULL);
-  
-  return lookahead;
-} /* end simple_formal_params */
-
-
-/* --------------------------------------------------------------------------
- * private function attrib_formal_params()
- * --------------------------------------------------------------------------
- * attribFormalParams :=
- *   ( CONST | VAR ) simpleFormalParams
- *   ;
- *
- * astnode: (FPARAMS identListNode formalTypeNode)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t attrib_formal_params (m2c_parser_context_t p) {
-  m2c_astnode_t aftype, sftype;
-  m2c_token_t lookahead;
-  bool const_attr = false;
-  
-  PARSER_DEBUG_INFO("attribFormalParams");
-  
-  lookahead = m2c_next_sym(p->lexer);
-  
-  /* CONST */
-  if (lookahead == TOKEN_CONST) {
-    lookahead = m2c_consume_sym(p->lexer);
-    const_attr = true;
-  }
-  /* | VAR */
-  else if (lookahead == TOKEN_VAR) {
-    lookahead = m2c_consume_sym(p->lexer);
-  }
-  else /* unreachable code */ {
-    /* fatal error -- abort */
-    exit(-1);
-  } /* end if */
-  
-  /* simpleFormalParams */
-  if (match_set(p, FIRST(SIMPLE_FORMAL_PARAMS),
-      FOLLOW(ATTRIB_FORMAL_PARAMS))) {
-    lookahead = simple_formal_params(p);
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  sftype = m2c_ast_subnode_for_index(p->ast, 1);
-  
-  if (const_attr) {
-    aftype = m2c_ast_new_node(AST_CONSTP, sftype, NULL);
-  }
-  else {
-    aftype = m2c_ast_new_node(AST_VARP, sftype, NULL);
-  } /* end if */
-  
-  m2c_ast_replace_subnode(p->ast, 1, aftype);
-  
-  return lookahead;
-} /* end attrib_formal_params */
 
 
 /* ************************************************************************ *
