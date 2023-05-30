@@ -2666,6 +2666,7 @@ m2c_token_t binding_specifier (m2c_parser_context_t p) {
         bind_target = lexeme;
       }
       else /* not bindable */ {
+        /* TO DO: report error -- symbol not bindable */
         bind_target = intstr_empty_string();
       } /* end if */
       break;
@@ -2798,51 +2799,23 @@ m2c_token_t formal_params (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function implementation_module()
- * --------------------------------------------------------------------------
- * implementationModule :=
- *   IMPLEMENTATION programModule
- *   ;
- * ----------------------------------------------------------------------- */
-
-m2c_token_t implementation_module (m2c_parser_context_t p) {
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("implementationModule");
-  
-  /* IMPLEMENTATION */
-  lookahead = m2c_consume_sym(p->lexer);
-  
-  /* programModule */
-  if (match_token(p, TOKEN_MODULE, FOLLOW(PROGRAM_MODULE))) {
-    lookahead = program_module(p);
-  } /* end if */
-  
-  /* AST node is passed through in p->ast */
-  
-  return lookahead;
-} /* end implementation_module */
-
-
-/* --------------------------------------------------------------------------
  * private function program_module()
  * --------------------------------------------------------------------------
  * programModule :=
- *   MODULE moduleIdent modulePriority? ';'
- *   import* block moduleIdent '.'
+ *   MODULE moduleIdent ';'
+ *   privateImport* block moduleIdent '.'
  *   ;
  *
- * moduleIdent := Ident ;
- *
- * astnode: (IMPMOD identNode priorityNode importListNode blockNode)
+ * astNode: (PGMMOD moduleIdent implist blockNode)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t block (m2c_parser_context_t p);
 
 m2c_token_t program_module (m2c_parser_context_t p) {
-  m2c_astnode_t id, prio, implist, body;
-  m2c_string_t ident1, ident2;
+  intstr_t ident1, ident2;
   m2c_token_t lookahead;
+  m2c_fifo_t imp_list;
+  m2c_astnode_t id_node, list_node, block_node;
   
   PARSER_DEBUG_INFO("programModule");
   
@@ -2850,71 +2823,73 @@ m2c_token_t program_module (m2c_parser_context_t p) {
   lookahead = m2c_consume_sym(p->lexer);
   
   /* moduleIdent */
-  if (match_token(p, TOKEN_IDENTIFIER, RESYNC(IMPORT_OR_BLOCK))) {
+  if (match_token(p, TOKEN_IDENTIFIER)) {
+    ident1 = m2c_lexer_lookahead_lexeme(p->lexer);
+    lookahead = ident(p);
+    id_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead =
+      skip_to_token_list(p, TOKEN_SEMICOLON, TOKEN_IMPORT, TOKEN_BEGIN, NULL);
+      ident1 = intstr_empty_string();
+      id_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* ';' */
+  if (match_token(p, TOKEN_SEMICOLON)) {
     lookahead = m2c_consume_sym(p->lexer);
-    ident1 = m2c_lexer_current_lexeme(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_list(p, TOKEN_IMPORT, TOKEN_BEGIN, NULL);
+  } /* end if */
+  
+  imp_list = m2c_fifo_new_queue(NULL);
+  
+  /* import* */
+  while (lookahead == TOKEN_IMPORT) {
+    lookahead = private_import(p);
+    m2c_fifo_enqueue(imp_list, p->ast);
+  } /* end while */
+  
+  if (m2c_fifo_entry_count(tmp_list) > 0) {
+    list_node = m2c_ast_new_list_node(AST_IMPLIST, imp_list, NULL);
+  }
+  else /* no import list */ {
+    list_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  m2c_fifo_release(imp_list);
+  
+  /* block */
+  if (match_set(p, FIRST(BLOCK))) {
+    lookahead = block(p);
+    block_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead =
+      skip_to_token_list(p, TOKEN_IDENT, TOKEN_DOT, TOKEN_EOF, NULL);
+    block_node = m2c_ast_empty_node();
+  } /* end if */
     
-    /* modulePriority? */
-    if (lookahead == TOKEN_LEFT_BRACKET) {
-      lookahead = module_priority(p);
-      prio = p->ast;
-    }
-    else /* no module priority */ {
-      prio = m2c_ast_empty_node();
-    } /* end while */
-    
-    /* ';' */
-    if (match_token(p, TOKEN_SEMICOLON, RESYNC(IMPORT_OR_BLOCK))) {
-      lookahead = m2c_consume_sym(p->lexer);
-    }
-    else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
+  /* moduleIdent */
+  if (match_token(p, TOKEN_IDENTIFIER)) {
+    lookahead = m2c_consume_sym(p->lexer);
+    ident2 = m2c_lexer_current_lexeme(p->lexer);
+      
+    if (ident1 != ident2) {
+      /* TO DO: report error -- module identifiers don't match */ 
     } /* end if */
   }
   else /* resync */ {
-    lookahead = m2c_next_sym(p->lexer);
+    lookahead = skip_to_token_list(p, TOKEN_DOT, TOKEN_EOF, NULL);
   } /* end if */
   
-  tmplist = m2c_fifo_new_queue(NULL);
-  
-  /* import* */
-  while ((lookahead == TOKEN_IMPORT) ||
-         (lookahead == TOKEN_FROM)) {
-    lookahead = import(p);
-    m2c_fifo_enqueue(tmplist, p->ast);
-  } /* end while */
-  
-  if (m2c_fifo_entry_count(tmplist) > 0) {
-    implist = m2c_ast_new_list_node(AST_IMPLIST, tmplist);
-  }
-  else /* no import list */ {
-    implist = m2c_ast_empty_node();
-  } /* end if */
-  
-  m2c_fifo_release(tmplist);
-  
-  /* block */
-  if (match_set(p, FIRST(BLOCK), FOLLOW(PROGRAM_MODULE))) {
-    lookahead = block(p);
-    body = p->ast;
-    
-    /* moduleIdent */
-    if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(PROGRAM_MODULE))) {
-      lookahead = m2c_consume_sym(p->lexer);
-      ident2 = m2c_lexer_current_lexeme(p->lexer);
-      
-      if (ident1 != ident2) {
-        /* TO DO: report error -- module identifiers don't match */ 
-      } /* end if */
-      
-      if (match_token(p, TOKEN_PERIOD, FOLLOW(PROGRAM_MODULE))) {
-        lookahead = m2c_consume_sym(p->lexer);
-      } /* end if */
-    } /* end if */
+  if (match_token(p, TOKEN_PERIOD)) {
+    lookahead = m2c_consume_sym(p->lexer);
   } /* end if */  
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_IMPMOD, id, prio, implist, body, NULL);
+  p->ast = m2c_ast_new_node(AST_IMPMOD, id_node, imp_node, block_node, NULL);
   
   return lookahead;
 } /* end program_module */
@@ -3037,6 +3012,41 @@ m2c_token_t block (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end block */
+
+
+/* --------------------------------------------------------------------------
+ * private function implementation_module()
+ * --------------------------------------------------------------------------
+ * implementationModule :=
+ *   IMPLEMENTATION MODULE moduleIdent ';'
+ *   privateImport* possiblyEmptyBlock moduleIdent '.'
+ *   ;
+ *
+ * astNode: (IMPMOD moduleIdent implist blockNode)
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t implementation_module (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("implementationModule");
+  
+  /* IMPLEMENTATION */
+  lookahead = m2c_consume_sym(p->lexer);
+  
+  /* TO DO */
+  
+  /* programModule */
+  if (match_token(p, TOKEN_MODULE)) {
+    lookahead = program_module(p);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(PROGRAM_MODULE));
+  } /* end if */
+  
+  /* AST node is passed through in p->ast */
+  
+  return lookahead;
+} /* end implementation_module */
 
 
 /* --------------------------------------------------------------------------
