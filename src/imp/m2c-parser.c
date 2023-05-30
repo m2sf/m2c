@@ -40,13 +40,14 @@
  * ----------------------------------------------------------------------- */
 
 #include "m2c-parser.h"
-
 #include "m2c-lexer.h"
 #include "m2c-error.h"
 #include "m2c-tokenset.h"
 #include "m2c-fileutils.h"
 #include "m2c-production.h"
-#include "m2c-resync-sets.h"
+#include "m2c-first-sets.h"
+#include "m2c-follow-sets.h"
+#include "m2c-bindables.h"
 #include "m2c-compiler-options.h"
 
 #include <stdio.h>
