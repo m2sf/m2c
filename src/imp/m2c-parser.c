@@ -3051,7 +3051,6 @@ m2c_token_t implementation_module (m2c_parser_context_t p) {
  *   TYPE ( typeDeclaration ';' )* |
  *   VAR ( variableDeclaration ';' )* |
  *   procedureDeclaration ';'
- *   moduleDeclaration ';'
  *   ;
  * 
  * constDeclaration := constDefinition ;
@@ -3060,7 +3059,6 @@ m2c_token_t implementation_module (m2c_parser_context_t p) {
 m2c_token_t type_declaration (m2c_parser_context_t p);
 m2c_token_t variable_declaration (m2c_parser_context_t p);
 m2c_token_t procedure_declaration (m2c_parser_context_t p);
-m2c_token_t module_declaration (m2c_parser_context_t p);
 
 m2c_token_t declaration (m2c_parser_context_t p) {
   m2c_token_t lookahead;
