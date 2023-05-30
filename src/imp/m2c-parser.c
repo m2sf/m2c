@@ -2578,6 +2578,107 @@ m2c_token_t procedure_signature (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
+ * private function binding_specifier()
+ * --------------------------------------------------------------------------
+ * bindingSpecifier :=
+ *   NEW ( argListFlag | capacityFlag )? | RETAIN | RELEASE |
+ *   READ allocFlag? | WRITE formatFlag? | bindableIdent
+ *   ;
+ *
+ * astnode: (BINDTO "NEW") | (BINDTO "NEW+") | (BINDTO "NEW*") |
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t binding_specifier (m2c_parser_context_t p) {
+  intstr_t bind_target;
+  m2c_token_t lookahead;
+  
+  lookahead = m2c_next_sym(p->lexer);
+  lexeme = m2c_lookahead_lexeme(p->lexer);
+  
+  switch (lookahead) {
+    case TOKEN_NEW :
+      /* NEW */
+      lookahead = m2c_consume_sym(p->lexer);
+      
+      /* ('+' | '*')? */
+      if (lookahead == TOKEN_PLUS) {
+        /* '+' */
+        lookahead = m2c_consume_sym(p->lexer);
+        bind_target = m2c_lexeme_for_bindable(BIND_NEWARGS);
+      }
+      else if (lookahead == TOKEN_HASH) {
+        /* '#' */
+        lookahead = m2c_consume_sym(p->lexer);
+        bind_target = m2c_lexeme_for_bindable(BIND_NEWCAP);
+      }
+      else /* no flag */ {
+        bind_target = m2c_lexeme_for_bindable(BIND_NEW);
+      } /* end if */
+      break;
+      
+    case TOKEN_READ :
+      /* READ */
+      lookahead = m2c_consume_sym(p->lexer);
+      
+      /* '*'? */
+      if (lookahead == TOKEN_ASTERISK) {
+        /* '*' */
+        lookahead = m2c_consume_sym(p->lexer);
+        bind_target = m2c_lexeme_for_bindable(BIND_READNEW);
+      }
+      else /* no flag */ {
+        bind_target = m2c_lexeme_for_bindable(BIND_READ);
+      } /* end if */
+      break;
+    
+    case TOKEN_RELEASE :
+      /* RELEASE */
+      lookahead = m2c_consume_sym(p->lexer);
+      bind_target = m2c_lexeme_for_bindable(BIND_RELEASE);
+      break;
+    
+    case TOKEN_RETAIN :
+      /* RETAIN */
+      lookahead = m2c_consume_sym(p->lexer);
+      bind_target = m2c_lexeme_for_bindable(BIND_RETAIN);
+      break;
+    
+    case TOKEN_WRITE :
+      /* WRITE */
+      lookahead = m2c_consume_sym(p->lexer);
+      
+      /* '#'? */
+      if (lookahead == TOKEN_HASH) {
+        /* '#' */
+        lookahead = m2c_consume_sym(p->lexer);
+        bind_target = m2c_lexeme_for_bindable(BIND_WRITEF);
+      }
+      else /* no flag */ {
+        bind_target = m2c_lexeme_for_bindable(BIND_WRITE);
+      } /* end if */
+      break;
+    
+    case TOKEN_IDENT :
+      lookahead = m2c_consume_sym(p->lexer);
+      lexeme = m2c_current_lexeme(p->lexer);
+      
+      if (m2c_bindable_for_lexeme(lexeme) != BINDABLE_INVALID) {
+        bind_target = lexeme;
+      }
+      else /* not bindable */ {
+        bind_target = intstr_empty_string();
+      } /* end if */
+      break;
+  } /* end switch */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_BIND, bind_target, NULL);
+  
+  return lookahead;
+} /* end binding_specifier */
+
+
+/* --------------------------------------------------------------------------
  * private function formal_param_list()
  * --------------------------------------------------------------------------
  * formalParamList :=
