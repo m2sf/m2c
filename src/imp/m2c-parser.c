@@ -2907,28 +2907,30 @@ m2c_token_t program_module (m2c_parser_context_t p) {
  * astnode: (IMPORT identListNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t ident_list (m2c_parser_context_t p);
-
-m2c_token_t qualified_import (m2c_parser_context_t p) {
-  m2c_astnode_t idlist;
+m2c_token_t private_import (m2c_parser_context_t p) {
   m2c_token_t lookahead;
+  m2c_astnode_t list_node;
   
-  PARSER_DEBUG_INFO("qualifiedImport");
+  PARSER_DEBUG_INFO("privateImport");
   
   /* IMPORT */
   lookahead = m2c_consume_sym(p->lexer);
   
   /* moduleList */
-  if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(QUALIFIED_IMPORT))) {
+  if (match_token(p, TOKEN_IDENTIFIER)) {
     lookahead = ident_list(p);
-    idlist = p->ast;
+    list_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(PRIVATE_IMPORT));
+    list_node = m2c_ast_empty_node();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_IMPORT, idlist, NULL);
+  p->ast = m2c_ast_new_node(AST_IMPORT, list_node, NULL);
   
   return lookahead;
-} /* end qualified_import */
+} /* end private_import */
 
 
 /* --------------------------------------------------------------------------
