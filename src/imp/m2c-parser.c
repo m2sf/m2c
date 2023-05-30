@@ -2604,15 +2604,15 @@ m2c_token_t binding_specifier (m2c_parser_context_t p) {
       if (lookahead == TOKEN_PLUS) {
         /* '+' */
         lookahead = m2c_consume_sym(p->lexer);
-        bind_target = m2c_lexeme_for_bindable(BIND_NEWARGS);
+        bind_target = m2c_lexeme_for_bindable(BINDABLE_NEWARGS);
       }
       else if (lookahead == TOKEN_HASH) {
         /* '#' */
         lookahead = m2c_consume_sym(p->lexer);
-        bind_target = m2c_lexeme_for_bindable(BIND_NEWCAP);
+        bind_target = m2c_lexeme_for_bindable(BINDABLE_NEWCAP);
       }
       else /* no flag */ {
-        bind_target = m2c_lexeme_for_bindable(BIND_NEW);
+        bind_target = m2c_lexeme_for_bindable(BINDABLE_NEW);
       } /* end if */
       break;
       
@@ -2624,23 +2624,23 @@ m2c_token_t binding_specifier (m2c_parser_context_t p) {
       if (lookahead == TOKEN_ASTERISK) {
         /* '*' */
         lookahead = m2c_consume_sym(p->lexer);
-        bind_target = m2c_lexeme_for_bindable(BIND_READNEW);
+        bind_target = m2c_lexeme_for_bindable(BINDABLE_READNEW);
       }
       else /* no flag */ {
-        bind_target = m2c_lexeme_for_bindable(BIND_READ);
+        bind_target = m2c_lexeme_for_bindable(BINDABLE_READ);
       } /* end if */
       break;
     
     case TOKEN_RELEASE :
       /* RELEASE */
       lookahead = m2c_consume_sym(p->lexer);
-      bind_target = m2c_lexeme_for_bindable(BIND_RELEASE);
+      bind_target = m2c_lexeme_for_bindable(BINDABLE_RELEASE);
       break;
     
     case TOKEN_RETAIN :
       /* RETAIN */
       lookahead = m2c_consume_sym(p->lexer);
-      bind_target = m2c_lexeme_for_bindable(BIND_RETAIN);
+      bind_target = m2c_lexeme_for_bindable(BINDABLE_RETAIN);
       break;
     
     case TOKEN_WRITE :
@@ -2651,10 +2651,10 @@ m2c_token_t binding_specifier (m2c_parser_context_t p) {
       if (lookahead == TOKEN_HASH) {
         /* '#' */
         lookahead = m2c_consume_sym(p->lexer);
-        bind_target = m2c_lexeme_for_bindable(BIND_WRITEF);
+        bind_target = m2c_lexeme_for_bindable(BINDABLE_WRITEF);
       }
       else /* no flag */ {
-        bind_target = m2c_lexeme_for_bindable(BIND_WRITE);
+        bind_target = m2c_lexeme_for_bindable(BINDABLE_WRITE);
       } /* end if */
       break;
     
