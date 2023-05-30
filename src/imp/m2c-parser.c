@@ -85,15 +85,6 @@ typedef struct m2c_parser_context_s *m2c_parser_context_t;
 
 
 /* --------------------------------------------------------------------------
- * private type m2c_nonterminal_f
- * --------------------------------------------------------------------------
- * function pointer type for function to parse a non-terminal symbol.
- * ----------------------------------------------------------------------- */
-
-typedef m2c_token_t (m2c_nonterminal_f) (m2c_parser_context_t);
-
-
-/* --------------------------------------------------------------------------
  * private type m2c_parser_context_s
  * --------------------------------------------------------------------------
  * Record type to implement parser context.
@@ -2824,10 +2815,6 @@ m2c_token_t program_module (m2c_parser_context_t p) {
   
   PARSER_DEBUG_INFO("programModule");
   
-  /* install handlers for block and declaration */
-  p->parse_block = block;
-  p->parse_declaration = declaration;
-  
   /* MODULE */
   lookahead = m2c_consume_sym(p->lexer);
   
@@ -2893,7 +2880,7 @@ m2c_token_t program_module (m2c_parser_context_t p) {
     lookahead = skip_to_token_list(p, TOKEN_DOT, TOKEN_EOF, NULL);
   } /* end if */
   
-  if (match_token(p, TOKEN_PERIOD)) {
+  if (match_token(p, TOKEN_DOT)) {
     lookahead = m2c_consume_sym(p->lexer);
   } /* end if */  
   
@@ -3013,31 +3000,99 @@ m2c_token_t block (m2c_parser_context_t p) {
  * --------------------------------------------------------------------------
  * implementationModule :=
  *   IMPLEMENTATION MODULE moduleIdent ';'
- *   privateImport* possiblyEmptyBlock moduleIdent '.'
+ *   privateImport* privateBlock moduleIdent '.'
  *   ;
  *
  * astNode: (IMPMOD moduleIdent implist blockNode)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t implementation_module (m2c_parser_context_t p) {
+  intstr_t ident1, ident2;
   m2c_token_t lookahead;
+  m2c_fifo_t imp_list;
+  m2c_astnode_t id_node, imp_node, block_node;
   
   PARSER_DEBUG_INFO("implementationModule");
   
   /* IMPLEMENTATION */
   lookahead = m2c_consume_sym(p->lexer);
   
-  /* TO DO */
-  
-  /* programModule */
+  /* MODULE */
   if (match_token(p, TOKEN_MODULE)) {
-    lookahead = program_module(p);
+    lookahead = m2c_consume_sym(p->lexer);
   }
   else /* resync */ {
-    lookahead = skip_to_set(p, FOLLOW(PROGRAM_MODULE));
+    lookahead = skip_to_token_list(p, TOKEN_IDENT, TOKEN_SEMICOLON, NULL);
   } /* end if */
   
-  /* AST node is passed through in p->ast */
+  /* moduleIdent */
+  if (match_token(p, TOKEN_IDENTIFIER)) {
+    ident1 = m2c_lexer_lookahead_lexeme(p->lexer);
+    lookahead = ident(p);
+    id_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead =
+      skip_to_token_list(p, TOKEN_SEMICOLON, TOKEN_IMPORT, NULL);
+      ident1 = intstr_empty_string();
+      id_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* ';' */
+  if (match_token(p, TOKEN_SEMICOLON)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_IMPORT, FIRST(BLOCK);
+  } /* end if */
+  
+  imp_list = m2c_fifo_new_queue(NULL);
+  
+  /* privateImport* */
+  while (lookahead == TOKEN_IMPORT) {
+    lookahead = private_import(p);
+    m2c_fifo_enqueue(imp_list, p->ast);
+  } /* end while */
+  
+  if (m2c_fifo_entry_count(tmp_list) > 0) {
+    imp_node = m2c_ast_new_list_node(AST_IMPLIST, imp_list, NULL);
+  }
+  else /* no import list */ {
+    list_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  m2c_fifo_release(imp_list);
+  
+  /* privateBlock */
+  if (match_set(p, FIRST(BLOCK))) {
+    lookahead = private_block(p);
+    block_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead =
+      skip_to_token_list(p, TOKEN_IDENT, TOKEN_DOT, TOKEN_EOF, NULL);
+    block_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* moduleIdent */
+  if (match_token(p, TOKEN_IDENTIFIER)) {
+    lookahead = m2c_consume_sym(p->lexer);
+    ident2 = m2c_lexer_current_lexeme(p->lexer);
+      
+    if (ident1 != ident2) {
+      /* TO DO: report error -- module identifiers don't match */ 
+    } /* end if */
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_list(p, TOKEN_DOT, TOKEN_EOF, NULL);
+  } /* end if */
+  
+  if (match_token(p, TOKEN_DOT)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  } /* end if */  
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_IMPMOD, id_node, imp_node, block_node, NULL);
   
   return lookahead;
 } /* end implementation_module */
@@ -3099,7 +3154,7 @@ m2c_token_t private_block (m2c_parser_context_t p) {
   } /* end if */
   
   if ((list_node == empty_node) && (sseq_node == empty_node)) {
-    /* TO DO: warning -- empty implementation module */
+    /* TO DO: issue warning -- empty implementation module */
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
@@ -3269,144 +3324,60 @@ m2c_token_t type_declaration (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function var_size_record_type()
+ * private function private_pointer_type()
  * --------------------------------------------------------------------------
- * varSizeRecordType :=
- *   VAR RECORD fieldListSequence
- *   VAR varSizeFieldIdent ':' ARRAY sizeFieldIdent OF typeIdent
- *   END
+ * privatePointerType :=
+ *   POINTER TO ( determinateTarget | indeterminateTarget )
  *   ;
  *
  * astnode:
- *  (VSREC fieldListSeqNode (VSFIELD identNode identNode identNode))
+ *  (PRIVPTR targetNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t var_size_record_type (m2c_parser_context_t p) {
-  m2c_astnode_t flseq, vsfield, vsfieldid, sizeid, typeid;
-  m2c_string_t ident;
-  uint_t line_of_semicolon, column_of_semicolon;
+m2c_token_t private_pointer_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
+  m2c_astnode_t tgt_node;
     
-  PARSER_DEBUG_INFO("varSizeRecordType");
+  PARSER_DEBUG_INFO("privatePointerType");
   
-  /* VAR */
+  /* POINTER */
   lookahead = m2c_consume_sym(p->lexer);
   
-  /* RECORD */
-  if (match_token(p, TOKEN_RECORD, FOLLOW(VAR_SIZE_RECORD_TYPE))) {
-    lookahead = m2c_consume_sym(p->lexer); 
-    
-    /* check for empty field list sequence */
-    if (lookahead == TOKEN_VAR) {
-
-        /* empty field list sequence warning */
-        m2c_emit_warning_w_pos
-          (M2C_EMPTY_FIELD_LIST_SEQ,
-           m2c_lexer_lookahead_line(p->lexer),
-           m2c_lexer_lookahead_column(p->lexer));
-        p->warning_count++;
-    }
-    /* fieldListSequence */
-    else if (match_set(p, FIRST(FIELD_LIST_SEQUENCE),
-             FOLLOW(VAR_SIZE_RECORD_TYPE))) {
-      lookahead = field_list_sequence(p);
-      flseq = p->ast;
-    }
-    else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
-    } /* end if */
-    
-    /* VAR */
-    if (match_token(p, TOKEN_VAR, FOLLOW(VAR_SIZE_RECORD_TYPE))) {
-      lookahead = m2c_consume_sym(p->lexer);
-      
-      if (lookahead == TOKEN_END) {
-        m2c_emit_warning_w_pos
-          (M2C_EMPTY_FIELD_LIST_SEQ,
-           m2c_lexer_lookahead_line(p->lexer),
-           m2c_lexer_lookahead_column(p->lexer));
-           m2c_consume_sym(p->lexer);
-        p->warning_count++;
-      }
-      /* varSizeFieldIdent */
-      else if (match_token(p, TOKEN_IDENTIFIER,
-               FOLLOW(VAR_SIZE_RECORD_TYPE))) {
-        lookahead = m2c_consume_sym(p->lexer);
-        ident = m2c_lexer_current_lexeme(p->lexer);
-        vsfieldid = m2c_ast_new_terminal_node(AST_IDENT, ident);
-      
-        /* ':' */
-        if (match_token(p, TOKEN_COLON, FOLLOW(VAR_SIZE_RECORD_TYPE))) {
-          lookahead = m2c_consume_sym(p->lexer);
+  /* TO */
+  if (match_token(p, TOKEN_TO)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_list(p, TOKEN_IDENT, TOKEN_RECORD, NULL);
+  } /* end if */
+  
+  /* determinateTarget | indeterminateTarget */
+  if (match_set(p, IDENT_OR_RECORD)) {
+    switch (lookahead) {
+      /* determinateTarget | */
+      case TOKEN_IDENT :
+        lookahead = ident(p);
+        break;
         
-          /* ARRAY */
-          if (match_token(p, TOKEN_ARRAY, FOLLOW(VAR_SIZE_RECORD_TYPE))) {
-            lookahead = m2c_consume_sym(p->lexer);
-          
-            /* sizeFieldIdent */
-            if (match_token(p, TOKEN_IDENTIFIER,
-                FOLLOW(VAR_SIZE_RECORD_TYPE))) {
-              lookahead = m2c_consume_sym(p->lexer);
-              ident = m2c_lexer_current_lexeme(p->lexer);
-              sizeid = m2c_ast_new_terminal_node(AST_IDENT, ident);
-            
-              /* OF */
-              if (match_token(p, TOKEN_OF, FOLLOW(VAR_SIZE_RECORD_TYPE))) {
-                lookahead = m2c_consume_sym(p->lexer);
-              
-                /* typeIdent */
-                if (match_token(p, TOKEN_IDENTIFIER,
-                    FOLLOW(VAR_SIZE_RECORD_TYPE))) {
-                  lookahead = qualident(p);
-                  typeid = p->ast;
-                  
-                  /* check for errant semicolon */
-                  if (lookahead == TOKEN_SEMICOLON) {
-                    line_of_semicolon =
-                      m2c_lexer_lookahead_line(p->lexer);
-                    column_of_semicolon =
-                      m2c_lexer_lookahead_column(p->lexer);
-                  
-                    if (m2c_option_errant_semicolon()) {
-                      /* treat as warning */
-                      m2c_emit_warning_w_pos
-                        (M2C_SEMICOLON_AFTER_FIELD_LIST_SEQ,
-                         line_of_semicolon, column_of_semicolon);
-                      p->warning_count++;
-                    }
-                    else /* treat as error */ {
-                      m2c_emit_error_w_pos
-                        (M2C_SEMICOLON_AFTER_FIELD_LIST_SEQ,
-                         line_of_semicolon, column_of_semicolon);
-                      p->error_count++;
-                    } /* end if */
-                    
-                    m2c_consume_sym(p->lexer);
-                    
-                    /* print source line */
-                    if (m2c_option_verbose()) {
-                      m2c_print_line_and_mark_column(p->lexer,
-                        line_of_semicolon, column_of_semicolon);
-                    } /* end if */
-                  } /* end if */
-                  
-                  if (match_token(p, TOKEN_END,
-                      FOLLOW(VAR_SIZE_RECORD_TYPE))) {
-                    lookahead = m2c_consume_sym(p->lexer);
-                  } /* end if */
-                } /* end if */
-              } /* end if */
-            } /* end if */
-          } /* end if */
-        } /* end if */
-      } /* end if */
-    } /* end if */
+      /* indeterminateTarget */
+      case TOKEN_RECORD :
+        lookahead = indeterminate_target(p);
+        break;
+        
+      default :
+        /* TO DO: fatal error -- we should never get here */
+        exit (-1);
+    } /* end switch */
+    tgt_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(PRIVATE_POINTER_TYPE));
+    tgt_node = m2c_ast_empty_node();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  vsfield = m2c_ast_new_node(AST_VSFIELD, vsfieldid, sizeid, typeid, NULL);
-  p->ast = m2c_ast_new_node(AST_VSREC, flseq, vsfield, NULL);
-  
+  p->ast = m2c_ast_new_node(PRIVPTR tgt_node, NULL);
+   
   return lookahead;
 } /* end var_size_record_type */
 
