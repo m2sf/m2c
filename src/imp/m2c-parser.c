@@ -3675,6 +3675,76 @@ m2c_token_t statement (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
+ * private function new_statement()
+ * --------------------------------------------------------------------------
+ * newStatement :=
+ *   NEW designator ( ':=' structuredValue | CAPACITY expression )?
+ *   ;
+ *
+ * astnode:
+ *  
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t assignment_or_proc_call (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("newStatement");
+  
+  /* NEW */
+  lookahead = m2c_consume_sym(p->lexer);
+  
+  /* designator */
+  if (match_set(p, FIRST(DESIGNATOR))) {
+    lookahead = designator(p);
+    id_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_list(p, TOKEN_ASSIGN, TOKEN_IDENT);
+    id_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* ( ':=' structuredValue | CAPACITY expression )? */
+  if (lookahead == TOKEN_ASSIGN) {
+    /* ':=' */
+    lookahead = m2c_consume_sym(p);
+    
+    /* structuredValue */
+    if (match_token(p, TOKEN_LBRACE)) {
+      lookahead = structured_value(p);
+      init_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_SEMICOLON, FOLLOW(STATEMENT));
+      init_node = m2c_ast_empty_node();
+    } /* end if */
+    p->ast = m2c_ast_new_node(AST_NEWINIT, id_node, init_node, NULL);
+  }
+  else if (lookahead == TOKEN_IDENT) && () {
+    /* CAPACITY */
+    lookahead = m2c_consume_sym(p);
+    
+    /* expression */
+    if (match_set(p, FIRST(EXPRESSION))) {
+      lookahead = expression(p);
+      capv_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_SEMICOLON, FOLLOW(STATEMENT));
+      capv_node = m2c_ast_empty_node();
+    } /* end if */
+    p->ast = m2c_ast_new_node(AST_NEWCAP, id_node, capv_node, NULL);
+  }
+  else /* no parameters */ {
+    p->ast = m2c_ast_new_node(AST_NEW, id_node, NULL);
+  } /* end if */
+  
+  return lookahead;
+} /* end newStatement */
+
+
+/* --------------------------------------------------------------------------
  * private function assignment_or_proc_call()
  * --------------------------------------------------------------------------
  * assignmentOrProcCall :=
