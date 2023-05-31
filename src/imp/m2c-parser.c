@@ -3685,6 +3685,9 @@ m2c_token_t statement (m2c_parser_context_t p) {
  *  (NEW desigNode) | (NEWINIT desigNode initValNode) | (NEWCAP valueNode)
  * ----------------------------------------------------------------------- */
 
+m2c_token_t designator (m2c_parser_context_t p);
+m2c_token_t expression (m2c_parser_context_t p);
+
 m2c_token_t new_statement (m2c_parser_context_t p) {
   intstr_t lexeme;
   m2c_token_t lookahead;
@@ -3824,103 +3827,26 @@ m2c_token_t retain_statement (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function assignment_or_proc_call()
+ * private function update_or_proc_call()
  * --------------------------------------------------------------------------
- * assignmentOrProcCall :=
- *   designator ( ':=' expression | actualParameters )?
+ * updateOrProcCall :=
+ *   designator ( IncOrDecSuffix | '(' expressionList ')' )? |
+ *   targetDesignator ':=' expression
  *   ;
  *
  * astnode:
- *  (ASSIGN designatorNode exprNode) | (PCALL designatorNode argsNode)
+ *  
  * ----------------------------------------------------------------------- */
 
-m2c_token_t designator (m2c_parser_context_t p);
-m2c_token_t expression (m2c_parser_context_t p);
-m2c_token_t actual_parameters (m2c_parser_context_t p);
-
-m2c_token_t assignment_or_proc_call (m2c_parser_context_t p) {
-  m2c_astnode_t desig;
+m2c_token_t update_or_proc_call (m2c_parser_context_t p) {
   m2c_token_t lookahead;
     
-  PARSER_DEBUG_INFO("assignmentOrProcCall");
+  PARSER_DEBUG_INFO("updateOrProcCall");
   
-  /* designator */
-  lookahead = designator(p);
-  desig = p->ast;
-  
-  /* ( ':=' expression | actualParameters )? */
-  if (lookahead == TOKEN_ASSIGN) {
-    lookahead = m2c_consume_sym(p->lexer);
-    
-    /* expression */
-    if (match_set(p, FIRST(EXPRESSION), FOLLOW(ASSIGNMENT_OR_PROC_CALL))) {
-      lookahead = expression(p);
-      p->ast = m2c_ast_new_node(AST_ASSIGN, desig, p->ast, NULL);
-      /* astnode: (ASSIGN designatorNode exprNode) */
-    } /* end if */
-  }
-  /* | actualParameters */
-  else if (lookahead == TOKEN_LEFT_PAREN) {
-    lookahead = actual_parameters(p);
-    p->ast = m2c_ast_new_node(AST_PCALL, desig, p->ast, NULL);
-    /* astnode: (PCALL designatorNode argsNode) */
-  } /* end if */
+  /* TO DO */
   
   return lookahead;
-} /* end assignment_or_proc_call */
-
-
-/* --------------------------------------------------------------------------
- * private function actual_parameters()
- * --------------------------------------------------------------------------
- * actualParameters :=
- *   '(' ( expression ( ',' expression )* )? ')'
- *   ;
- *
- * astnode: (ARGS exprNode+) | (EMPTY)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t actual_parameters (m2c_parser_context_t p) {
-  m2c_fifo_t tmplist;
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("actualParameters");
-  
-  /* '(' */
-  lookahead = m2c_consume_sym(p->lexer);
-  
-  /* ( expression ( ',' expression )* )? */
-  if (m2c_tokenset_member(FIRST(EXPRESSION), lookahead)) {
-    /* expression */
-    lookahead = expression(p);
-    tmplist = m2c_fifo_new_queue(p->ast);
-  
-    /* ( ',' expression )* */
-    while (lookahead == TOKEN_COMMA) {
-      /* ',' */
-      lookahead = m2c_consume_sym(p->lexer);
-    
-      /* expression */
-      if (match_set(p, FIRST(EXPRESSION), FOLLOW(EXPRESSION))) {
-        lookahead = expression(p);
-        m2c_fifo_enqueue(tmplist, p->ast);
-      } /* end if */
-    } /* end while */
-    
-    p->ast = m2c_ast_new_list_node(AST_ARGS, tmplist);
-    m2c_fifo_release(tmplist);
-  }
-  else /* no arguments */ {
-    p->ast = m2c_ast_empty_node();
-  } /* end if */
-  
-  /* ')' */
-  if (match_token(p, TOKEN_RIGHT_PAREN, FOLLOW(ACTUAL_PARAMETERS))) {
-    lookahead = m2c_consume_sym(p->lexer);
-  } /* end if */
-  
-  return lookahead;
-} /* end actual_parameters */
+} /* end update_or_proc_call */
 
 
 /* --------------------------------------------------------------------------
@@ -3934,7 +3860,7 @@ m2c_token_t actual_parameters (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t return_statement (m2c_parser_context_t p) {
-  m2c_astnode_t expr;
+  m2c_astnode_t expr_node;
   m2c_token_t lookahead;
     
   PARSER_DEBUG_INFO("returnStatement");
@@ -3945,17 +3871,85 @@ m2c_token_t return_statement (m2c_parser_context_t p) {
   /* expression? */
   if (m2c_tokenset_element(FIRST(EXPRESSION), lookahead)) {
     lookahead = expression(p);
-    expr = p->ast;
+    expr_node = p->ast;
   }
   else {
-    expr = m2c_ast_empty_node();
+    expr_node = m2c_ast_empty_node();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_RETURN, expr, NULL);
+  p->ast = m2c_ast_new_node(AST_RETURN, expr_node, NULL);
   
   return lookahead;
 } /* end return_statement */
+
+
+/* --------------------------------------------------------------------------
+ * private function copy_statement()
+ * --------------------------------------------------------------------------
+ * copyStatement :=
+ *   COPY targetDesignator ':=' expression
+ *   ;
+ *
+ * astnode:
+ *  
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t copy_statement (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+    
+  PARSER_DEBUG_INFO("copyStatement");
+  
+  /* TO DO */
+  
+  return lookahead;
+} /* end copy_statement */
+
+
+/* --------------------------------------------------------------------------
+ * private function read_statement()
+ * --------------------------------------------------------------------------
+ * readStatement :=
+ *   READ ( '@' chan ':' )?
+ *   inputArg ( ',' inputArg )*
+ *   ;
+ *
+ * astnode:
+ *  
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t read_statement (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+    
+  PARSER_DEBUG_INFO("readStatement");
+  
+  /* TO DO */
+  
+  return lookahead;
+} /* end read_statement */
+
+
+/* --------------------------------------------------------------------------
+ * private function write_statement()
+ * --------------------------------------------------------------------------
+ * writeStatement :=
+ *   WRITE ( '@' chan ':' )?
+ *   outputArgs ( ',' outputArgs )*
+ *   ;
+ *
+ * astnode:
+ *  
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t write_statement (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+    
+  PARSER_DEBUG_INFO("writeStatement");
+  
+  /* TO DO */
+  
+  return lookahead;
+} /* end write_statement */
 
 
 /* --------------------------------------------------------------------------
