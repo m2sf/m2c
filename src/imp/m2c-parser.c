@@ -3685,7 +3685,7 @@ m2c_token_t statement (m2c_parser_context_t p) {
  *  (NEW desigNode) | (NEWINIT desigNode initValNode) | (NEWCAP valueNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t assignment_or_proc_call (m2c_parser_context_t p) {
+m2c_token_t new_statement (m2c_parser_context_t p) {
   intstr_t lexeme;
   m2c_token_t lookahead;
   m2c_astnode_t id_node, init_node, capv_node;
@@ -3746,7 +3746,81 @@ m2c_token_t assignment_or_proc_call (m2c_parser_context_t p) {
   } /* end if */
   
   return lookahead;
-} /* end newStatement */
+} /* end new_statement */
+
+
+/* --------------------------------------------------------------------------
+ * private function retain_statement()
+ * --------------------------------------------------------------------------
+ * retainStatement :=
+ *   RETAIN designator
+ *   ;
+ *
+ * astnode:
+ *  (RETAIN desigNode)
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t retain_statement (m2c_parser_context_t p) {
+  intstr_t lexeme;
+  m2c_token_t lookahead;
+  m2c_astnode_t id_node;
+  
+  PARSER_DEBUG_INFO("retainStatement");
+  
+  /* RETAIN */
+  lookahead = m2c_consume_sym(p->lexer);
+  
+  if (match_token(p, TOKEN_IDENT)) {
+    lookahead = designator(p);
+    id_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(STATEMENT));
+    id_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_RETAIN, id_node, NULL);
+      
+  return lookahead;
+} /* end retain_statement */
+
+
+/* --------------------------------------------------------------------------
+ * private function release_statement()
+ * --------------------------------------------------------------------------
+ * releaseStatement :=
+ *   RELEASE designator
+ *   ;
+ *
+ * astnode:
+ *  (RELEASE desigNode)
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t retain_statement (m2c_parser_context_t p) {
+  intstr_t lexeme;
+  m2c_token_t lookahead;
+  m2c_astnode_t id_node;
+  
+  PARSER_DEBUG_INFO("newStatement");
+  
+  /* RELEASE */
+  lookahead = m2c_consume_sym(p->lexer);
+  
+  if (match_token(p, TOKEN_IDENT)) {
+    lookahead = designator(p);
+    id_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(STATEMENT));
+    id_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_RELEASE, id_node, NULL);
+      
+  return lookahead;
+} /* end release_statement */
 
 
 /* --------------------------------------------------------------------------
