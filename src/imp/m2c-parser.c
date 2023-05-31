@@ -680,45 +680,6 @@ m2c_token_t import (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private macro const_definition_list()
- * --------------------------------------------------------------------------
- * constDefinitionList :=
- *   constDefinition ';' (constDefinition ';')*
- *   ;
- *
- * astnode: (CONSTDEFLIST constDefNode1 constDefNode2 ... constDefNodeN)
- * ----------------------------------------------------------------------- */
-
-#define const_definition_list(_p) definition_list(const_def, _p)
-
-
-/* --------------------------------------------------------------------------
- * private macro type_definition_list()
- * --------------------------------------------------------------------------
- * typeDefinitionList :=
- *   typeDefinition ';' (typeDefinition ';')*
- *   ;
- *
- * astnode: (TYPEDEFLIST typeDefNode1 typeDefNode2 ... typeDefNodeN)
- * ----------------------------------------------------------------------- */
-
-#define type_definition_list(_p) definition_list(type_def, _p)
-
-
-/* --------------------------------------------------------------------------
- * private macro var_definition_list()
- * --------------------------------------------------------------------------
- * varDefinitionList :=
- *   varDefinition ';' (varDefinition ';')*
- *   ;
- *
- * astnode: (VARDEFLIST varDefNode1 varDefNode2 ... varDefNodeN)
- * ----------------------------------------------------------------------- */
-
-#defint var_definition_list(_p) definition_list(var_def, _p)
-
-
-/* --------------------------------------------------------------------------
  * private function definition()
  * --------------------------------------------------------------------------
  * definition :=
@@ -730,6 +691,9 @@ m2c_token_t import (m2c_parser_context_t p) {
  *   ;
  * ----------------------------------------------------------------------- */
 
+#define const_definition_list(_p) definition_list(const_def, _p)
+#define type_definition_list(_p) definition_list(type_def, _p)
+#define var_definition_list(_p) definition_list(var_def, _p)
 m2c_token_t definition_list (deflist_context_t *context, m2c_parser_context_t p)
 m2c_token_t procedure_header (m2c_parser_context_t p);
 m2c_token_t to_do_list (m2c_parser_context_t p);
@@ -805,9 +769,29 @@ m2c_token_t definition (m2c_parser_context_t p) {
  * depending on context, constructs its AST node, passes it in p->ast and
  * returns the new lookahead symbol.
  *
- * for const_definition_list(p), call definition_list(const_def, p)
- * for type_definition_list(p), call definition_list(type_def, p)
- * for var_definition_list(p), call definition_list(var_def, p)
+ * (1) context: const definition list
+ *
+ * constDefinitionList :=
+ *   constDefinition ';' (constDefinition ';')*
+ *   ;
+ *
+ * astnode: (CONSTDEFLIST constDefNode1 constDefNode2 ... constDefNodeN)
+ *
+ * (2) context: type definition list
+ *
+ * typeDefinitionList :=
+ *   typeDefinition ';' (typeDefinition ';')*
+ *   ;
+ *
+ * astnode: (TYPEDEFLIST typeDefNode1 typeDefNode2 ... typeDefNodeN)
+ *
+ * (3) context: var definition list
+ *
+ * varDefinitionList :=
+ *   varDefinition ';' (varDefinition ';')*
+ *   ;
+ *
+ * astnode: (VARDEFLIST varDefNode1 varDefNode2 ... varDefNodeN)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t definition_list (deflist_context_t *context, m2c_parser_context_t p) {
