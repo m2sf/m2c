@@ -3682,7 +3682,7 @@ m2c_token_t statement (m2c_parser_context_t p) {
  *   ;
  *
  * astnode:
- *  
+ *  (NEW desigNode) | (NEWINIT desigNode initValNode) | (NEWCAP valueNode)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t assignment_or_proc_call (m2c_parser_context_t p) {
