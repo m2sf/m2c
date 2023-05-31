@@ -3686,7 +3686,9 @@ m2c_token_t statement (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t assignment_or_proc_call (m2c_parser_context_t p) {
+  intstr_t lexeme;
   m2c_token_t lookahead;
+  m2c_astnode_t id_node, init_node, capv_node;
   
   PARSER_DEBUG_INFO("newStatement");
   
@@ -3702,6 +3704,8 @@ m2c_token_t assignment_or_proc_call (m2c_parser_context_t p) {
     lookahead = skip_to_token_list(p, TOKEN_ASSIGN, TOKEN_IDENT);
     id_node = m2c_ast_empty_node();
   } /* end if */
+  
+  lexeme = m2c_lookahead_lexeme(p->lexer);
   
   /* ( ':=' structuredValue | CAPACITY expression )? */
   if (lookahead == TOKEN_ASSIGN) {
@@ -3720,7 +3724,8 @@ m2c_token_t assignment_or_proc_call (m2c_parser_context_t p) {
     } /* end if */
     p->ast = m2c_ast_new_node(AST_NEWINIT, id_node, init_node, NULL);
   }
-  else if (lookahead == TOKEN_IDENT) && () {
+  else if ((lookahead == TOKEN_IDENT) 
+    && (lexeme == m2c_res_ident(RESIDENT_CAPACITY))) {
     /* CAPACITY */
     lookahead = m2c_consume_sym(p);
     
