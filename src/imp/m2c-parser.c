@@ -3509,61 +3509,35 @@ m2c_token_t procedure_declaration (m2c_parser_context_t p) {
 m2c_token_t statement (m2c_parser_context_t p);
 
 m2c_token_t statement_sequence (m2c_parser_context_t p) {
-  m2c_fifo_t tmplist;
   m2c_token_t lookahead;
-  uint_t line_of_semicolon, column_of_semicolon;
+  m2c_fifo_t stmt_list;
   
   PARSER_DEBUG_INFO("statementSequence");
   
   /* statement */
   lookahead = statement(p);
-  tmplist = m2c_fifo_new_queue(p->ast);
+  stmt_list = m2c_fifo_new_queue(p->ast);
   
   /* ( ';' statement )* */
   while (lookahead == TOKEN_SEMICOLON) {
     /* ';' */
-    line_of_semicolon = m2c_lexer_lookahead_line(p->lexer);
-    column_of_semicolon = m2c_lexer_lookahead_column(p->lexer);
     lookahead = m2c_consume_sym(p->lexer);
-    
-    /* check if semicolon occurred at the end of a statement sequence */
-    if (m2c_tokenset_element(FOLLOW(STATEMENT_SEQUENCE), lookahead)) {
-    
-      if (m2c_option_errant_semicolon()) {
-        /* treat as warning */
-        m2c_emit_warning_w_pos
-          (M2C_SEMICOLON_AFTER_STMT_SEQ,
-           line_of_semicolon, column_of_semicolon);
-        p->warning_count++;
-      }
-      else /* treat as error */ {
-        m2c_emit_error_w_pos
-          (M2C_SEMICOLON_AFTER_STMT_SEQ,
-           line_of_semicolon, column_of_semicolon);
-        p->error_count++;
-      } /* end if */
-      
-      /* print source line */
-      if (m2c_option_verbose()) {
-        m2c_print_line_and_mark_column(p->lexer,
-          line_of_semicolon, column_of_semicolon);
-      } /* end if */
-    
-      /* leave statement sequence loop to continue */
-      break;
-    } /* end if */
-    
+        
     /* statement */
-    if (match_set(p, FIRST(STATEMENT),
-        RESYNC(FIRST_OR_FOLLOW_OF_STATEMENT))) {
+    if (match_set(p, FIRST(STATEMENT))) {
       lookahead = statement(p);
-      m2c_fifo_enqueue(tmplist, p->ast);
+      m2c_fifo_enqueue(stmt_list, p->ast);
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_SEMICOLON, FOLLOW(STATEMENT));
     } /* end if */
   } /* end while */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_list_node(AST_STMTSEQ, tmplist);
-  m2c_fifo_release(tmplist);
+  p->ast = m2c_ast_new_list_node(AST_STMTSEQ, stmt_list);
+  
+  m2c_fifo_release(stmt_list);
   
   return lookahead;
 } /* end statement_sequence */
