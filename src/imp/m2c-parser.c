@@ -91,40 +91,70 @@ typedef m2c_token_t (m2c_nonterminal_f) (m2c_parser_context_t);
  * ----------------------------------------------------------------------- */
 
 typedef struct {
-  m2c_nonterminal_f definition;
+  m2c_nonterminal_f def_or_decl;
   m2c_production_t production;
   ast_node_type_t node_type;
-} deflist_context_t;
+} def_decl_context_t;
 
 
 /* --------------------------------------------------------------------------
  * constDefinitionList context
  * ----------------------------------------------------------------------- */
 
-static deflist_context_t *const_def = {
-  const_definition,
-  CONST_DEFINITION,
-  AST_CONSTDEFLIST
+static def_decl_context_t *const_def = {
+  const_definition,   /* parse function */
+  CONST_DEFINITION,   /* production rule */
+  AST_CONSTDEFLIST    /* AST node type */
 };
 
 /* --------------------------------------------------------------------------
  * typeDefinitionList context
  * ----------------------------------------------------------------------- */
 
-static deflist_context_t *type_def = {
-  type_definition,
-  TYPE_DEFINITION,
-  AST_TYPEDEFLIST
+static def_decl_context_t *type_def = {
+  type_definition,   /* parse function */
+  TYPE_DEFINITION,   /* production rule */
+  AST_TYPEDEFLIST    /* AST node type */
 };
 
 /* --------------------------------------------------------------------------
  * varDefinitionList context
  * ----------------------------------------------------------------------- */
 
-static deflist_context_t *var_def = {
-  var_definition,
-  VAR_DEFINITION,
-  AST_VARDEFLIST
+static def_decl_context_t *var_def = {
+  var_definition,   /* parse function */
+  VAR_DEFINITION,   /* production rule */
+  AST_VARDEFLIST    /* AST node type */
+};
+
+/* --------------------------------------------------------------------------
+ * constDeclarationList context
+ * ----------------------------------------------------------------------- */
+
+static def_decl_context_t *const_decl = {
+  const_declaration,   /* parse function */
+  CONST_DECLARATION,   /* production rule */
+  AST_CONSTDECLLIST    /* AST node type */
+};
+
+/* --------------------------------------------------------------------------
+ * typeDeclarationList context
+ * ----------------------------------------------------------------------- */
+
+static def_decl_context_t *type_decl = {
+  type_declaration,   /* parse function */
+  TYPE_DECLARATION,   /* production rule */
+  AST_TYPEDECLLIST    /* AST node type */
+};
+
+/* --------------------------------------------------------------------------
+ * varDeclarationList context
+ * ----------------------------------------------------------------------- */
+
+static def_decl_context_t *var_decl = {
+  var_declaration,   /* parse function */
+  VAR_DECLARATION,   /* production rule */
+  AST_VARDECLLIST    /* AST node type */
 };
 
 
@@ -691,10 +721,10 @@ m2c_token_t import (m2c_parser_context_t p) {
  *   ;
  * ----------------------------------------------------------------------- */
 
-#define const_definition_list(_p) definition_list(const_def, _p)
-#define type_definition_list(_p) definition_list(type_def, _p)
-#define var_definition_list(_p) definition_list(var_def, _p)
-m2c_token_t definition_list (deflist_context_t *context, m2c_parser_context_t p)
+#define const_definition_list(_p) def_or_decl_list(const_def, _p)
+#define type_definition_list(_p) def_or_decl_list(type_def, _p)
+#define var_definition_list(_p) def_or_decl_list(var_def, _p)
+m2c_token_t definition_list (def_decl_context_t *context, m2c_parser_context_t p)
 m2c_token_t procedure_header (m2c_parser_context_t p);
 m2c_token_t to_do_list (m2c_parser_context_t p);
 
@@ -763,13 +793,14 @@ m2c_token_t definition (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function definition_list()
+ * private function def_or_decl_list(context, p)
  * --------------------------------------------------------------------------
- * Parses rule constDefinitionList, typeDefinitionList  or varDefinitionList,
- * depending on context, constructs its AST node, passes it in p->ast and
- * returns the new lookahead symbol.
+ * Parses one of  constDefinitionList, typeDefinitionList, varDefinitionList,
+ * constDeclarationList, typeDeclarationList  and varDeclarationList,  depen-
+ * ding on context, constructs its AST node, passes it in p->ast  and returns
+ * the new lookahead symbol.
  *
- * (1) context: const definition list
+ * (1) const definition list context:
  *
  * constDefinitionList :=
  *   constDefinition ';' (constDefinition ';')*
@@ -777,7 +808,7 @@ m2c_token_t definition (m2c_parser_context_t p) {
  *
  * astnode: (CONSTDEFLIST constDefNode1 constDefNode2 ... constDefNodeN)
  *
- * (2) context: type definition list
+ * (2) type definition list context:
  *
  * typeDefinitionList :=
  *   typeDefinition ';' (typeDefinition ';')*
@@ -785,27 +816,53 @@ m2c_token_t definition (m2c_parser_context_t p) {
  *
  * astnode: (TYPEDEFLIST typeDefNode1 typeDefNode2 ... typeDefNodeN)
  *
- * (3) context: var definition list
+ * (3) var definition list context:
  *
  * varDefinitionList :=
  *   varDefinition ';' (varDefinition ';')*
  *   ;
  *
  * astnode: (VARDEFLIST varDefNode1 varDefNode2 ... varDefNodeN)
+ *
+ * (4) const declaration list context:
+ *
+ * constDeclarationList :=
+ *   constDeclaration ';' (constDeclaration ';')*
+ *   ;
+ *
+ * astnode: (CONSTDECLLIST constDeclNode1 constDeclNode2 ... constDeclNodeN)
+ *
+ * (5) type declaration list context:
+ *
+ * typeDeclarationList :=
+ *   typeDeclaration ';' (typeDeclaration ';')*
+ *   ;
+ *
+ * astnode: (TYPEDECLLIST typeDeclNode1 typeDeclNode2 ... typeDeclNodeN)
+ *
+ * (6) var declaration list context:
+ *
+ * varDeclarationList :=
+ *   varDeclaration ';' (varDeclaration ';')*
+ *   ;
+ *
+ * astnode: (VARDECLLIST varDeclNode1 varDeclNode2 ... varDeclNodeN)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t definition_list (deflist_context_t *context, m2c_parser_context_t p) {
+m2c_token_t def_or_decl_list
+  (def_decl_context_t *context, m2c_parser_context_t p) {
+  
   m2c_token_t lookahead;
-  m2c_fifo_t def_list;
+  m2c_fifo_t node_list;
   
-  def_list = m2c_fifo_new_queue(NULL);
+  node_list = m2c_fifo_new_queue(NULL);
   
-  /* const/type/varDefinition ';' */
+  /* const/type/varDefinition/Declaration ';' */
   
-  /* const/type/varDefinition */
+  /* const/type/varDefinition/Declaration */
   if (match_token(p, TOKEN_IDENT)) {
-    lookahead = context->definition(p);
-    def_list = m2c_fifo_enqueue(def_list, p->ast);
+    lookahead = context->def_or_decl(p);
+    m2c_fifo_enqueue(node_list, p->ast);
       
     /* ';' */
     if (match_token(p, TOKEN_SEMICOLON)) {
@@ -821,12 +878,12 @@ m2c_token_t definition_list (deflist_context_t *context, m2c_parser_context_t p)
     lookahead = skip_to_set(p, FOLLOW(context->production));
   } /* end if */
   
-  /* (const/type/varDefinition ';')* */
+  /* (const/type/varDefinition/Declaration ';')* */
   
-  /* const/type/varDefinition */
+  /* const/type/varDefinition/Declaration */
   while (match_token(p, TOKEN_IDENT)) {
-    lookahead = context->definition(p); /* p-ast holds ast-node */
-    def_list = m2c_fifo_enqueue(def_list, p->ast);
+    lookahead = context->def_or_decl(p); /* p-ast holds ast-node */
+    m2c_fifo_enqueue(node_list, p->ast);
     
     /* ';' */
     if (match_token == TOKEN_SEMICOLON) {
@@ -839,12 +896,12 @@ m2c_token_t definition_list (deflist_context_t *context, m2c_parser_context_t p)
   } /* end while */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(context->node_type, def_list, NULL);
+  p->ast = m2c_ast_new_node(context->node_type, node_list, NULL);
   
-  m2c_fifo_releast(def_list);
+  m2c_fifo_releast(node_list);
   
   return lookahead;
-} /* end definition_list */
+} /* end def_or_decl_list */
 
 
 /* --------------------------------------------------------------------------
@@ -1102,21 +1159,21 @@ m2c_token_t type_definition (m2c_parser_context_t p) {
  * Parses rule type or privateType depending on p->module_context, constructs
  * its AST node, passes it in p->ast and returns the new lookahead symbol.
  *
- * definition module context:
+ * (1) definition module context:
  *
  * type :=
  *   aliasType | derivedType | subrangeType | enumType | setType |
  *   arrayType | recordType | pointerType | opaqueType | procedureType
  *   ;
  *
- * program module context:
+ * (2) program module context:
  *
  * type :=
  *   aliasType | derivedType | subrangeType | enumType | setType |
  *   arrayType | recordType | pointerType | procedureType
  *   ;
  *
- * implementation module context:
+ * (3) implementation module context:
  *
  * privateType :=
  *   aliasType | derivedType | subrangeType | enumType | setType |
@@ -3125,9 +3182,9 @@ m2c_token_t private_block (m2c_parser_context_t p) {
  *   ;
  * ----------------------------------------------------------------------- */
 
-m2c_token_t const_declaration_list (m2c_parser_context_t p);
-m2c_token_t type_declaration_list (m2c_parser_context_t p);
-m2c_token_t var_declaration_list (m2c_parser_context_t p);
+#define const_declaration_list(_p) def_or_decl_list(const_decl, _p)
+#define type_declaration_list(_p) def_or_decl_list(type_decl, _p)
+#define var_declaration_list(_p) def_or_decl_list(var_decl, _p)
 m2c_token_t alias_declaration (m2c_parser_context_t p);
 m2c_token_t procedure_declaration (m2c_parser_context_t p);
 m2c_token_t to_do_list (m2c_parser_context_t p);
@@ -3208,136 +3265,6 @@ m2c_token_t declaration (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end declaration */
-
-
-/* --------------------------------------------------------------------------
- * private function const_declaration_list()
- * --------------------------------------------------------------------------
- * constDeclarationList :=
- *   constDeclaration ';' (constDeclaration ';')*
- *   ;
- *
- * astnode: (CONSTDECLLIST constDeclNode1 constDeclNode2 ... constDeclNodeN)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t const_declaration_list (m2c_parser_context_t p) {
-  m2c_token_t lookahead;
-  m2c_fifo_t decl_list;
-  
-  PARSER_DEBUG_INFO("constDeclarationList");
-
-  decl_list = m2c_fifo_new_queue(NULL);
-  
-  /* constDeclaration ';' */
-  
-  /* constDeclaration */
-  if (match_token(p, TOKEN_IDENT)) {
-    lookahead = const_declaration(p); /* p->ast holds ast-node */
-    m2c_fifo_enqueue(decl_list, p->ast);
-    
-    /* ';' */
-    if (match_token(p, TOKEN_SEMICOLON)) {
-      lookahead = m2c_consume_sym(p->lexer);
-    }
-    else /* resync */ {
-      lookahead =
-        skip_to_token_or_set(p, TOKEN_SEMICOLON, FOLLOW(CONST_DECLARATION));
-    } /* end if */
-  }
-  else /* resync */ {
-    lookahead = skip_to_set(p, FOLLOW(CONST_DECLARATION));
-  } /* end if */
-  
-  /* (constDeclaration ';')* */
-  
-  /* constDeclaration */
-  while (match_token(p, TOKEN_IDENT)) {
-    lookahead = const_declaration(p); /* p-ast holds ast-node */
-    m2c_fifo_enqueue(decl_list, p->ast);
-    
-    /* ';' */
-    if (match_token == TOKEN_SEMICOLON) {
-      lookahead = m2c_consume_sym(p->lexer);
-    }
-    else /* resync */ {
-      lookahead =
-        skip_to_token_or_set(p, TOKEN_SEMICOLON, FOLLOW(CONST_DECLARATION));
-    } /* end if */
-  } /* end while */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_CONSTDECLLIST, decl_list, NULL);
-  
-  m2c_fifo_releast(decl_list);
-  
-  return lookahead;
-} /* end const_declaration_list */
-
-
-/* --------------------------------------------------------------------------
- * private function type_declaration_list()
- * --------------------------------------------------------------------------
- * typeDeclarationList :=
- *   typeDeclaration ';' (typeDeclaration ';')*
- *   ;
- *
- * astnode: (TYPEDECLLIST typeDeclNode1 typeDeclNode2 ... typeDeclNodeN)
- * ----------------------------------------------------------------------- */
-
-m2c_token_t type_declaration (m2c_parser_context_t p);
-
-m2c_token_t type_declaration_list (m2c_parser_context_t p) {
-  m2c_token_t lookahead;
-  m2c_fifo_t decl_list;
-  
-  PARSER_DEBUG_INFO("typeDeclarationList");
-
-  decl_list = m2c_fifo_new_queue(NULL);
-  
-  /* typeDeclaration ';' */
-  
-  /* typeDeclaration */
-  if (match_token(p, TOKEN_IDENT)) {
-    lookahead = type_declaration(p); /* p->ast holds ast-node */
-    m2c_fifo_enqueue(decl_list, p->ast);
-      
-    /* ';' */
-    if (match_token(p, TOKEN_SEMICOLON)) {
-      lookahead = m2c_consume_sym(p->lexer);
-    }
-    else /* resync */ {
-      lookahead =
-        skip_to_token_or_set(p, TOKEN_SEMICOLON, FOLLOW(TYPE_DECLARATION));
-    } /* end if */
-  }
-  else /* resync */ {
-    lookahead = skip_to_set(p, FOLLOW(TYPE_DECLARATION));
-  } /* end if */
-  
-  /* (typeDeclaration ';')* */
-  
-  /* typeDeclaration */
-  while (match_token(p, TOKEN_IDENT)) {
-    lookahead = type_declaration(p); /* p-ast holds ast-node */
-    m2c_fifo_enqueue(decl_list, p->ast);
-    
-    /* ';' */
-    if (match_token == TOKEN_SEMICOLON) {
-      lookahead = m2c_consume_sym(p->lexer);
-    }
-    else /* resync */ {
-      lookahead =
-        skip_to_token_or_set(p, TOKEN_SEMICOLON, FOLLOW(TYPE_DECLARATION));
-    } /* end if */
-  } /* end while */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_TYPEDECLLIST, decl_list);
-  
-  m2c_fifo_release(decl_list);
-  
-  return lookahead;
-} /* end type_declaration_list */
 
 
 /* --------------------------------------------------------------------------
