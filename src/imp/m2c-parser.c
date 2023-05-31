@@ -3547,14 +3547,21 @@ m2c_token_t statement_sequence (m2c_parser_context_t p) {
  * private function statement()
  * --------------------------------------------------------------------------
  * statement :=
- *   assignmentOrProcCall | returnStatement | withStatement | ifStatement |
- *   caseStatement | loopStatement | whileStatement | repeatStatement |
- *   forStatement | EXIT
+ *   memMgtOperation | updateOrProcCall | returnStatement | copyStatement |
+ *   readStatement | writeStateent | ifStatement | caseStatement |
+ *   loopStatement | whileStatement | repeatStatement | forStatement |
+ *   toDoList | EXIT | NOP
  *   ;
  * ----------------------------------------------------------------------- */
 
-m2c_token_t assignment_or_proc_call (m2c_parser_context_t p);
+m2c_token_t new_statement (m2c_parser_context_t p);
+m2c_token_t retain_statement (m2c_parser_context_t p);
+m2c_token_t release_statement (m2c_parser_context_t p);
+m2c_token_t update_or_proc_call (m2c_parser_context_t p);
 m2c_token_t return_statement (m2c_parser_context_t p);
+m2c_token_t copy_statement (m2c_parser_context_t p);
+m2c_token_t read_statement (m2c_parser_context_t p);
+m2c_token_t write_statement (m2c_parser_context_t p);
 m2c_token_t if_statement (m2c_parser_context_t p);
 m2c_token_t case_statement (m2c_parser_context_t p);
 m2c_token_t loop_statement (m2c_parser_context_t p);
@@ -3571,9 +3578,24 @@ m2c_token_t statement (m2c_parser_context_t p) {
   
   switch (lookahead) {
   
-    /* assignmentOrProcCall */
-    case TOKEN_IDENTIFIER :
-      lookahead = assignment_or_proc_call(p);
+    /* newStatement */
+    case TOKEN_NEW :
+      new_statement(p);
+      break;
+      
+    /* | retainStatement */
+    case TOKEN_RETAIN :
+      retain_statement(p);
+      break;
+      
+    /* | releaseStatement */
+    case TOKEN_RELEASE :
+      lookahead = release_statement(p);
+      break;
+      
+    /* | updateOrProcCall */
+    case TOKEN_IDENT :
+      lookahead = update_or_proc_call(p);
       break;
       
     /* | returnStatement */
@@ -3581,9 +3603,19 @@ m2c_token_t statement (m2c_parser_context_t p) {
       lookahead = return_statement(p);
       break;
       
-    /* | withStatement */
-    case TOKEN_WITH :
-      lookahead = with_statement(p);
+    /* | copyStatement */
+    case TOKEN_COPY :
+      lookahead = copy_statement(p);
+      break;
+      
+    /* | readStatement */
+    case TOKEN_READ :
+      lookahead = read_statement(p);
+      break;
+      
+    /* | writeStatement */
+    case TOKEN_WRITE :
+      lookahead = write_statement(p);
       break;
       
     /* | ifStatement */
@@ -3616,10 +3648,21 @@ m2c_token_t statement (m2c_parser_context_t p) {
       lookahead = for_statement(p);
       break;
       
+    /* | toDoList */
+    case TOKEN_TO :
+      lookahead = to_do_list(p);
+      break;
+      
     /* | EXIT */
     case TOKEN_EXIT :
       lookahead = m2c_consume_sym(p->lexer);
       p->ast = m2c_ast_new_node(AST_EXIT, NULL);
+      break;
+      
+    /* | NOP */
+    case TOKEN_NOP :
+      lookahead = m2c_consume_sym(p->lexer);
+      p->ast = m2c_ast_new_node(AST_NOP, NULL);
       break;
       
     default : /* unreachable code */
