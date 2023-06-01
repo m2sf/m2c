@@ -4251,12 +4251,16 @@ m2c_token_t output_args (m2c_parser_context_t p) {
  *
  * boolExpression := expression ;
  *
- * astnode: (IF exprNode ifBranchNode elsifSeqNode elseBranchNode)
+ * astnode:
+ *  (IF exprNode stmtSeqNode (ELIF expr stmtSeqNode) ... (ELSE stmtSeqNode))
  * ----------------------------------------------------------------------- */
 
 m2c_token_t if_statement (m2c_parser_context_t p) {
-  m2c_astnode_t ifexpr, ifseq, elif, expr, stmtseq, elifseq, elseseq;
   m2c_token_t lookahead;
+  m2c_fifo_t elif_list;
+  m2c_astnode_t if_expr_node, if_stmt_seq_node;
+  m2c_astnode_t expr_node, stmt_seq_node;
+  m2c_astnode_t elif_node, else_node;
   
   PARSER_DEBUG_INFO("ifStatement");
   
@@ -4264,132 +4268,113 @@ m2c_token_t if_statement (m2c_parser_context_t p) {
   lookahead = m2c_consume_sym(p->lexer);
   
   /* boolExpression */
-  if (match_set(p, FIRST(EXPRESSION), RESYNC(ELSIF_OR_ELSE_OR_END))) {
+  if (match_set(p, FIRST(EXPRESSION))) {
     lookahead = expression(p);
-    ifexpr = p->ast;
-    
-    /* THEN */
-    if (match_token(p, TOKEN_THEN, RESYNC(ELSIF_OR_ELSE_OR_END))) {
-      lookahead = m2c_consume_sym(p->lexer);
-      
-      /* check for empty statement sequence */
-      if ((m2c_tokenset_element(RESYNC(ELSIF_OR_ELSE_OR_END), lookahead))) {
-    
-          /* empty statement sequence warning */
-          m2c_emit_warning_w_pos
-            (M2C_EMPTY_STMT_SEQ,
-             m2c_lexer_lookahead_line(p->lexer),
-             m2c_lexer_lookahead_column(p->lexer));
-          p->warning_count++;
-      }
-      /* statementSequence */
-      else if (match_set(p, FIRST(STATEMENT_SEQUENCE),
-          RESYNC(ELSIF_OR_ELSE_OR_END))) {
-        lookahead = statement_sequence(p);
-        ifseq = p->ast;
-      }
-      else /* resync */ {
-        lookahead = m2c_next_sym(p->lexer);
-      } /* end if */
-    }
-    else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
-    } /* end if */
+    if_expr_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_THEN, FIRST(STATEMENT));
+    if_expr_node = m2c_ast_empty_node();
   } /* end if */
+  
+  /* THEN */
+  if (match_token(p, TOKEN_THEN)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FIRST(STATEMENT));
+  } /* end if */
+  
+  /* statementSequence */
+  if (match_set(p, FIRST(STATEMENT))) {
+    lookahead = statement_sequence(p);
+    if_stmt_seq_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead =
+      skip_to_token_list(p, TOKEN_ELSE, TOKEN_ELSIF, TOKEN_END, NULL);
+    if_stmt_seq_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  elif_list = m2c_fifo_new_queue(NULL);
   
   /* ( ELSIF boolExpression THEN statementSequence )* */
   while (lookahead == TOKEN_ELSIF) {
-    
     /* ELSIF */
     lookahead = m2c_consume_sym(p->lexer);
     
     /* boolExpression */
-    if (match_set(p, FIRST(EXPRESSION), RESYNC(ELSIF_OR_ELSE_OR_END))) {
+    if (match_set(p, FIRST(EXPRESSION))) {
       lookahead = expression(p);
-      expr = p->ast;
-    
-      /* THEN */
-      if (match_token(p, TOKEN_THEN, RESYNC(ELSIF_OR_ELSE_OR_END))) {
-        lookahead = m2c_consume_sym(p->lexer);
-      
-        /* check for empty statement sequence */
-        if ((m2c_tokenset_element
-            (RESYNC(ELSIF_OR_ELSE_OR_END), lookahead))) {
-    
-            /* empty statement sequence warning */
-            m2c_emit_warning_w_pos
-              (M2C_EMPTY_STMT_SEQ,
-               m2c_lexer_lookahead_line(p->lexer),
-               m2c_lexer_lookahead_column(p->lexer));
-            p->warning_count++;
-        }
-        /* statementSequence */
-        else if (match_set(p, FIRST(STATEMENT_SEQUENCE),
-            RESYNC(ELSIF_OR_ELSE_OR_END))) {
-          lookahead = statement_sequence(p);
-          stmtseq = p->ast;
-          
-          elif = m2c_ast_new_node(AST_ELSIF, expr, stmtseq, NULL);
-          m2c_fifo_enqueue(tmplist, elif);
-        }
-        else /* resync */ {
-          lookahead = m2c_next_sym(p->lexer);
-        } /* end if */
-      }
-      else /* resync */ {
-        lookahead = m2c_next_sym(p->lexer);
-      } /* end if */
+      expr_node = p->ast;
     }
     else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
+      lookahead = skip_to_token_or_set(p, TOKEN_THEN, FIRST(STATEMENT));
+      expr_node = m2c_ast_empty_node();
     } /* end if */
+  
+    /* THEN */
+    if (match_token(p, TOKEN_THEN)) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FIRST(STATEMENT));
+    } /* end if */
+    
+    /* statementSequence */
+    if (match_set(p, FIRST(STATEMENT))) {
+      lookahead = statement_sequence(p);
+      stmt_seq_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token_list(p, TOKEN_ELSE, TOKEN_ELSIF, TOKEN_END, NULL);
+        stmt_seq_node = m2c_ast_empty_node();
+    } /* end if */
+    
+    /* build elsif AST node */
+    elif_node = m2c_new_ast_node(AST_ELIF, expr_node, stmt_seq_node, NULL);
+      
+    /* add node to list */
+    m2c_fifo_enqueue(elif_list, elif_node)
   } /* end while */
-  
-  if (m2c_fifo_entry_count(tmplist) > 0) {
-    elifseq = m2c_ast_new_list_node(ELSIFSEQ, tmplist);
-  }
-  else /* no ELSIF branches */ {
-    elifseq = m2c_ast_empty_node();
-  } /* end if */
-  
-  m2c_fifo_release(tmplist);
-  
+    
   /* ( ELSE statementSequence )? */
   if (lookahead == TOKEN_ELSE) {
-  
     /* ELSE */
     lookahead = m2c_consume_sym(p->lexer);
-  
-    /* check for empty statement sequence */
-    if (lookahead == TOKEN_END) {
-  
-        /* empty statement sequence warning */
-        m2c_emit_warning_w_pos
-          (M2C_EMPTY_STMT_SEQ,
-           m2c_lexer_lookahead_line(p->lexer),
-           m2c_lexer_lookahead_column(p->lexer));
-        p->warning_count++;
-    }
+    
     /* statementSequence */
-    else if (match_set(p, FIRST(STATEMENT_SEQUENCE), FOLLOW(IF_STATEMENT))) {
+    if (match_set(p, FIRST(STATEMENT))) {
       lookahead = statement_sequence(p);
-      elseseq = p->ast;
+      stmt_seq_node = p->ast;
     }
     else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
+      lookahead = skip_to_token_or_set(p, TOKEN_END, FOLLOW(STATEMENT));
+      stmt_seq_node = m2c_ast_empty_node();
     } /* end if */
   }
-  else {
-    elseseq = m2c_ast_empty_node();
+  else /* no else-branch */ {
+    stmt_seq_node = m2c_ast_empty_node();
   } /* end if */
   
+  /* build else AST node */
+  else_node = m2c_ast_new_node(AST_ELSE, stmt_seq_node, NULL);
+  
   /* END */
-  if (match_token(p, TOKEN_END, FOLLOW(IF_STATEMENT))) {
+  if (match_token(p, TOKEN_END)) {
     lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(STATEMENT));
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_IF, ifexpr, ifseq, elifseq, elseseq, NULL);
+  p->ast =
+    m2c_ast_new_node(AST_IF,
+      if_expr_node, if_stmt_seq_node, elif_list, else_node, NULL);
+  
+  m2c_fifo_release(elif_list);
   
   return lookahead;
 } /* end if_statement */
