@@ -4063,7 +4063,7 @@ m2c_token_t input_arg (m2c_parser_context_t p) {
   } /* end if */
     
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(node_type, if_node, NULL);
+  p->ast = m2c_ast_new_node(node_type, id_node, NULL);
   
   return lookahead;
 } /* end input_arg */
@@ -4151,6 +4151,92 @@ m2c_token_t write_statement (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end write_statement */
+
+
+/* --------------------------------------------------------------------------
+ * private function output_args()
+ * --------------------------------------------------------------------------
+ * outputArgs :=
+ *   formattedArgs | unformattedArg 
+ *   ;
+ *
+ * formatted_args :=
+ *   '#' '(' fmtStr ',' unformattedArgs ')'
+ *   ;
+ *
+ * alias fmtStr = expression ;
+ * alias unformattedArg = expression ;
+ * alias unformattedArgs = expression_list;
+ *
+ * astnode:
+ *   (WRITEARG exprNode | (FMTARG fmtNode exprListNode)
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t output_args (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  m2c_astnode_t fmt_node, args_node;
+  
+  lookahead = m2c_next_sym(p->lexer);
+  
+  /* formattedArgs | */
+  if (lookahead == TOKEN_HASH) {
+    /* '#' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* '(' */
+    if (match_token(p, TOKEN_LPAREN)) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead = skip_to_token(p, FIRST(EXPRESSION));
+    } /* end if */
+    
+    /* fmtStr */
+    if (match_set(p, FIRST(EXPRESSION))) {
+      lookahead = expression(p);
+      fmt_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_token_or_set(p, TOKEN_COMMA, FIRST(EXPRESSION));
+      fmt_node = m2c_ast_empty_node();
+    } /* end if */
+    
+    /* ',' */
+    if (match_token(p, TOKEN_COMMA)) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead = skip_to_token(p, FIRST(EXPRESSION));
+    } /* end if */
+    
+    /* unformattedArgs */
+    if (match_set(p, FIRST(EXPRESSION))) {
+      lookahead = expression_list(p);
+      args_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_token_or_set(p, TOKEN_RPAREN, FOLLOW(OUTPUT_ARGS));
+      args_node = m2c_ast_empty_node();
+    } /* end if */
+    
+    /* ')' */
+    if (match_token(p, TOKEN_RPAREN)) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead = skip_to_token(p, FOLLOW(OUTPUT_ARGS));
+    } /* end if */
+    
+    /* build AST node and pass it back in p->ast */
+    p->ast = m2c_ast_new_node(AST_FMTARG, fmt_node, args_node, NULL);
+  }
+  else /* unformattedArg */ {
+    lookahead = expression(p);
+    p->ast = m2c_ast_new_node(AST_WRITEARG, p->ast, NULL);
+  } /* end if */
+  
+  return lookahead;
+} /* end output_args */
 
 
 /* --------------------------------------------------------------------------
