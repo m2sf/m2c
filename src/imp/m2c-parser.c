@@ -3955,7 +3955,66 @@ m2c_token_t read_statement (m2c_parser_context_t p) {
     
   PARSER_DEBUG_INFO("readStatement");
   
-  /* TO DO */
+  /* READ */
+  lookahead = m2c_consume_sym(p->lexer);
+  
+  /* ( '@' chan ':' )? */
+  if (lookahead == TOKEN_AT_SIGN) {
+    /* '@' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* chan */
+    if (match_set(p, FIRST(DESIGNATOR))) {
+      lookahead = designator(p);
+      chan_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_token_or_set();
+      chan_node = m2c_ast_empty_node();
+    } /* end if */
+    
+    /* ':' */
+    if (match_token(p, TOKEN_COLON)) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FIRST(INPUT_ARG));
+    } /* end if */
+  }
+  else /* chan parameter omitted */ {
+    chan_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  arg_list = m2c_fifo_new_list(NULL);
+  
+  /* inputArg */
+  if (match_set(p, FIRST(INPUT_ARG))) {
+    lookahead = input_arg(p);
+    m2c_fifo_enqueue(arg_list, p->ast);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(INPUT_ARG));
+  } /* end if */
+  
+  /* (',' inputArg)* */
+  while (lookahead == TOKEN_COMMA) {
+    /* ',' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* inputArg */
+    if (match_set(p, FIRST(INPUT_ARG))) {
+      lookahead = input_arg(p);
+      m2c_fifo_enqueue(arg_list, p->ast);
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(INPUT_ARG));
+    } /* end if */
+  } /* end while */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_READ, chan_node, arg_list, NULL);
+  
+  m2c_fifo_release(arg_list);
   
   return lookahead;
 } /* end read_statement */
