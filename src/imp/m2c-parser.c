@@ -4494,7 +4494,7 @@ m2c_token_t case_statement (m2c_parser_context_t p) {
  * private function case_branch()
  * --------------------------------------------------------------------------
  * case :=
- *   caseLabelList ':' statementSequence
+ *   caseLabels ( ',' caseLabels )* : statementSequence
  *   ;
  *
  * NB: 'case' is a reserved word in C, we use case_branch() here instead
@@ -4503,40 +4503,53 @@ m2c_token_t case_statement (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t case_branch (m2c_parser_context_t p) {
-  m2c_astnode_t cllist, stmtseq;
   m2c_token_t lookahead;
-    
+  
   PARSER_DEBUG_INFO("case");
   
-  /* caseLabelList */
-  lookahead = case_label_list(p);
-  cllist = p->ast;
+  /* caseLabels */
+  lookahead = case_labels(p);
+  label_list = m2c_fifo_new_queue(p->ast);
   
-  /* ':' */
-  if (match_token(p, TOKEN_COLON, FOLLOW(CASE))) {
+  /* (',' caseLabels)* */
+  while (lookahead == TOKEN_COMMA) {
+    /* ',' */
     lookahead = m2c_consume_sym(p->lexer);
     
-    /* check for empty statement sequence */
-    if ((m2c_tokenset_element(FOLLOW(CASE), lookahead))) {
-  
-        /* empty statement sequence warning */
-        m2c_emit_warning_w_pos
-          (M2C_EMPTY_STMT_SEQ,
-           m2c_lexer_lookahead_line(p->lexer),
-           m2c_lexer_lookahead_column(p->lexer));
-        p->warning_count++;
+    /* caseLabels */
+    if (match_set(p, FIRST(CASE_LABELS))) {
+      lookahead = case_labels(p);
+      m2c_fifo_enqueue(case_list, p->ast);
     }
-    /* statementSequence */
-    else if (match_set(p, FIRST(STATEMENT_SEQUENCE), FOLLOW(CASE))) {
-      lookahead = statement_sequence(p);
-      stmtseq = p->ast;
+    else /* resync */ {
+      lookahead = skip_to_token_list(p, TOKEN_COMMA, TOKEN_COLON, NULL);
     } /* end if */
+  } /* end while */
+  
+  /* ':' */
+  if (match_token(p, TOKEN_COLON)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FIRST(STATEMENT));
+  } /* end if */
+  
+  /* statementSequence */
+  if (match_set(p, FIRST(STATEMENT))) {
+    lookahead = statement_sequence(p);
+    stmt_seq_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(CASE));
+    stmt_seq_node = m2c_ast_empty_node();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_CASE, cllist, stmtseq, NULL);
+  p->ast = m2c_ast_new_node(AST_CASE, case_list, stmt_seq_node, NULL);
   
-  return lookahead;
+  m2c_fifo_release(case_list);
+  
+  return lookahead;  
 } /* end case_branch */
 
 
