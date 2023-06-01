@@ -3950,6 +3950,8 @@ m2c_token_t copy_statement (m2c_parser_context_t p) {
  *   (READ chanNode inputArgNode+)
  * ----------------------------------------------------------------------- */
 
+m2c_token_t input_arg (m2c_parser_context_t p);
+
 m2c_token_t read_statement (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_fifo_t arg_list;
@@ -4023,6 +4025,51 @@ m2c_token_t read_statement (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
+ * private function input_arg()
+ * --------------------------------------------------------------------------
+ * inputArg :=
+ *   NEW? designator
+ *   ;
+ *
+ * astnode:
+ *   (READARG designator) | (READNEW designator)
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t input_arg (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  m2c_astnode_t id_node;
+  m2c_ast_nodetype_t node_type;
+  
+  lookahead = m2c_next_sym(p->lexer);
+  
+  /* NEW? */
+  if (lookahead == TOKEN_NEW) {
+    /* NEW */
+    lookahead = m2c_consume_sym(p->lexer);
+    node_type = AST_READNEW;
+  }
+  else /* no allocation */ {
+    node_type = AST_READARG;
+  } /* end if */
+  
+  /* designator */
+  if (match_set(p, FIRST(DESIGNATOR))) {
+    lookahead = designator(p);
+    id_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW_DESIGNATOR);
+    id_node = m2c_ast_empty_node();
+  } /* end if */
+    
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(node_type, if_node, NULL);
+  
+  return lookahead;
+} /* end input_arg */
+
+
+/* --------------------------------------------------------------------------
  * private function write_statement()
  * --------------------------------------------------------------------------
  * writeStatement :=
@@ -4031,7 +4078,7 @@ m2c_token_t read_statement (m2c_parser_context_t p) {
  *   ;
  *
  * astnode:
- *  
+ *   (WRITE chanNode outputArgsNode+)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t write_statement (m2c_parser_context_t p) {
