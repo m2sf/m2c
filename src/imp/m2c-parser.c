@@ -4384,7 +4384,7 @@ m2c_token_t if_statement (m2c_parser_context_t p) {
  * private function case_statement()
  * --------------------------------------------------------------------------
  * caseStatement :=
- *   CASE expression OF case ( '|' case )*
+ *   CASE expression OF ( '|' case )+
  *   ( ELSE statementSequence )?
  *   END
  *   ;
@@ -4397,8 +4397,9 @@ m2c_token_t if_statement (m2c_parser_context_t p) {
 m2c_token_t case_branch (m2c_parser_context_t p);
 
 m2c_token_t case_statement (m2c_parser_context_t p) {
-  m2c_astnode_t expr, caselist, elseseq;
   m2c_token_t lookahead;
+  m2c_fifo_t case_list;
+  m2c_astnode_t expr_node, case_list_node, else_node;
   
   PARSER_DEBUG_INFO("caseStatement");
   
@@ -4406,83 +4407,84 @@ m2c_token_t case_statement (m2c_parser_context_t p) {
   lookahead = m2c_consume_sym(p->lexer);
   
   /* expression */
-  if (match_set(p, FIRST(EXPRESSION), RESYNC(ELSE_OR_END))) {
+  if (match_set(p, FIRST(EXPRESSION))) {
     lookahead = expression(p);
-    expr = p->ast;
-    
-    /* OF */
-    if (match_token(p, TOKEN_OF, RESYNC(ELSE_OR_END))) {
+    expr_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_list(p, TOKEN_OF, TOKEN_BAR, NULL);
+    expr_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* OF */
+  if (match_token(p, TOKEN_OF)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_token(p, TOKEN_BAR);
+  } /* end if */
+  
+  case_list = m2c_fifo_new_queue(NULL);
+  
+  /* ('|' case)+ */
+  if (match_token(p, TOKEN_BAR)) {
+    while (lookahead == TOKEN_BAR) {
+      /* '|' */
       lookahead = m2c_consume_sym(p->lexer);
       
       /* case */
-      if (match_set(p, FIRST(CASE), RESYNC(ELSE_OR_END))) {
+      if (match_set(p, FIRST(EXPRESSION))) {
         lookahead = case_branch(p);
-        tmplist = m2c_fifo_new_queue(p->ast);
-        
-        /* ( '| case )* */
-        while (lookahead == TOKEN_BAR) {
-          /* '|' */
-          lookahead = m2c_consume_sym(p->lexer);
-          
-          /* case */
-          if (match_set(p, FIRST(CASE), RESYNC(ELSE_OR_END))) {
-            lookahead = case_branch(p);
-            m2c_fifo_enqueue(tmplist, p->ast);
-          }
-          else /* resync */ {
-            lookahead = m2c_next_sym(p->lexer);
-          } /* end if */
-        } /* end while */
+        m2c_fifo_enqueue(case_list, p->ast);
       }
       else /* resync */ {
-        lookahead = m2c_next_sym(p->lexer);
+        lookahead =
+          skip_to_token_list(p, TOKEN_BAR, TOKEN_ELSE, TOKEN_END, NULL);
       } /* end if */
-    }
-    else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
-    } /* end if */
+    } /* end while */
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_list(p, TOKEN_ELSE, TOKEN_END, NULL);
   } /* end if */
   
-  caselist = m2c_ast_new_list_node(AST_CASELIST, tmplist);
-  m2c_fifo_release(tmplist);
+  /* build case list AST node */
+  case_list_node = m2c_ast_new_node(AST_CASELIST, case_list, NULL);
   
   /* ( ELSE statementSequence )? */
   if (lookahead == TOKEN_ELSE) {
-  
     /* ELSE */
     lookahead = m2c_consume_sym(p->lexer);
-  
-    /* check for empty statement sequence */
-    if (lookahead == TOKEN_END) {
-  
-        /* empty statement sequence warning */
-        m2c_emit_warning_w_pos
-          (M2C_EMPTY_STMT_SEQ,
-           m2c_lexer_lookahead_line(p->lexer),
-           m2c_lexer_lookahead_column(p->lexer));
-        p->warning_count++;
-    }
+    
     /* statementSequence */
-    else if
-      (match_set(p, FIRST(STATEMENT_SEQUENCE), FOLLOW(CASE_STATEMENT))) {
+    if (match_set(p, FIRST(STATEMENT))) {
       lookahead = statement_sequence(p);
-      else_branch = p->ast;
+      stmt_seq_node = p->ast;
     }
     else /* resync */ {
-      lookahead = m2c_next_sym(p->lexer);
+      lookahead = skip_to_token_or_set(p, TOKEN_END, FOLLOW(STATEMENT));
+      stmt_seq_node = m2c_ast_empty_node();
     } /* end if */
   }
-  else /* no ELSE branch */ {
-    elseseq = m2c_ast_empty_node();
+  else /* no else-branch */ {
+    stmt_seq_node = m2c_ast_empty_node();
   } /* end if */
   
+  /* build else AST node */
+  else_node = m2c_ast_new_node(AST_ELSE, stmt_seq_node, NULL);
+  
   /* END */
-  if (match_token(p, TOKEN_END, FOLLOW(CASE_STATEMENT))) {
+  if (match_token(p, TOKEN_END)) {
     lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(STATEMENT));
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_SWITCH, expr, caselist, elseseq, NULL);
+  p->ast =
+    m2c_ast_new_node(AST_SWITCH, expr_node, case_list_node, else_node, NULL);
+  
+  m2c_fifo_release(case_list);
   
   return lookahead;
 } /* end case_statement */
