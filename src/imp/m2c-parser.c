@@ -4610,8 +4610,8 @@ m2c_token_t loop_statement (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t while_statement (m2c_parser_context_t p) {
-  m2c_astnode_t expr, stmtseq;
   m2c_token_t lookahead;
+  m2c_astnode_t expr_node, stmt_seq_node;
   
   PARSER_DEBUG_INFO("whileStatement");
   
@@ -4619,43 +4619,43 @@ m2c_token_t while_statement (m2c_parser_context_t p) {
   lookahead = m2c_consume_sym(p->lexer);
   
   /* boolExpression */
-  if (match_set(p, FIRST(EXPRESSION), FOLLOW(WHILE_STATEMENT))) {
+  if (match_set(p, FIRST(EXPRESSION)) {
     lookahead = expression(p);
-    expr = p->ast;
-    
-    /* DO */
-    if (match_token(p, TOKEN_DO, FOLLOW(WHILE_STATEMENT))) {
-      lookahead = m2c_consume_sym(p->lexer);
-      
-      /* check for empty statement sequence */
-      if (lookahead == TOKEN_END) {
-
-        /* empty statement sequence warning */
-        m2c_emit_warning_w_pos
-          (M2C_EMPTY_STMT_SEQ,
-           m2c_lexer_lookahead_line(p->lexer),
-           m2c_lexer_lookahead_column(p->lexer));
-        p->warning_count++;
-         
-        /* END */
-        lookahead = m2c_consume_sym(p->lexer);
-      }
-      /* statementSequence */
-      else if
-        (match_set(p, FIRST(STATEMENT_SEQUENCE), FOLLOW(WHILE_STATEMENT))) {
-        lookahead = statement_sequence(p);
-        stmtseq = p->ast;
-    
-        /* END */
-        if (match_token(p, TOKEN_END, FOLLOW(WHILE_STATEMENT))) {
-          lookahead = m2c_consume_sym(p->lexer);
-        } /* end if */
-      } /* end if */
-    } /* end if */
+    expr_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_DO, FIRST(STATEMENT_SEQUENCE));
+    expr_node = m2c_ast_empty_node();
   } /* end if */
   
+  /* DO */
+  if (match_token(p, TOKEN_DO)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /**/ {
+    lookahead = skip_to_set(p, FIRST(STATEMENT_SEQUENCE));
+  } /* end if */
+  
+  /* statementSequence */
+  if (match_set(p, FIRST(STATEMENT_SEQUENCE))) {
+    lookahead = statement_sequence(p);
+    stmt_seq_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_END, FOLLOW(WHILE_STATEMENT));
+    stmt_seq_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* END */
+  if (match_token(p, TOKEN_END)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(WHILE_STATEMENT));
+  } /* end if*/
+  
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_WHILE, expr, stmtseq, NULL);
+  p->ast = m2c_ast_new_node(AST_WHILE, expr_node, stmt_seq_node, NULL);
   
   return lookahead;
 } /* end while_statement */
@@ -4674,8 +4674,8 @@ m2c_token_t while_statement (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t repeat_statement (m2c_parser_context_t p) {
-  m2c_astnode_t stmtseq, expr;
   m2c_token_t lookahead;
+  m2c_astnode_t expr_node, stmt_seq_node;
   
   PARSER_DEBUG_INFO("repeatStatement");
   
