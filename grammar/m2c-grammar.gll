@@ -565,7 +565,7 @@ outputArgs :=
 /* Formatted Arguments */
 
 formattedArgs :=
-  '#' '(' fmtStr, unformattedArg ')'
+  '#' '(' fmtStr, unformattedArgs ')'
   ;
 
 /* Format String */
@@ -575,6 +575,10 @@ alias fmtStr = expression ;
 /* Unformatted Argument */
 
 alias unformattedArg = expression ;
+
+/* Unformatted Arguments */
+
+alias unformattedArgs = expressionList ;
 
 
 /* IF Statement */
@@ -656,13 +660,8 @@ alias descender = '--' ;
 /* Iterable Expression */
 
 iterableExpr :=
-  collectionOrType valueRange?
+  valueRange OF typeIdent | collection valueRange?
   ;
-
-/* Collection or Type */
-
-alias collectionOrType = qualident ;
-
 
 /* Value Range */
 
@@ -673,6 +672,11 @@ valueRange :=
 /* First and Last Value */
 
 alias firstValue, lastValue = expression ;
+
+
+/* Collection */
+
+alias collection = qualident ;
 
 
 /* Designator */
