@@ -4564,41 +4564,35 @@ m2c_token_t case_branch (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 m2c_token_t loop_statement (m2c_parser_context_t p) {
-  m2c_astnode_t stmtseq;
   m2c_token_t lookahead;
+  m2c_astnode_t stmt_seq_node;
   
   PARSER_DEBUG_INFO("loopStatement");
   
   /* LOOP */
   lookahead = m2c_consume_sym(p->lexer);
   
-  /* check for empty statement sequence */
-  if (lookahead == TOKEN_END) {
-
-    /* empty statement sequence warning */
-    m2c_emit_warning_w_pos
-      (M2C_EMPTY_STMT_SEQ,
-       m2c_lexer_lookahead_line(p->lexer),
-       m2c_lexer_lookahead_column(p->lexer));
-    p->warning_count++;
-         
-    /* END */
-    lookahead = m2c_consume_sym(p->lexer);
-  }
   /* statementSequence */
-  else if (match_set(p, FIRST(STATEMENT_SEQUENCE), FOLLOW(LOOP_STATEMENT))) {
+  if (match_set(p, FIRST(STATEMENT_SEQUENCE))) {
     lookahead = statement_sequence(p);
-    stmtseq = p->ast;
-    
-    /* END */
-    if (match_token(p, TOKEN_END, FOLLOW(LOOP_STATEMENT))) {
-      lookahead = m2c_consume_sym(p->lexer);
-    } /* end if */
+    stmt_seq_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_END, FOLLOW(LOOP_STATEMENT));
+    stmt_seq_node = m2c_ast_empty_node();
   } /* end if */
   
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_LOOP, stmtseq, NULL);
+  /* END */
+  if (match_token(p, TOKEN_END)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(LOOP_STATEMENT));
+  } /* end if*/
   
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_LOOP, stmt_seq_node, NULL);
+    
   return lookahead;
 } /* end loop_statement */
 
