@@ -3800,12 +3800,12 @@ m2c_token_t retain_statement (m2c_parser_context_t p) {
  *  (RELEASE desigNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t retain_statement (m2c_parser_context_t p) {
+m2c_token_t release_statement (m2c_parser_context_t p) {
   intstr_t lexeme;
   m2c_token_t lookahead;
   m2c_astnode_t id_node;
   
-  PARSER_DEBUG_INFO("newStatement");
+  PARSER_DEBUG_INFO("releaseStatement");
   
   /* RELEASE */
   lookahead = m2c_consume_sym(p->lexer);
@@ -3892,7 +3892,7 @@ m2c_token_t return_statement (m2c_parser_context_t p) {
  *   ;
  *
  * astnode:
- *  
+ *   (COPY designatorNode expressionNode)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t copy_statement (m2c_parser_context_t p) {
@@ -3900,7 +3900,39 @@ m2c_token_t copy_statement (m2c_parser_context_t p) {
     
   PARSER_DEBUG_INFO("copyStatement");
   
-  /* TO DO */
+  /* COPY */
+  lookahead = m2c_consume_sym(p->lexer);
+  
+  /* targetDesignator */
+  if (match_set(p, FIRST(TARGET_DESIGNATOR))) {
+    lookahead = target_designator(p);
+    id_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(EXPRESSION));
+    id_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* ':=' */
+  if (match_token(p, TOKEN_ASSIGN)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FIRST(EXPRESSION));
+  } /* end if */
+  
+  /* expression */
+  if (match_set(p, FIRST(EXPRESSION))) {
+    lookahead = expression(p);
+    expr_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(EXPRESSION));
+    expr_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_COPY, id_node, expr_node, NULL);
   
   return lookahead;
 } /* end copy_statement */
