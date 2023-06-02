@@ -5210,77 +5210,94 @@ static m2c_token_t expression (m2c_parser_context_t p) {
  * private function simple_expression()
  * --------------------------------------------------------------------------
  * simpleExpression :=
- *   ( '+' | '-' )? term ( operL2 term )*
+ *   '-' factor | term ( OperL2 term )*
  *   ;
  *
- * operL2 := '+' | '-' | OR ;
+ * .operL2 := '+' | '-' | OR | ConcatOp | SetDiffOp ;
+ *
+ * alias ConcatOp = '&' ;
+ * alias SetDiffOp = '\' ;
  *
  * astnode:
- *  (NEG expr) |
- *  (PLUS expr expr) | (MINUS expr expr) | (OR expr expr) | termNode
+ *  termNode | (NEG expr) | (PLUS expr expr) | (MINUS expr expr) |
+ *  (OR expr expr) | (CONCAT expr expr) | (SETDIFF expr expr)
  * ----------------------------------------------------------------------- */
-
-#define IS_LEVEL2_OPERATOR(_t) \
-  (((_t) == TOKEN_PLUS) || ((_t) == TOKEN_MINUS) || ((_t) == TOKEN_OR))
 
 static m2c_token_t term (m2c_parser_context_t p);
 
 static m2c_token_t simple_expression (m2c_parser_context_t p) {
-  m2c_ast_nodetype_t nodetype;
-  m2c_astnode_t left;
   m2c_token_t lookahead;
-  bool unary_minus = false;
+  m2c_ast_nodetype_t node_type;
+  m2c_astnode_t left_node, right_node;
   
   PARSER_DEBUG_INFO("simpleExpression");
   
   lookahead = m2c_next_sym(p->lexer);
   
-  /* ( '+' | '-' )? */
-  if (lookahead == TOKEN_PLUS) {
+  /* '-' factor */
+  if (lookahead = TOKEN_MINUS) {
+    /* '-' */
     lookahead = m2c_consume_sym(p->lexer);
-  }
-  else if (lookahead == TOKEN_MINUS) {
-    lookahead = m2c_consume_sym(p->lexer);
-    unary_minus = true;
-  } /* end if */
-  
-  /* term */
-  if (match_set(p, FIRST(TERM), FOLLOW(TERM))) {
-    lookahead = term(p);
     
-    if (unary_minus) {
-      p->ast = m2c_ast_new_node(AST_NEG, p->ast, NULL);
+    /* factor */
+    if (match_set(p, FIRST(FACTOR))) {
+      lookahead = factor(p);
+      expr_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(SIMPLE_EXPRESSION));
+      expr_node = m2c_ast_empty_node();
     } /* end if */
-  
-    /* ( operL2 term )* */
-    while (IS_LEVEL2_OPERATOR(lookahead)) {
-      left = p->ast;
+    
+    p->ast = m2c_ast_new_node(AST_NEG, expr_node, NULL);
+  }
+  /* term (OperL2 term)* */
+  else {
+    /* term */
+    lookahead = term(p);
+    /* p->ast holds simple term node */
+    
+    /* (OperL2 term)* */
+    while (M2C_IS_OPER_L2_TOKEN(lookahead)) {
+      left_node = p->ast;
       
       /* operL2 */
       switch (lookahead) {
         case TOKEN_OR :
-          nodetype = AST_OR;
+          node_type = AST_OR;
           break;
       
         case TOKEN_PLUS :
-          nodetype = AST_PLUS;
+          node_type = AST_PLUS;
           break;
       
         case TOKEN_MINUS :
-          nodetype = AST_MINUS;
+          node_type = AST_MINUS;
+          break;
+          
+        case TOKEN_CONCAT :
+          node_type = AST_CONCAT;
+          break;
+          
+        case TOKEN_SET_DIFF :
+          node_type = AST_SETDIFF;
           break;
       } /* end switch */
       
-      lookahead = m2c_consume_sym(p->lexer);
-    
       /* term */
-      if (match_set(p, FIRST(TERM), FOLLOW(TERM))) {
-        lookahead = term(p);        
-        p->ast = m2c_ast_new_node(nodetype, left, p->ast, NULL);
+      if (match_set(p, FIRST(TERM))) {
+        lookahead = term(p);
+        right_node = p->ast;
+      }
+      else /* resync */ {
+        lookahead = skip_to_set(p, FIRST_OPERL2_AND_FOLLOW_SIMPLE_EXPRESSION);
+        right_node = m2c_ast_empty_node();
       } /* end if */
+      
+      p->ast = m2c_ast_new_node(node_type, left_node, right_node, NULL);
     } /* end while */
   } /* end if */
-    
+      
   return lookahead;
 } /* end simple_expression */
 
@@ -5292,7 +5309,7 @@ static m2c_token_t simple_expression (m2c_parser_context_t p) {
  *   simpleTerm ( operL3 simpleTerm )*
  *   ;
  *
- * operL3 := '*' | '/' | DIV | MOD | AND ;
+ * .operL3 := '*' | '/' | DIV | MOD | AND ;
  *
  * astnode:
  *  (ASTERISK expr expr) | (SOLIDUS expr expr) |
@@ -5346,7 +5363,7 @@ static m2c_token_t term (m2c_parser_context_t p) {
       right_node = p->ast;
     }
     else /* resync */ {
-      lookahead = skip_to_set(p, FOLLOW(TERM));
+      lookahead = skip_to_set(p, FIRST_OPERL3_AND_FOLLOW_TERM);
       right_node = m2c_ast_empty_node();
     } /* end if */
       
