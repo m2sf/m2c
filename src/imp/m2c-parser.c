@@ -5120,6 +5120,7 @@ static m2c_token_t index_list (m2c_parser_context_t p) {
   
   /* build AST node and pass it back in p->ast */
   p->ast = m2c_ast_new_list_node(AST_INDEX, tmplist);
+  
   m2c_fifo_release(tmplist);
   
   return lookahead;
@@ -5524,102 +5525,108 @@ static m2c_token_t designator_or_func_call (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function set_value()
+ * private function structured_value()
  * --------------------------------------------------------------------------
- * setValue :=
- *   '{' element ( ',' element )* '}'
+ * structuredValue :=
+ *   '{' ( valueComponent ( ',' valueComponent )* ) '}'
  *   ;
  *
- * astnode: (SETVAL (EMPTY) elemListNode)
+ * astnode: (STRUCT (EMPTY)) | (STRUCT valNode1 .. valNodeN)
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t element (m2c_parser_context_t p);
+static m2c_token_t value_component (m2c_parser_context_t p);
 
-static m2c_token_t set_value (m2c_parser_context_t p) {
-  m2c_astnode_t empty, elemlist;
-  m2c_ast_fifo_t tmplist;
+static m2c_token_t structured_value (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   
-  PARSER_DEBUG_INFO("setValue");
+  PARSER_DEBUG_INFO("structuredValue");
   
   /* '{' */
   lookahead = m2c_consume_sym(p->lexer);
   
-  /* element */
-  if (match_set(p, FIRST(ELEMENT), FOLLOW(SET_VALUE))) {
-    lookahead = element(p);
-    tmplist = m2c_fifo_new_queue(p->ast);
+  val_list = m2c_fifo_new_queue(NULL);
+  
+  /* ( valueComponent (',' valueComponent)* )? */
+  if (m2c_tokenset_element(FIRST(VALUE_COMPONENT, lookahead))) {
+    /* valueComponent */
+    lookahead = value_component(p);
+    m2c_fifo_enqueue(val_list, p->ast);
     
-    /* ( ',' element )* */
+    /* (',' valueComponent)* */
     while (lookahead == TOKEN_COMMA) {
       /* ',' */
       lookahead = m2c_consume_sym(p->lexer);
-    
-      /* element */
-      if (match_set(p, FIRST(ELEMENT), FOLLOW(SET_VALUE))) {
-        lookahead = element(p);
-        m2c_fifo_enqueue(tmplist, p->ast);
+      
+      /* valueComponent */
+      if (match_set(p, FIRST(VALUE_COMPONENT))) {
+        lookahead = value_component(p);
+        m2c_fifo_enqueue(val_list, p->ast);
       }
       else /* resync */ {
-        lookahead = m2c_next_sym(p->lexer);
+        lookahead = skip_to_token_or_set(p, TOKEN_COMMA, TOKEN_RBRACE, NULL);
       } /* end if */
     } /* end while */
-    
-    /* '}' */
-    if (match_token(p, TOKEN_RIGHT_BRACE, FOLLOW(SET_VALUE))) {
-      lookahead = m2c_consume_sym(p->lexer);
-    } /* end if */
   } /* end if */
   
-  if (m2c_fifo_entry_count(tmplist) > 0) {
-    elemlist = m2c_ast_new_list_node(AST_ELEMLIST, tmplist);
+  /* '}' */
+  if (match_token(p, TOKEN_RBRACE)) {
+    lookahead = m2c_consume_sym(p->lexer);
   }
-  else /* empty set */ {
-    elemlist = m2c_ast_empty_node();
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(STRUCTURED_VALUE));
   } /* end if */
-  
-  m2c_fifo_release(tmplist);
   
   /* build AST node and pass it back in p->ast */
-  empty = m2c_ast_empty_node();
-  p->ast = m2c_ast_new_node(AST_SETVAL, empty, elemlist, NULL);
+  p->ast = m2c_ast_new_list_node(AST_STRUCT, val_list, NULL);
   
   return lookahead;
-} /* end set_value */
+} /* end designator_or_func_call */
 
 
 /* --------------------------------------------------------------------------
- * private function element()
+ * private function value_component()
  * --------------------------------------------------------------------------
- * element :=
- *   expression ( '..' expression )?
+ * valueComponent :=
+ *   constExpression ( '..' constExpression )? |
+ *   runtimeExpression
  *   ;
  *
- * astnode: exprNode | (RANGE expr expr)
+ * astnode: exprNode | (CONSTRANGE exprNode exprNode)
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t element (m2c_parser_context_t p) {
-  m2c_astnode_t lower;
+static m2c_token_t value_component (m2c_parser_context_t p) {
   m2c_token_t lookahead;
+  m2c_astnode_t expr1_node, expr2_node;
     
-  PARSER_DEBUG_INFO("element");
+  PARSER_DEBUG_INFO("valueComponent");
   
   /* expression */
   lookahead = expression(p);
+  /* p->ast holds expression node */
   
   /* ( '..' expression )? */
-  if (lookahead == TOKEN_RANGE) {
-    lower = p->ast;
+  if (lookahead == TOKEN_DOT_DOT) {
+    expr1_node = p->ast;
+    
+    /* '..' */
     lookahead = m2c_consume_sym(p->lexer);
     
     /* expression */
-    if (match_set(p, FIRST(EXPRESSION), FOLLOW(ELEMENT))) {
+    if (match_set(p, FIRST(EXPRESSION))) {
       lookahead = expression(p);
-      p->ast = m2c_ast_new_node(AST_RANGE, lower, p->ast, NULL);
+      expr2_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(VALUE_COMPONENT));
+      expr2_node = m2c_ast_empty_node();
     } /* end if */
+    
+    /* build constant range AST node */
+    p->ast =
+      m2c_ast_new_list_node(AST_CONSTRANGE, expr1_node, expr2_node, NULL);
   } /* end if */
   
   return lookahead;
-} /* end element */
+} /* end value_component */
 
 /* END OF FILE */
