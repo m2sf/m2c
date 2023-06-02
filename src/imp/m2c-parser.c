@@ -262,21 +262,18 @@ void m2c_parse_file
 /* --------------------------------------------------------------------------
  * private function match_token(p, expected_token, resync_set)
  * --------------------------------------------------------------------------
- * Matches the lookahead symbol to expected_token and returns true if they
- * match.  If they don't match, a syntax error is reported, the error count
- * is incremented, symbols are consumed until the lookahead symbol matches
- * one of the symbols in resync_set and false is returned.
+ * Matches  the lookahead symbol  to expected_token  and returns true if they
+ * match.  Reports  a syntax error,  increments the error count  and  returns 
+ * false if they do not match.
  * ----------------------------------------------------------------------- */
 
 static bool match_token
-  (m2c_parser_context_t p,
-   m2c_token_t expected_token,
-   m2c_tokenset_t resync_set) {
+  (m2c_parser_context_t p, m2c_token_t expected_token) {
   
-  m2c_string_t lexeme;
+  intstr_t lexeme;
   const char *lexstr;
-  uint_t line, column;
   m2c_token_t lookahead;
+  unsigned short line, column;
   
   lookahead = m2c_next_sym(p->lexer);
   
@@ -302,34 +299,26 @@ static bool match_token
     /* update error count */
     p->error_count++;
     
-    /* skip symbols until lookahead matches resync_set */
-    while (!m2c_tokenset_element(resync_set, lookahead)) {
-      lookahead = m2c_consume_sym(p->lexer);
-    } /* end while */
     return false;
   } /* end if */
 } /* end match_token */
 
 
 /* --------------------------------------------------------------------------
- * private function match_set(p, expected_set, resync_set)
+ * private function match_set(p, expected_set)
  * --------------------------------------------------------------------------
- * Matches the lookahead symbol to set expected_set and returns true if it
- * matches any of the tokens in the set.  If there is no match, a syntax
- * error is reported, the error count is incremented, symbols are consumed
- * until the lookahead symbol matches one of the symbols in resync_set and
- * false is returned.
+ * Matches  the lookahead symbol  to set expected_set  and returns true if it
+ * matches any of the tokens in the set.  Reports a syntax error  and returns
+ * false if it does not match any of the tokens in the set.
  * ----------------------------------------------------------------------- */
 
 static bool match_set
-  (m2c_parser_context_t p,
-   m2c_tokenset_t expected_set,
-   m2c_tokenset_t resync_set) {
+  (m2c_parser_context_t p, m2c_tokenset_t expected_set) {
   
-  m2c_string_t lexeme;
+  intstr_t lexeme;
   const char *lexstr;
-  uint_t line, column;
   m2c_token_t lookahead;
+  unsigned short line, column;
   
   lookahead = m2c_next_sym(p->lexer);
   
@@ -356,13 +345,77 @@ static bool match_set
     /* update error count */
     p->error_count++;
     
-    /* skip symbols until lookahead matches resync_set */
-    while (!m2c_tokenset_element(resync_set, lookahead)) {
-      lookahead = m2c_consume_sym(p->lexer);
-    } /* end while */
     return false;
   } /* end if */
 } /* end match_set */
+
+
+/* --------------------------------------------------------------------------
+ * private function skip_to_token(p, token);
+ * --------------------------------------------------------------------------
+ * Consumes symbols  until the lookahead symbol  matches  token target_token.
+ * Return the new lookahead symbol.
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t skip_to_token
+  (m2c_parser_context_t p, m2c_token_t target_token) {
+  
+  m2c_token_t lookahead;
+  
+  lookahead = m2c_next_sym(p->lexer);
+  
+  while (lookahead != target_token) {
+    lookahead = m2c_consume_sym(p->lexer);
+  } /* end while */
+  
+  return lookahead;
+} /* end skip_to_token */
+
+
+/* --------------------------------------------------------------------------
+ * private function skip_to_set(p, set);
+ * --------------------------------------------------------------------------
+ * Consumes symbols until the lookahead symbol  matches  any token within set
+ * target_set.  Returns the new lookahead symbol.
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t skip_to_set
+  (m2c_parser_context_t p, m2c_tokenset_t target_set) {
+  
+  m2c_token_t lookahead;
+  
+  lookahead = m2c_next_sym(p->lexer);
+  
+  while (m2c_tokenset_member(target_set, lookahead) == false) {
+    lookahead = m2c_consume_sym(p->lexer);
+  } /* end while */
+  
+  return lookahead;
+} /* end skip_to_set */
+
+
+/* --------------------------------------------------------------------------
+ * private function skip_to_token_or_set(p, token, set);
+ * --------------------------------------------------------------------------
+ * Consumes symbols  until the lookahead symbol matches token target_token or
+ * any token within set target_set.  Return the new lookahead symbol.
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t skip_to_token_or_set
+  (m2c_parser_context_t p,
+   m2c_token_t target_token, m2c_tokenset_t target_set) {
+  
+  m2c_token_t lookahead;
+  
+  lookahead = m2c_next_sym(p->lexer);
+  
+  while ((lookahead != target_token)
+    && (m2c_tokenset_member(target_set, lookahead) == false)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  } /* end while */
+  
+  return lookahead;
+} /* end skip_to_token_or_set */
 
 
 /* --------------------------------------------------------------------------
