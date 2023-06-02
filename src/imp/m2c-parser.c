@@ -4838,6 +4838,83 @@ m2c_token_t for_statement (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
+ * private function iterable_expr()
+ * --------------------------------------------------------------------------
+ * iterableExpr :=
+ *   valueRange OF typeIdent | collectionOrTypeIdent valueRange?
+ *   ;
+ *
+ * alias typeIdent, collectionOrTypeIdent = qualident ;
+ *
+ * astnode:
+ *   (ITEREXPR identNode rangeNode)
+ * ----------------------------------------------------------------------- */
+
+m2c_token_t iterable_expr (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  m2c_astnode_t id_node, range_node;
+  
+  /* valueRange OF typeIdent */
+  if (lookahead = TOKEN_LBRACKET) {
+    /* valueRange */
+    if (match_token(p, TOKEN_LBRACKET)) {
+      lookahead = value_range(p);
+      range_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_token_list(p, TOKEN_OF, TOKEN_IDENT, NULL);
+      range_node = m2c_ast_empty_node();
+    } /* end if */
+    
+    /* OF */
+    if (match_token(p, TOKEN_OF)) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead = skip_to_token_list(p, TOKEN_IDENT, TOKEN_IN, NULL));
+    } /* end if */
+    
+    /* typeIdent */
+    if (match_token(p, TOKEN_IDENT)) {
+      lookahead = qualident(p);
+      id_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_token(p, TOKEN_IN);
+      id_node = m2c_ast_empty_node();
+    } /* end if */
+  }
+  /* | collectionOrTypeIdent valueRange? */
+  else {
+    /* collectionOrTypeIdent */
+    match_token(p, TOKEN_IDENT) {
+      lookahead = qualident(p);
+      id_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_token_list(p, TOKEN_LBRACKET, TOKEN_IN, NULL);
+      id_node = m2c_ast_empty_node();
+    } /* end if */
+    
+    /* valueRange? */
+    if (lookahead == TOKEN_LBRACKET) {
+      lookahead = value_range(p);
+      range_node = p->ast;
+    }
+    else /* no value range */ {
+      lookahead = skip_to_token(p, TOKEN_IN);
+      range_node = m2c_ast_empty_node();
+    } /* end if */
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_ITEREXPR, id_node, range_node, NULL);
+  
+  return lookahead;
+} /* end iterable_expr */
+
+
+/* --------------------------------------------------------------------------
  * private function designator()
  * --------------------------------------------------------------------------
  * designator :=
