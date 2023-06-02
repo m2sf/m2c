@@ -4720,111 +4720,120 @@ m2c_token_t repeat_statement (m2c_parser_context_t p) {
  * private function for_statement()
  * --------------------------------------------------------------------------
  * forStatement :=
- *   FOR forLoopVariant ':=' startValue TO endValue
- *   ( BY stepValue )? DO statementSequence END
+ *   FOR forLoopVariants IN iterableExpr DO statementSequence END
  *   ;
  *
- * forLoopVariant := Ident ;
+ * .forLoopVariants :=
+ *   accessor descender? ( ',' value )?
+ *   ;
  *
- * startValue, endValue := ordinalExpression ;
+ * alias accessor, value = StdIdent ;
+ * alias descender = '--' ;
  *
- * ordinalExpression := expression
- *
- * stepValue := constExpression
- *
- * astnode: (FORTO identNode exprNode exprNode exprNode statementSeqNode)
+ * astnode:
+ *   (FOR (ASC accessorNode valueNode iterExprNode) statementSeqNode) |
+ *   (FOR (DESC accessorNode valueNode iterExprNode) statementSeqNode)
  * ----------------------------------------------------------------------- */
 
 m2c_token_t for_statement (m2c_parser_context_t p) {
-  m2c_astnode_t id, start, end, step, stmtseq;
-  m2c_string_t ident;
   m2c_token_t lookahead;
+  m2c_astnode_t acc_node, val_node, expr_node, iter_node, stmt_seq_node;
   
   PARSER_DEBUG_INFO("forStatement");
   
   /* FOR */
   lookahead = m2c_consume_sym(p->lexer);
   
-  /* forLoopVariant */
-  if (match_token(p, TOKEN_IDENTIFIER, RESYNC(FOR_LOOP_BODY))) {
-    lookahead = m2c_consume_sym(p->lexer);
-    ident = m2c_lexer_current_lexeme(p->lexer);
-    id = m2c_ast_new_terminal_node(AST_IDENT, ident);
-    
-    /* ':=' */
-    if (match_token(p, TOKEN_ASSIGN, RESYNC(FOR_LOOP_BODY))) {
-      lookahead = m2c_consume_sym(p->lexer);
-      
-      /* startValue */
-      if (match_set(p, FIRST(EXPRESSION), RESYNC(FOR_LOOP_BODY))) {
-        lookahead = expression(p);
-        start = p->ast;
-        
-        /* TO */
-        if (match_token(p, TOKEN_TO, RESYNC(FOR_LOOP_BODY))) {
-          lookahead = m2c_consume_sym(p->lexer);
-          
-          /* endValue */
-          if (match_set(p, FIRST(EXPRESSION), RESYNC(FOR_LOOP_BODY))) {
-            lookahead = expression(p);
-            end = p->ast;
-            
-            /* ( BY stepValue )? */
-            if (lookahead == TOKEN_BY) {
-              lookahead = m2c_consume_sym(p->lexer);
-              
-              if (match_set(p, FIRST(EXPRESSION), RESYNC(FOR_LOOP_BODY))) {
-                lookahead = const_expression(p);
-                step = p->ast;
-              } /* end if */
-            }
-            else /* no step value */ {
-              step = m2c_ast_empty_node();
-            } /* end if */
-          } /* end if */
-        } /* end if */
-      } /* end if */
-    } /* end if */
-  } /* end if */
+  /* .forLoopVariants */
   
-  /* resync */
-  lookahead = m2c_next_sym(p->lexer);
-  
-  /* DO -- The FOR loop body */
-  if (match_token(p, TOKEN_DO, FOLLOW(FOR_STATEMENT))) {
-    lookahead = m2c_consume_sym(p->lexer);
+  /* accessor */
+  if (match_token(p, TOKEN_IDENT)) {
+    /* accessor */
+    lookahead = ident(p);
+    acc_node = p->ast;
     
-    /* check for empty statement sequence */
-    if (lookahead == TOKEN_END) {
-
-      /* empty statement sequence warning */
-      m2c_emit_warning_w_pos
-        (M2C_EMPTY_STMT_SEQ,
-         m2c_lexer_lookahead_line(p->lexer),
-         m2c_lexer_lookahead_column(p->lexer));
-      p->warning_count++;
-       
-      /* END */
+    /* descender? */
+    if (lookahead == TOKEN_MINUS_MINUS) {
+      /* '--' */
       lookahead = m2c_consume_sym(p->lexer);
+      node_type = AST_DESC;
     }
-    /* statementSequence */
-    else if
-      (match_set(p, FIRST(STATEMENT_SEQUENCE), FOLLOW(FOR_STATEMENT))) {
-      lookahead = statement_sequence(p);
-      stmtseq = p->ast;
-  
-      /* END */
-      if (match_token(p, TOKEN_END, FOLLOW(FOR_STATEMENT))) {
-        lookahead = m2c_consume_sym(p->lexer);
-      } /* end if */
+    else /* no descender */ {
+      node_type = AST_ASC;
     } /* end if */
+  }
+  else /* resync */ {
+    lookahead =
+      skip_to_token_list(p, TOKEN_COMMA, TOKEN_IDENT, TOKEN_IN, NULL);
+    acc_node = m2c_ast_empty_node();
   } /* end if */
   
+  /* (',' value)? */
+  if (lookahead == TOKEN_COMMA) {
+    /* ',' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* value */
+    if (match_token(p, TOKEN_IDENT)) {
+      lookahead = ident(p);
+      val_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token(p, TOKEN_IN, TOKEN_LBRACKET, TOKEN_IDENT, NULL);
+        val_node = m2c_ast_empty_node();
+    } /* end if */
+  }
+  else /* no value */ {
+    val_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* end .forLoopVariants */
+  
+  /* IN */
+  if (match_token(p, TOKEN_IN)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_DO, FIRST(ITERABLE_EXPR));
+  } /* end if */
+  
+  /* iterableExpr */
+  if (match_set(p, FIRST(ITERABLE_EXPR))) {
+    lookahead = iterable_expr(p);
+    expr_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_DO, FIRST(STATEMENT_SEQUENCE));
+    expr_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* build iterator AST node */
+  iter_node = m2c_ast_new_node(node_type, acc_node, val_node, expr_node, NULL);
+  
+  /* DO */
+  if (match_token(p, TOKEN_IN)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_END, FIRST(STATEMENT_SEQUENCE));
+  } /* end if */
+  
+  /* statementSequence */
+  if (match_set(p, FIRST(STATEMENT_SEQUENCE)) {
+    stmt_seq_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead =
+      skip_to_token_or_set(p, TOKEN_END, FOLLOW(FOR_STATEMENT));
+      stmt_seq_node = m2c_ast_empty_node();
+  } /* end if */
+    
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_FORTO, id, start, end, step, stmtseq, NULL);
+  p->ast = m2c_ast_new_node(AST_FOR, iter_node, stmt_seq_node, NULL);
   
   return lookahead;
-} /* end for_statement */
+} /* end repeat_statement */
 
 
 /* --------------------------------------------------------------------------
