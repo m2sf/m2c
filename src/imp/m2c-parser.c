@@ -4737,6 +4737,7 @@ m2c_token_t repeat_statement (m2c_parser_context_t p) {
 
 m2c_token_t for_statement (m2c_parser_context_t p) {
   m2c_token_t lookahead;
+  m2c_ast_nodetype_t node_type;
   m2c_astnode_t acc_node, val_node, expr_node, iter_node, stmt_seq_node;
   
   PARSER_DEBUG_INFO("forStatement");
@@ -4833,7 +4834,7 @@ m2c_token_t for_statement (m2c_parser_context_t p) {
   p->ast = m2c_ast_new_node(AST_FOR, iter_node, stmt_seq_node, NULL);
   
   return lookahead;
-} /* end repeat_statement */
+} /* end for_statement */
 
 
 /* --------------------------------------------------------------------------
