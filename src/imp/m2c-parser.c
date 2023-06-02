@@ -5021,6 +5021,147 @@ static m2c_token_t designator (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
+ * private function deref_tail()
+ * --------------------------------------------------------------------------
+ * derefTail :=
+ *   deref ( '.' designator | subscriptTail )?
+ *   ;
+ *
+ * astnode:
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t deref_tail (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("derefTail");
+  
+  /* TO DO */
+  
+  return lookahead;
+} /* end deref_tail */
+
+
+/* --------------------------------------------------------------------------
+ * private function subscript_tail()
+ * --------------------------------------------------------------------------
+ * subscriptTail :=
+ *   '[' expression ']' ( '.' designator | derefTail )?
+ *   ;
+ *
+ * astnode:
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t subscript_tail (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("subscriptTail");
+  
+  /* TO DO */
+  
+  return lookahead;
+} /* end subscript_tail */
+
+
+/* --------------------------------------------------------------------------
+ * private function target_designator()
+ * --------------------------------------------------------------------------
+ * targetDesignator :=
+ *   qualident ( derefTargetTail | bracketTargetTail )?
+ *   ;
+ *
+ * astnode:
+ *   identNode | (DEREF identNode tailNode) | (SUBSCR identNode tailNode)
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t target_designator (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("targetDesignator");
+  
+  /* qualident */
+  lookahead = qualident(p);
+  
+  id_node = p->ast;
+  
+  /* ( derefTargetTail | bracketTargetTail )? */
+  if (lookahead == TOKEN_LBRACKET) {
+    lookahead = bracket_target_tail(p);
+    p->ast = m2c_ast_new_node(AST_SUBSCR, id_node, p->ast, NULL);
+  }
+  else if (lookahead == TOKEN_DEREF) {
+    lookahead = deref_target_tail(p);
+    p->ast = m2c_ast_new_node(AST_DEREF, id_node, p->ast, NULL);
+  } /* end if */
+  
+  return lookahead;
+} /* end target_designator */
+
+
+/* --------------------------------------------------------------------------
+ * private function deref_target_tail()
+ * --------------------------------------------------------------------------
+ * derefTargetTail :=
+ *   deref ( '.' targetDesignator | bracketTargetTail )?
+ *   ;
+ *
+ * astnode:
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t deref_target_tail (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("derefTargetTail");
+  
+  /* TO DO */
+  
+  return lookahead;
+} /* end deref_target_tail */
+
+
+/* --------------------------------------------------------------------------
+ * private function bracket_target_tail()
+ * --------------------------------------------------------------------------
+ * bracketTargetTail :=
+ *   '[' expression
+ *   (']' ( '.' targetDesignator | derefTargetTail )? | '..' expression ']')?
+ *   ;
+ *
+ * astnode:
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t bracket_target_tail (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("bracketTargetTail");
+  
+  /* TO DO */
+  
+  return lookahead;
+} /* end bracket_target_tail */
+
+
+/* --------------------------------------------------------------------------
+ * private function deref()
+ * --------------------------------------------------------------------------
+ * deref :=
+ *   ( '^' )+
+ *   ;
+ *
+ * astnode:
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t deref (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("deref");
+  
+  /* TO DO */
+  
+  return lookahead;
+} /* end deref */
+
+
+/* --------------------------------------------------------------------------
  * private function expression_list()
  * --------------------------------------------------------------------------
  * expressionList :=
@@ -5517,6 +5658,8 @@ static m2c_token_t simple_factor (m2c_parser_context_t p) {
  *   (SUBSCR identNode tailNode)
  * ----------------------------------------------------------------------- */
 
+static m2c_token_t function_call_tail (m2c_parser_context_t p);
+
 static m2c_token_t source_designator (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   
@@ -5586,6 +5729,50 @@ static m2c_token_t function_call_tail (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end function_call_tail */
+
+
+/* --------------------------------------------------------------------------
+ * private function deref_source_tail()
+ * --------------------------------------------------------------------------
+ * derefSourceTail :=
+ *   deref ( '.' sourceDesignator | functionCallTail | bracketSourceTail )?
+ *   ;
+ *
+ * astnode:
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t deref_source_tail (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("derefSourceTail");
+  
+  /* TO DO */
+  
+  return lookahead;
+} /* end deref_source_tail */
+
+
+/* --------------------------------------------------------------------------
+ * private function bracket_source_tail()
+ * --------------------------------------------------------------------------
+ * bracketSourceTail :=
+ *   '[' expression
+ *   ( ']' ( '.' sourceDesignator | functionCallTail | derefSourceTail )? |
+ *     '..' expression ']' )?
+ *   ;
+ *
+ * astnode:
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t bracket_source_tail (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("bracketSourceTail");
+  
+  /* TO DO */
+  
+  return lookahead;
+} /* end bracket_source_tail */
 
 
 /* --------------------------------------------------------------------------
