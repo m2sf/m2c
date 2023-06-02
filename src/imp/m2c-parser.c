@@ -5131,75 +5131,78 @@ static m2c_token_t index_list (m2c_parser_context_t p) {
  * private function expression()
  * --------------------------------------------------------------------------
  * expression :=
- *   simpleExpression ( operL1 simpleExpression )?
+ *   simpleExpression ( OperL1 simpleExpression )?
  *   ;
  *
- * operL1 := '=' | '#' | '<' | '<=' | '>' | '>=' | IN ;
+ * .OperL1 := '=' | '#' | '<' | '<=' | '>' | '>=' | '==' | IN ;
  *
  * astnode:
  *  (EQ expr expr) | (NEQ expr expr) | (LT expr expr) | (LTEQ expr expr) |
  *  (GT expr expr) | (GTEQ expr expr) | (IN expr expr) | simpleExprNode
  * ----------------------------------------------------------------------- */
 
-#define IS_LEVEL1_OPERATOR(_t) \
-  (((_t) == TOKEN_EQUAL) || ((_t) == TOKEN_NOTEQUAL) || \
-   ((_t) == TOKEN_LESS) || ((_t) == TOKEN_LESS_EQUAL) || \
-   ((_t) == TOKEN_GREATER) || ((_t) == TOKEN_GREATER_EQUAL) || \
-   ((_t) == TOKEN_IN))
-
 static m2c_token_t simple_expression (m2c_parser_context_t p);
 
 static m2c_token_t expression (m2c_parser_context_t p) {
-  m2c_ast_nodetype_t nodetype;
-  m2c_astnode_t left;
   m2c_token_t lookahead;
+  m2c_ast_nodetype_t node_type;
+  m2c_astnode_t left_node, right_node;
     
   PARSER_DEBUG_INFO("expression");
   
   /* simpleExpression */
   lookahead = simple_expression(p);
   
-  /* ( operL1 simpleExpression )? */
-  if (IS_LEVEL1_OPERATOR(lookahead)) {
-    left = p->ast;
+  /* ( OperL1 simpleExpression )? */
+  if (M2C_IS_OPER_L1_TOKEN(lookahead)) {
+    left_node = p->ast;
     
     switch (lookahead) {
       case TOKEN_IN :
-        nodetype = AST_IN;
+        node_type = AST_IN;
         break;
       
       case TOKEN_EQUAL :
-        nodetype = AST_EQ;
+        node_type = AST_EQ;
         break;
       
-      case TOKEN_NOTEQUAL :
-        nodetype = AST_NEQ;
+      case TOKEN_NOT_EQUAL :
+        node_type = AST_NEQ;
         break;
       
       case TOKEN_LESS :
-        nodetype = AST_LT;
+        node_type = AST_LT;
         break;
       
-      case TOKEN_LESS_EQUAL :
-        nodetype = AST_LTEQ;
+      case TOKEN_LESS_OR_EQ :
+        node_type = AST_LTEQ;
         break;
       
       case TOKEN_GREATER :
-        nodetype = AST_GT;
+        node_type = AST_GT;
         break;
       
-      case TOKEN_GREATER_EQUAL :
+      case TOKEN_GREATER_OR_EQ :
         nodetype = AST_GTEQ;
         break;
+        
+      case TOKEN_IDENTITY :
+        nodetype = AST_IDTY;
+        break;
     } /* end switch */
-    
     lookahead = m2c_consume_sym(p->lexer);
     
     /* simpleExpression */
-    if (match_set(p, FIRST(EXPRESSION), FOLLOW(SIMPLE_EXPRESSION))) {
+    if (match_set(p, FIRST(EXPRESSION))) {
       lookahead = simple_expression(p);
-      p->ast = m2c_ast_new_node(nodetype, left, p->ast, NULL);
+      right_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(EXPRESSION));
+      right_node = m2c_ast_empty_node();
     } /* end if */
+    
+    p->ast = m2c_ast_new_node(node_type, left_node, right_node, NULL);
   } /* end if */
   
   return lookahead;
@@ -5213,7 +5216,7 @@ static m2c_token_t expression (m2c_parser_context_t p) {
  *   '-' factor | term ( OperL2 term )*
  *   ;
  *
- * .operL2 := '+' | '-' | OR | ConcatOp | SetDiffOp ;
+ * .OperL2 := '+' | '-' | OR | ConcatOp | SetDiffOp ;
  *
  * alias ConcatOp = '&' ;
  * alias SetDiffOp = '\' ;
@@ -5251,17 +5254,17 @@ static m2c_token_t simple_expression (m2c_parser_context_t p) {
     
     p->ast = m2c_ast_new_node(AST_NEG, expr_node, NULL);
   }
-  /* term (OperL2 term)* */
+  /* term (.OperL2 term)* */
   else {
     /* term */
     lookahead = term(p);
     /* p->ast holds simple term node */
     
-    /* (OperL2 term)* */
+    /* ( .OperL2 term )* */
     while (M2C_IS_OPER_L2_TOKEN(lookahead)) {
       left_node = p->ast;
       
-      /* operL2 */
+      /* OperL2 */
       switch (lookahead) {
         case TOKEN_OR :
           node_type = AST_OR;
@@ -5306,10 +5309,10 @@ static m2c_token_t simple_expression (m2c_parser_context_t p) {
  * private function term()
  * --------------------------------------------------------------------------
  * term :=
- *   simpleTerm ( operL3 simpleTerm )*
+ *   simpleTerm ( OperL3 simpleTerm )*
  *   ;
  *
- * .operL3 := '*' | '/' | DIV | MOD | AND ;
+ * .OperL3 := '*' | '/' | DIV | MOD | AND ;
  *
  * astnode:
  *  (ASTERISK expr expr) | (SOLIDUS expr expr) |
@@ -5329,11 +5332,11 @@ static m2c_token_t term (m2c_parser_context_t p) {
   lookahead = simple_term(p);
   /* p->ast holds simple term node */
   
-  /* ( operL3 simpleTerm )* */
+  /* ( .OperL3 simpleTerm )* */
   while (M2C_IS_OPER_L3_TOKEN(lookahead)) {
     left_node = p->ast;
     
-    /* operL3 */
+    /* OperL3 */
     switch (lookahead) {
       case TOKEN_AND :
         node_type = AST_AND;
