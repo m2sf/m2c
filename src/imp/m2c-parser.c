@@ -4991,17 +4991,16 @@ static m2c_token_t selector (m2c_parser_context_t p);
 
 static m2c_token_t designator (m2c_parser_context_t p) {
   m2c_token_t lookahead;
-  m2c_astnode_t head_node, tail_node;
+  m2c_astnode_t id_node, tail_node;
     
   PARSER_DEBUG_INFO("designator");
   
   /* qualident */
   lookahead = qualident(p);
-  /* p->ast holds ident or qualident node */
   
   /* ( derefTail | subscriptTail )? */
-  while (match_set(p, FIRST_DEREF_AND_SUBSCRIPT)) {
-    head_node = p->ast;
+  if (match_set(p, FIRST_DEREF_AND_SUBSCRIPT)) {
+    id_node = p->ast;
     
     /* derefTail */
     if (lookahead == TOKEN_DEREF) {
@@ -5014,7 +5013,7 @@ static m2c_token_t designator (m2c_parser_context_t p) {
       tail_node = p->ast;
     } /* end if */
     
-    p->ast = m2c_ast_new_node(AST_DESIG, head_node, tail_node, NULL);
+    p->ast = m2c_ast_new_node(AST_DESIG, id_node, tail_node, NULL);
   } /* end if */
   
   return lookahead;
