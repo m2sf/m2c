@@ -5299,57 +5299,58 @@ static m2c_token_t simple_expression (m2c_parser_context_t p) {
  *  (DIV expr expr) | (MOD expr expr) | (AND expr expr) | simpleTermNode
  * ----------------------------------------------------------------------- */
 
-#define IS_LEVEL3_OPERATOR(_t) \
-  (((_t) == TOKEN_ASTERISK) || ((_t) == TOKEN_SOLIDUS) || \
-   ((_t) == TOKEN_DIV) || ((_t) == TOKEN_MOD) || ((_t) == TOKEN_AND))
-
 static m2c_token_t simple_term (m2c_parser_context_t p);
 
 static m2c_token_t term (m2c_parser_context_t p) {
-  m2c_ast_nodetype_t operation;
-  m2c_astnode_t left, right;
   m2c_token_t lookahead;
+  m2c_ast_nodetype_t node_type;
+  m2c_astnode_t left_node, right_node;
   
   PARSER_DEBUG_INFO("term");
   
   /* simpleTerm */
   lookahead = simple_term(p);
-  left = p->ast;
+  /* p->ast holds simple term node */
   
   /* ( operL3 simpleTerm )* */
-  while (IS_LEVEL3_OPERATOR(lookahead)) {
-    left = p->ast;
+  while (M2C_IS_OPER_L3_TOKEN(lookahead)) {
+    left_node = p->ast;
     
     /* operL3 */
     switch (lookahead) {
       case TOKEN_AND :
-        nodetype = AST_AND;
+        node_type = AST_AND;
         break;
     
       case TOKEN_DIV :
-        nodetype = AST_DIV;
+        node_type = AST_DIV;
         break;
     
       case TOKEN_MOD :
-        nodetype = AST_MOD;
+        node_type = AST_MOD;
         break;
     
       case TOKEN_ASTERISK :
-        nodetype = AST_ASTERISK;
+        node_type = AST_ASTERISK;
         break;
     
       case TOKEN_SOLIDUS :
-        nodetype = AST_SOLIDUS;
+        node_type = AST_SOLIDUS;
         break;
     } /* end switch */
-      
     lookahead = m2c_consume_sym(p->lexer);
     
     /* simpleTerm */
-    if (match_set(p, FIRST(SIMPLE_TERM), FOLLOW(SIMPLE_TERM))) {
-      lookahead = simple_term(p);      
-      p->ast = m2c_ast_new_node(nodetype, left, p->ast, NULL);
+    if (match_set(p, FIRST(SIMPLE_TERM))) {
+      lookahead = simple_term(p);
+      right_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(TERM));
+      right_node = m2c_ast_empty_node();
     } /* end if */
+      
+    p->ast = m2c_ast_new_node(node_type, left_node, right_node, NULL);
   } /* end while */
   
   return lookahead;
@@ -5363,34 +5364,43 @@ static m2c_token_t term (m2c_parser_context_t p) {
  *   NOT? factor
  *   ;
  *
- * astnode: (NOT expr) | factorNode
+ * astnode: factorNode | (NOT factorNode)
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t factor (m2c_parser_context_t p);
 
 static m2c_token_t simple_term (m2c_parser_context_t p) {
   m2c_token_t lookahead;
-  bool negation = false;
+  bool not_flag;
   
   PARSER_DEBUG_INFO("simpleTerm");
-  
-  lookahead = m2c_next_sym(p->lexer);
   
   /* NOT? */
   if (lookahead == TOKEN_NOT) {
     lookahead = m2c_consume_sym(p->lexer);
-    negation = true;
+    not_flag = true;
+  }
+  else {
+    not_flag = false;
   } /* end if */
   
   /* factor */
-  if (match_set(p, FIRST(FACTOR), FOLLOW(FACTOR))) {
+  if (match_set(p, FIRST(FACTOR))) {
     lookahead = factor(p);
-    
-    if (negation) {
-      p->ast = m2c_ast_new_node(AST_NOT, p->ast, NULL);
-    } /* end if */
+    value_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(SIMPLE_TERM));
+    value_node = m2c_ast_empty_node();
   } /* end if */
-
+  
+  if (not_flag == true) {
+    p->ast = m2c_ast_new_node(AST_NOT, value_node, NULL);
+  }
+  else /* not_flag == false */ {
+    p->ast = value_node;
+  } /* end if */
+  
   return lookahead;
 } /* end simple_term */
 
@@ -5399,129 +5409,206 @@ static m2c_token_t simple_term (m2c_parser_context_t p) {
  * private function factor()
  * --------------------------------------------------------------------------
  * factor :=
- *   NumberLiteral | StringLiteral | setValue |
- *   designatorOrFuncCall | '(' expression ')'
+ *   simpleFactor ( TypeConvOp typeIdent )?
  *   ;
  *
- * astnode:
- *  (INTVAL value) | (REALVAL value) | (CHRVAL value) | (QUOTEDVAL value) |
- *  setValNode | designatorNode | funcCallNode | exprNode
+ * astnode: simpleFactorNode | (CONV simpleFactorNode typeIdentNode)
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t set_value (m2c_parser_context_t p);
-static m2c_token_t designator_or_func_call (m2c_parser_context_t p);
+static m2c_token_t simple_factor (m2c_parser_context_t p);
 
 static m2c_token_t factor (m2c_parser_context_t p) {
-  m2c_string_t lexeme;
   m2c_token_t lookahead;
+  m2c_astnode_t value_node, type_node;
   
   PARSER_DEBUG_INFO("factor");
   
-  lookahead = m2c_next_sym(p->lexer);
+  /* simpleFactor */
+  lookahead = simple_factor(p);
+  /* p->ast holds simple factor node */
   
-  switch (lookahead) {
-  
-    /* NumberLiteral */
-    case TOKEN_INTEGER :
-      lookahead = m2c_consume_sym(p->lexer);
-      lexeme = m2c_lexer_current_lexeme(p->lexer);
-      p->ast = m2c_ast_new_terminal_node(AST_INTVAL, lexeme);
-      break;
-      
-    case TOKEN_REAL :
-      lookahead = m2c_consume_sym(p->lexer);
-      lexeme = m2c_lexer_current_lexeme(p->lexer);
-      p->ast = m2c_ast_new_terminal_node(AST_REALVAL, lexeme);
-      break;
-      
-    case TOKEN_CHAR :
-      lookahead = m2c_consume_sym(p->lexer);
-      lexeme = m2c_lexer_current_lexeme(p->lexer);
-      p->ast = m2c_ast_new_terminal_node(AST_CHRVAL, lexeme);
-      break;
-          
-    /* | StringLiteral */
-    case TOKEN_STRING :
-      lookahead = m2c_consume_sym(p->lexer);
-      lexeme = m2c_lexer_current_lexeme(p->lexer);
-      p->ast = m2c_ast_new_terminal_node(AST_QUOTEDVAL, lexeme);
-      break;
-      
-    /* | setValue */
-    case TOKEN_LEFT_BRACE :
-      lookahead = set_value(p);
-      break;
-      
-    /* | designatorOrFuncCall */
-    case TOKEN_IDENTIFIER :
-      lookahead = designator_or_func_call(p);
-      break;
-      
-    /* | '(' expression ')' */
-    case TOKEN_LEFT_PAREN :
-      lookahead = m2c_consume_sym(p->lexer);
-      
-      /* expression */
-      if (match_set(p, FIRST(EXPRESSION), FOLLOW(FACTOR))) {
-        lookahead = expression(p);
-        
-        /* ')' */
-        if (match_token(p, TOKEN_RIGHT_PAREN, FOLLOW(FACTOR))) {
-          lookahead = m2c_consume_sym(p->lexer);
-        } /* end if */
-      } /* end if */
-      break;
-      
-    default : /* unreachable code */
-      /* fatal error -- abort */
-      exit(-1);
-  } /* end switch */
+  /* ( TypeConvOp typeIdent )? */
+  if (match_token(p, TOKEN_TYPE_CONV)) {
+    value_node = p->ast;
+    
+    /* '::' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* typeIdent */
+    if (match_token(p, TOKEN_IDENT)) {
+      lookahead = qualident(p);
+      type_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(FACTOR)));
+      type_node = m2c_ast_empty_node();
+    } /* end if */
+    
+    /* build type conversion AST node */
+    p->ast = m2c_ast_new_node(AST_CONV, value_node, type_node, NULL);
+  } /* end if */
   
   return lookahead;
 } /* end factor */
 
 
 /* --------------------------------------------------------------------------
- * private function designator_or_func_call()
+ * private function simple_factor()
  * --------------------------------------------------------------------------
- * designatorOrFuncCall :=
- *   designator ( setValue | actualParameters )?
+ * simpleFactor :=
+ *   NumberLiteral | StringLiteral |
+ *   structuredValue | sourceDesignator | '(' expression ')'
  *   ;
  *
  * astnode:
- *  (SETVAL designatorNode elemListNode) | (FCALL designatorNode argsNode)
+ *  (INTVAL value) | (REALVAL value) | (CHRVAL value) | (QUOTEDVAL value) |
+ *  structuredValueNode | designatorNode | exprNode
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t designator_or_func_call (m2c_parser_context_t p) {
-  m2c_astnode_t desig;
+static m2c_token_t source_designator (m2c_parser_context_t p);
+static m2c_token_t structured_value (m2c_parser_context_t p);
+
+static m2c_token_t simple_factor (m2c_parser_context_t p) {
+  intstr_t lexeme;
   m2c_token_t lookahead;
-    
-  PARSER_DEBUG_INFO("designatorOrFuncCall");
   
-  /* designator */
-  lookahead = designator(p);
-  desig = p->ast;
+  PARSER_DEBUG_INFO("simpleFactor");
   
-  /* setValue */
-  if (lookahead == TOKEN_LEFT_BRACE) {
-    lookahead = set_value(p);
-    /* TO DO: check designator for IDENT or QUALIDENT */
-    p->ast = m2c_ast_replace_subnode(p->ast, 0, desig);
-    /* astnode: (SETVAL designatorNode elemListNode) */
-  }
-  /* actualParameters */
-  else if (lookahead == TOKEN_LEFT_PAREN) {
-    lookahead = actual_parameters(p);
-    p->ast = m2c_ast_new_node(AST_FCALL, desig, p->ast, NULL);
-    /* astnode: (FCALL designatorNode argsNode) */
-    
-    if (match_token(p, TOKEN_RIGHT_PAREN, FOLLOW(DESIGNATOR_OR_FUNC_CALL))) {
+  lookahead = m2c_next_sym(p->lexer);
+  
+  switch (lookahead) {
+    /* sourceDesignator */
+    case TOKEN_IDENT :
+      lookahead = source_designator(p);
+      /* p->ast holds designator node */
+      break;
+      
+    /* | WholeNumber */
+    case TOKEN_WHOLE_NUMBER :
       lookahead = m2c_consume_sym(p->lexer);
-    } /* end if */
-  } /* end if */
+      lexeme = m2c_current_lexeme(p->lexer);
+      p->ast = ast_new_terminal_node(AST_INTVAL, lexeme);
+      break;
+      
+    /* | RealNumber */
+    case TOKEN_REAL_NUMBER :
+      lookahead = m2c_consume_sym(p->lexer);
+      lexeme = m2c_current_lexeme(p->lexer);
+      p->ast = ast_new_terminal_node(AST_REALVAL, lexeme);
+      break;
     
+    /* | CharCode */
+    case TOKEN_CHAR_CODE :
+      lookahead = m2c_consume_sym(p->lexer);
+      lexeme = m2c_current_lexeme(p->lexer);
+      p->ast = ast_new_terminal_node(AST_CHRVAL, lexeme);
+      break;
+    
+    /* | QuotedString */
+    case TOKEN_QUOTED_STRING :
+      lookahead = m2c_consume_sym(p->lexer);
+      lexeme = m2c_current_lexeme(p->lexer);
+      p->ast = ast_new_terminal_node(AST_QUOTEDVAL, lexeme);
+      break;
+      
+    /* | '(' expression ')' */
+    case TOKEN_LPAREN :
+      /* '(' */
+      lookahead = m2c_consume_sym(p->lexer);
+      
+      /* expression */
+      if (match_set(p, FIRST(EXPRESSION))) {
+        lookahead = expression(p);
+        /* p->ast holds expression node */
+      }
+      else /* resync */ {
+        lookahead = skip_to_set(p, FOLLOW(SIMPLE_FACTOR));
+        p->ast = m2c_ast_empty_node();
+      } /* end if */
+      
+      /* ')' */
+      if (match_token(p, TOKEN_RPAREN)) {
+        lookahead = m2c_consume_sym(p->lexer);
+      }
+      else /* resync */ {
+        lookahead = skip_to_set(p, FOLLOW(SIMPLE_FACTOR));
+      } /* end if */      
+      
+    /* | structuredValue */
+    case TOKEN_LBRACE :
+      lookahead = structured_value(p);
+      /* p->ast holds structured value node */
+      break;
+  } /* end switch */
+  
   return lookahead;
-} /* end designator_or_func_call */
+} /* end simple_factor */
+
+
+/* --------------------------------------------------------------------------
+ * private function source_designator()
+ * --------------------------------------------------------------------------
+ * sourceDesignator :=
+ *   qualident ( functionCallTail | derefSourceTail | bracketSourceTail )?
+ *   ;
+ *
+ * astnode:
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t source_designator (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("sourceDesignator");
+  
+  /* qualident */
+  
+  /* ( functionCallTail | derefSourceTail | bracketSourceTail )? */
+  
+  return lookahead;
+} /* end source_designator */
+
+
+/* --------------------------------------------------------------------------
+ * private function function_call_tail()
+ * --------------------------------------------------------------------------
+ * functionCallTail :=
+ *   '(' expressionList? ')'
+ *   ;
+ *
+ * astnode: (EMPTY) | exprNode | exprListNode
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t function_call_tail (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  m2c_astnode_t expr_list_node;
+  
+  PARSER_DEBUG_INFO("functionCallTail");
+  
+  /* '(' */
+  lookahead = m2c_consume_sym(p->lexer);
+  
+  /* expressionList? */
+  if (m2c_tokenset_element(FIRST(EXPRESSION), lookahead)) {
+    lookahead = expression_list(p);
+    expr_list_node = p->ast;
+  }
+  else /* empty */ {
+    expr_list_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* ')' */
+  if (match_token(p, TOKEN_RPAREN)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(FUNCTION_CALL_TAIL));
+  } /* end if */
+  
+  /* pass AST back in p->ast */
+  p->ast = expr_list_node;
+  
+  return lookahead;
+} /* end function_call_tail */
 
 
 /* --------------------------------------------------------------------------
@@ -5580,7 +5667,7 @@ static m2c_token_t structured_value (m2c_parser_context_t p) {
   p->ast = m2c_ast_new_list_node(AST_STRUCT, val_list, NULL);
   
   return lookahead;
-} /* end designator_or_func_call */
+} /* end structured_value */
 
 
 /* --------------------------------------------------------------------------
