@@ -5330,6 +5330,7 @@ static m2c_token_t factor (m2c_parser_context_t p);
 
 static m2c_token_t simple_term (m2c_parser_context_t p) {
   m2c_token_t lookahead;
+  m2c_astnode_t value_node;
   bool not_flag;
   
   PARSER_DEBUG_INFO("simpleTerm");
@@ -5512,6 +5513,8 @@ static m2c_token_t simple_factor (m2c_parser_context_t p) {
  *   ;
  *
  * astnode:
+ *   identNode | (FCALL identNode tailNode) | (DEREF identNode tailNode) |
+ *   (SUBSCR identNode tailNode)
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t source_designator (m2c_parser_context_t p) {
@@ -5520,8 +5523,23 @@ static m2c_token_t source_designator (m2c_parser_context_t p) {
   PARSER_DEBUG_INFO("sourceDesignator");
   
   /* qualident */
+  lookahead = qualident(p);
+  
+  id_node = p->ast;
   
   /* ( functionCallTail | derefSourceTail | bracketSourceTail )? */
+  if ((lookahead == TOKEN_LPAREN) {
+    lookahead = function_call_tail(p);
+    p->ast = m2c_ast_new_node(AST_FCALL, id_node, p->ast, NULL);
+  }
+  else if (lookahead == TOKEN_LBRACKET) {
+    lookahead = bracket_source_tail(p);
+    p->ast = m2c_ast_new_node(AST_SUBSCR, id_node, p->ast, NULL);
+  }
+  else if (lookahead == TOKEN_DEREF) {
+    lookahead = deref_source_tail(p);
+    p->ast = m2c_ast_new_node(AST_DEREF, id_node, p->ast, NULL);
+  } /* end if */
   
   return lookahead;
 } /* end source_designator */
