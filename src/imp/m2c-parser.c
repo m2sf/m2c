@@ -268,7 +268,7 @@ void m2c_parse_file
  * one of the symbols in resync_set and false is returned.
  * ----------------------------------------------------------------------- */
 
-bool match_token
+static bool match_token
   (m2c_parser_context_t p,
    m2c_token_t expected_token,
    m2c_tokenset_t resync_set) {
@@ -321,7 +321,7 @@ bool match_token
  * false is returned.
  * ----------------------------------------------------------------------- */
 
-bool match_set
+static bool match_set
   (m2c_parser_context_t p,
    m2c_tokenset_t expected_set,
    m2c_tokenset_t resync_set) {
@@ -461,7 +461,7 @@ static void parse_start_symbol
  * astnode: defModuleNode | impModuleNode
  * ----------------------------------------------------------------------- */
 
-m2c_token_t compilation_unit (m2c_parser_context_t p) {
+static m2c_token_t compilation_unit (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("compilationUnit");
@@ -513,10 +513,10 @@ m2c_token_t compilation_unit (m2c_parser_context_t p) {
  * astnode: (DEFMOD identNode implist deflist)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t import (m2c_parser_context_t p);
-m2c_token_t definition (m2c_parser_context_t p);
+static m2c_token_t import (m2c_parser_context_t p);
+static m2c_token_t definition (m2c_parser_context_t p);
 
-m2c_token_t definition_module (m2c_parser_context_t p) {
+static m2c_token_t definition_module (m2c_parser_context_t p) {
   intstr_t ident1, ident2;
   m2c_token_t lookahead;
   m2c_fifo_t imp_list, def_list;
@@ -622,9 +622,9 @@ m2c_token_t definition_module (m2c_parser_context_t p) {
  * alias reExport = '+' ;
  * ----------------------------------------------------------------------- */
 
-m2c_token_t ident (m2c_parser_context_t p);
+static m2c_token_t ident (m2c_parser_context_t p);
 
-m2c_token_t import (m2c_parser_context_t p) {
+static m2c_token_t import (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_ast_node_t lib_ident;
   m2c_fifo_t imp_list, rxp_list;
@@ -724,9 +724,10 @@ m2c_token_t import (m2c_parser_context_t p) {
 #define const_definition_list(_p) def_or_decl_list(const_def, _p)
 #define type_definition_list(_p) def_or_decl_list(type_def, _p)
 #define var_definition_list(_p) def_or_decl_list(var_def, _p)
-m2c_token_t definition_list (def_decl_context_t *context, m2c_parser_context_t p)
-m2c_token_t procedure_header (m2c_parser_context_t p);
-m2c_token_t to_do_list (m2c_parser_context_t p);
+static m2c_token_t definition_list
+  (def_decl_context_t *context, m2c_parser_context_t p)
+static m2c_token_t procedure_header (m2c_parser_context_t p);
+static m2c_token_t to_do_list (m2c_parser_context_t p);
 
 m2c_token_t definition (m2c_parser_context_t p) {
   m2c_token_t lookahead;
@@ -849,7 +850,7 @@ m2c_token_t definition (m2c_parser_context_t p) {
  * astnode: (VARDECLLIST varDeclNode1 varDeclNode2 ... varDeclNodeN)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t def_or_decl_list
+static m2c_token_t def_or_decl_list
   (def_decl_context_t *context, m2c_parser_context_t p) {
   
   m2c_token_t lookahead;
@@ -914,10 +915,10 @@ m2c_token_t def_or_decl_list
  * astNode: (BIND ident expr) | (CONST constId typeId expr)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t const_binding (m2c_parser_context_t p);
-m2c_token_t const_declaration (m2c_parser_context_t p);
+static m2c_token_t const_binding (m2c_parser_context_t p);
+static m2c_token_t const_declaration (m2c_parser_context_t p);
 
-m2c_token_t const_definition (m2c_parser_context_t p) {
+static m2c_token_t const_definition (m2c_parser_context_t p) {
   m2c_token_t lookahead;
     
   PARSER_DEBUG_INFO("constDefinition");
@@ -947,10 +948,10 @@ m2c_token_t const_definition (m2c_parser_context_t p) {
  * astNode: (BIND ident expr)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t ident (m2c_parser_context_t p);
-m2c_token_t const_expression (m2c_parser_context_t p);
+static m2c_token_t ident (m2c_parser_context_t p);
+static m2c_token_t const_expression (m2c_parser_context_t p);
 
-m2c_token_t const_binding (m2c_parser_context_t p) {
+static m2c_token_t const_binding (m2c_parser_context_t p) {
   intstr_t ident;
   m2c_token_t lookahead;
   m2c_ast_node_t id_node, expr_node;
@@ -1028,7 +1029,7 @@ m2c_token_t const_binding (m2c_parser_context_t p) {
  * astNode: (CONST constId typeId expr)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t const_declaration (m2c_parser_context_t p) {
+static m2c_token_t const_declaration (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_ast_node_t const_id, type_id, expr;
   
@@ -1088,7 +1089,7 @@ m2c_token_t const_declaration (m2c_parser_context_t p) {
  * astNode: (IDENT "lexeme")
  * ----------------------------------------------------------------------- */
 
-m2c_token_t ident (m2c_parser_context_t p) {
+static m2c_token_t ident (m2c_parser_context_t p) {
   intstr_t lexeme;
   m2c_token_t lookahead;
   
@@ -1116,9 +1117,9 @@ m2c_token_t type_definition (m2c_parser_context_t p);
  * astNode: (TYPE identNode typeNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t type (m2c_parser_context_t p);
+static m2c_token_t type (m2c_parser_context_t p);
 
-m2c_token_t type_definition (m2c_parser_context_t p) {
+static m2c_token_t type_definition (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t ident_node, type_node;
     
@@ -1187,16 +1188,16 @@ m2c_token_t type_definition (m2c_parser_context_t p) {
  *   indeterminateTypeNode | procedureTypeNode
  * ----------------------------------------------------------------------- */
 
-m2c_token_t derived_type (m2c_parser_context_t p);
-m2c_token_t subrange_type (m2c_parser_context_t p);
-m2c_token_t enum_type (m2c_parser_context_t p);
-m2c_token_t set_type (m2c_parser_context_t p);
-m2c_token_t array_type (m2c_parser_context_t p);
-m2c_token_t pointer_type (m2c_parser_context_t p);
-m2c_token_t private_pointer_type (m2c_parser_context_t p);
-m2c_token_t procedure_type (m2c_parser_context_t p);
+static m2c_token_t derived_type (m2c_parser_context_t p);
+static m2c_token_t subrange_type (m2c_parser_context_t p);
+static m2c_token_t enum_type (m2c_parser_context_t p);
+static m2c_token_t set_type (m2c_parser_context_t p);
+static m2c_token_t array_type (m2c_parser_context_t p);
+static m2c_token_t pointer_type (m2c_parser_context_t p);
+static m2c_token_t private_pointer_type (m2c_parser_context_t p);
+static m2c_token_t procedure_type (m2c_parser_context_t p);
 
-m2c_token_t type (m2c_parser_context_t p) {
+static m2c_token_t type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("type");
@@ -1300,9 +1301,9 @@ m2c_token_t type (m2c_parser_context_t p) {
  * astNode: (ALIAS baseType)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t qualident (m2c_parser_context_t p);
+static m2c_token_t qualident (m2c_parser_context_t p);
 
-m2c_token_t alias_type (m2c_parser_context_t p) {
+static m2c_token_t alias_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_ast_node_t type_node;
   
@@ -1346,7 +1347,7 @@ m2c_token_t alias_type (m2c_parser_context_t p) {
  * astnode: (IDENT ident) | (QUALIDENT q0 q1 q2 ... qN ident)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t qualident (m2c_parser_context_t p) {
+static m2c_token_t qualident (m2c_parser_context_t p) {
   m2c_string_t first_ident, tail_ident;
   m2c_fifo_t lex_list;
   m2c_token_t lookahead;
@@ -1408,7 +1409,7 @@ m2c_token_t qualident (m2c_parser_context_t p) {
  * astNode: (SUBR baseType lowerBound upperBound)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t subrange_type (m2c_parser_context_t p) {
+static m2c_token_t subrange_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t type_node, lower_bound, upper_bound;
   
@@ -1490,9 +1491,9 @@ m2c_token_t subrange_type (m2c_parser_context_t p) {
  * astNode: (ENUM baseType enumValues)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t ident_list (m2c_parser_context_t p);
+static m2c_token_t ident_list (m2c_parser_context_t p);
 
-m2c_token_t enum_type (m2c_parser_context_t p) {
+static m2c_token_t enum_type (m2c_parser_context_t p) {
   m2c_ast_node_t type_node, list_node;
   m2c_token_t lookahead;
   
@@ -1562,7 +1563,7 @@ m2c_token_t enum_type (m2c_parser_context_t p) {
  * astnode: (IDENTLIST ident0 ident1 ident2 ... identN)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t ident_list (m2c_parser_context_t p) {
+static m2c_token_t ident_list (m2c_parser_context_t p) {
   intstr_t lexeme;
   m2c_fifo_t tmp_list;
   uint_t line, column;
@@ -1626,7 +1627,7 @@ m2c_token_t ident_list (m2c_parser_context_t p) {
  * astNode: (SET baseType)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t set_type (m2c_parser_context_t p) {
+static m2c_token_t set_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_ast_node_t type_node;
   
@@ -1672,7 +1673,7 @@ m2c_token_t set_type (m2c_parser_context_t p) {
  * astNode: (ARRAY baseType valueCount )
  * ----------------------------------------------------------------------- */
 
-m2c_token_t array_type (m2c_parser_context_t p) {
+static m2c_token_t array_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t type_node, value_node;
   
@@ -1731,9 +1732,9 @@ m2c_token_t array_type (m2c_parser_context_t p) {
  * astNode: (RECORD baseType fieldListSeq)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t field_list_sequence (m2c_parser_context_t p);
+static m2c_token_t field_list_sequence (m2c_parser_context_t p);
 
-m2c_token_t record_type (m2c_parser_context_t p) {
+static m2c_token_t record_type (m2c_parser_context_t p) {
   m2c_astnode_t type_node, list_node;
   m2c_token_t lookahead;
   
@@ -1805,9 +1806,9 @@ m2c_token_t record_type (m2c_parser_context_t p) {
  * astnode: (FIELDLISTSEQ fieldListNode+)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t field_list (m2c_parser_context_t p);
+static m2c_token_t field_list (m2c_parser_context_t p);
 
-m2c_token_t field_list_sequence (m2c_parser_context_t p) {
+static m2c_token_t field_list_sequence (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_fifo_t tmp_list;
   
@@ -1852,9 +1853,9 @@ m2c_token_t field_list_sequence (m2c_parser_context_t p) {
  * astNode: (FIELDLIST identListNode typeNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t anon_type (m2c_parser_context_t p);
+static m2c_token_t anon_type (m2c_parser_context_t p);
 
-m2c_token_t field_list (m2c_parser_context_t p) {
+static m2c_token_t field_list (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t type_node, list_node;
     
@@ -1898,7 +1899,7 @@ m2c_token_t field_list (m2c_parser_context_t p) {
  *   ;
  * ----------------------------------------------------------------------- */
 
-m2c_token_t anon_type (m2c_parser_context_t p) {
+static m2c_token_t anon_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("fieldList");
@@ -1943,7 +1944,7 @@ m2c_token_t anon_type (m2c_parser_context_t p) {
  * astNode: (POINTER qualidentNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t pointer_type (m2c_parser_context_t p) {
+static m2c_token_t pointer_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t type_node;
   
@@ -1988,7 +1989,7 @@ m2c_token_t pointer_type (m2c_parser_context_t p) {
  * astNode: (OPAQUE size)
  * ----------------------------------------------------------------------- */
  
-m2c_token_t opaque_type (m2c_parser_context_t p) {
+static m2c_token_t opaque_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t type_node;
   
@@ -2040,9 +2041,9 @@ m2c_token_t opaque_type (m2c_parser_context_t p) {
  * astNode: (PROCTYPE qualidentNode formalTypeNode+)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t formal_type (m2c_parser_context_t p);
+static m2c_token_t formal_type (m2c_parser_context_t p);
 
-m2c_token_t procedure_type (m2c_parser_context_t p) {
+static m2c_token_t procedure_type (m2c_parser_context_t p) {
   m2c_astnode_t type_node, list_node;
   m2c_token_t lookahead;
   
@@ -2115,7 +2116,7 @@ m2c_token_t procedure_type (m2c_parser_context_t p) {
  * astNode: (FTYPELIST formalTypeNode+)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t formal_type (m2c_parser_context_t p) {
+static m2c_token_t formal_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_fifo_t tmp_list;
   
@@ -2156,9 +2157,9 @@ m2c_token_t formal_type (m2c_parser_context_t p) {
  * astNode: formalTypeNode
  * ----------------------------------------------------------------------- */
 
-m2c_token_t non_attr_formal_type (m2c_parser_context_t p);
+static m2c_token_t non_attr_formal_type (m2c_parser_context_t p);
 
-m2c_token_t formal_type (m2c_parser_context_t p) {
+static m2c_token_t formal_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_ast_node_t type_node;
   
@@ -2208,7 +2209,7 @@ m2c_token_t formal_type (m2c_parser_context_t p) {
  * astnode:
  * ----------------------------------------------------------------------- */
 
-m2c_token_t non_attr_formal_type (m2c_parser_context_t p) {
+static m2c_token_t non_attr_formal_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("nonAttrFormalType");
@@ -2263,7 +2264,7 @@ m2c_token_t non_attr_formal_type (m2c_parser_context_t p) {
  *  (IDENT ident) | (QUALIDENT q0 q1 q2 ... qN ident) | (OPENARRAY identNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t simple_formal_type (m2c_parser_context_t p) {
+static m2c_token_t simple_formal_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t type_node;
   bool open_array;
@@ -2326,7 +2327,7 @@ m2c_token_t simple_formal_type (m2c_parser_context_t p) {
  * astNode: (CASTP OctetSeq ) | (CASTP Address)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t casting_formal_type (m2c_parser_context_t p) {
+static m2c_token_t casting_formal_type (m2c_parser_context_t p) {
   intstr_t lexeme;
   m2c_token_t lookahead;
   m2c_astnode_t type_node;
@@ -2372,7 +2373,7 @@ m2c_token_t casting_formal_type (m2c_parser_context_t p) {
  * astNode: (VARGP formalTypeNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t variadic_formal_type (m2c_parser_context_t p) {
+static m2c_token_t variadic_formal_type (m2c_parser_context_t p) {
   intstr_t lexeme;
   m2c_token_t lookahead;
   m2c_astnode_t type_node;
@@ -2407,9 +2408,6 @@ m2c_token_t variadic_formal_type (m2c_parser_context_t p) {
 } /* end variadic_formal_type */
 
 
-m2c_token_t var_definition (m2c_parser_context_t p);
-
-
 /* --------------------------------------------------------------------------
  * private function var_definition()
  * --------------------------------------------------------------------------
@@ -2420,7 +2418,7 @@ m2c_token_t var_definition (m2c_parser_context_t p);
  * astNode: (VARDECL idlist typeId)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t var_definition (m2c_parser_context_t p) {
+static m2c_token_t var_definition (m2c_parser_context_t p) {
   intstr_t lexeme;
   m2c_token_t lookahead;
   m2c_astnode_t list_node, type_node;
@@ -2467,9 +2465,9 @@ m2c_token_t var_definition (m2c_parser_context_t p) {
  * astnode: (PROCDECL bindSpecNode signatureNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t procedure_signature (m2c_parser_context_t p);
+static m2c_token_t procedure_signature (m2c_parser_context_t p);
 
-m2c_token_t procedure_header (m2c_parser_context_t p) {
+static m2c_token_t procedure_header (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t bind_node, psig_node;
   
@@ -2533,9 +2531,9 @@ m2c_token_t procedure_header (m2c_parser_context_t p) {
  * astnode: (PSIG identNode formalParamListNode returnTypeNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t formal_param_list (m2c_parser_context_t p);
+static m2c_token_t formal_param_list (m2c_parser_context_t p);
 
-m2c_token_t procedure_signature (m2c_parser_context_t p) {
+static m2c_token_t procedure_signature (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t id_node, list_node, type_node;
   
@@ -2612,7 +2610,7 @@ m2c_token_t procedure_signature (m2c_parser_context_t p) {
  * astnode: (BINDTO "NEW") | (BINDTO "NEW+") | (BINDTO "NEW*") |
  * ----------------------------------------------------------------------- */
 
-m2c_token_t binding_specifier (m2c_parser_context_t p) {
+static m2c_token_t binding_specifier (m2c_parser_context_t p) {
   intstr_t bind_target;
   m2c_token_t lookahead;
   
@@ -2713,9 +2711,9 @@ m2c_token_t binding_specifier (m2c_parser_context_t p) {
  * astnode: (FPARAMLIST fparams+)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t formal_params (m2c_parser_context_t p);
+static m2c_token_t formal_params (m2c_parser_context_t p);
 
-m2c_token_t formal_param_list (m2c_parser_context_t p) {
+static m2c_token_t formal_param_list (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_fifo_t param_list;
   
@@ -2759,7 +2757,7 @@ m2c_token_t formal_param_list (m2c_parser_context_t p) {
  * astNode: (FPARAMS attr idlist ftype)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t formal_params (m2c_parser_context_t p) {
+static m2c_token_t formal_params (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t attr_node, list_node, type_node;
   
@@ -2833,9 +2831,9 @@ m2c_token_t formal_params (m2c_parser_context_t p) {
  * astNode: (PGMMOD moduleIdent implist blockNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t block (m2c_parser_context_t p);
+static m2c_token_t block (m2c_parser_context_t p);
 
-m2c_token_t program_module (m2c_parser_context_t p) {
+static m2c_token_t program_module (m2c_parser_context_t p) {
   intstr_t ident1, ident2;
   m2c_token_t lookahead;
   m2c_fifo_t imp_list;
@@ -2931,7 +2929,7 @@ m2c_token_t program_module (m2c_parser_context_t p) {
  * astnode: (IMPORT identListNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t private_import (m2c_parser_context_t p) {
+static m2c_token_t private_import (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t list_node, empty_node;
   
@@ -2969,10 +2967,10 @@ m2c_token_t private_import (m2c_parser_context_t p) {
  * astnode: (BLOCK declarationListNode statementSeqNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t declaration (m2c_parser_context_t p);
-m2c_token_t statement_sequence (m2c_parser_context_t p);
+static m2c_token_t declaration (m2c_parser_context_t p);
+static m2c_token_t statement_sequence (m2c_parser_context_t p);
 
-m2c_token_t block (m2c_parser_context_t p) {
+static m2c_token_t block (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t list_node, sseq_node;
   
@@ -3034,7 +3032,7 @@ m2c_token_t block (m2c_parser_context_t p) {
  * astNode: (IMPMOD moduleIdent implist blockNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t implementation_module (m2c_parser_context_t p) {
+static m2c_token_t implementation_module (m2c_parser_context_t p) {
   intstr_t ident1, ident2;
   m2c_token_t lookahead;
   m2c_fifo_t imp_list;
@@ -3135,7 +3133,7 @@ m2c_token_t implementation_module (m2c_parser_context_t p) {
  * astnode: (BLOCK declarationListNode statementSeqNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t private_block (m2c_parser_context_t p) {
+static m2c_token_t private_block (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t list_node, sseq_node, empty_node;
   
@@ -3208,11 +3206,11 @@ m2c_token_t private_block (m2c_parser_context_t p) {
 #define const_declaration_list(_p) def_or_decl_list(const_decl, _p)
 #define type_declaration_list(_p) def_or_decl_list(type_decl, _p)
 #define var_declaration_list(_p) def_or_decl_list(var_decl, _p)
-m2c_token_t alias_declaration (m2c_parser_context_t p);
-m2c_token_t procedure_declaration (m2c_parser_context_t p);
-m2c_token_t to_do_list (m2c_parser_context_t p);
+static m2c_token_t alias_declaration (m2c_parser_context_t p);
+static m2c_token_t procedure_declaration (m2c_parser_context_t p);
+static m2c_token_t to_do_list (m2c_parser_context_t p);
 
-m2c_token_t declaration (m2c_parser_context_t p) {
+static m2c_token_t declaration (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("declaration");
@@ -3300,7 +3298,7 @@ m2c_token_t declaration (m2c_parser_context_t p) {
  * astnode: (TYPEDECL identNode typeConstructorNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t type_declaration (m2c_parser_context_t p) {
+static m2c_token_t type_declaration (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t id_node, type_node;
     
@@ -3346,7 +3344,7 @@ m2c_token_t type_declaration (m2c_parser_context_t p) {
  *  (POINTER identNode) | (PRIVPTR targetNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t private_pointer_type (m2c_parser_context_t p) {
+static m2c_token_t private_pointer_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t tgt_node;
     
@@ -3404,7 +3402,7 @@ m2c_token_t private_pointer_type (m2c_parser_context_t p) {
  * astNode: (VARDECL identListNode typeNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t var_declaration (m2c_parser_context_t p) {
+static m2c_token_t var_declaration (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t type_node, list_node;
     
@@ -3449,7 +3447,7 @@ m2c_token_t var_declaration (m2c_parser_context_t p) {
  * astnode: (PROC procDefinitionNode blockNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t procedure_declaration (m2c_parser_context_t p) {
+static m2c_token_t procedure_declaration (m2c_parser_context_t p) {
   intstr_t ident;
   m2c_token_t lookahead;
   m2c_astnode_t def_node, block_node;
@@ -3506,9 +3504,9 @@ m2c_token_t procedure_declaration (m2c_parser_context_t p) {
  * astnode: (STMTSEQ stmtNode+)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t statement (m2c_parser_context_t p);
+static m2c_token_t statement (m2c_parser_context_t p);
 
-m2c_token_t statement_sequence (m2c_parser_context_t p) {
+static m2c_token_t statement_sequence (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_fifo_t stmt_list;
   
@@ -3554,22 +3552,22 @@ m2c_token_t statement_sequence (m2c_parser_context_t p) {
  *   ;
  * ----------------------------------------------------------------------- */
 
-m2c_token_t new_statement (m2c_parser_context_t p);
-m2c_token_t retain_statement (m2c_parser_context_t p);
-m2c_token_t release_statement (m2c_parser_context_t p);
-m2c_token_t update_or_proc_call (m2c_parser_context_t p);
-m2c_token_t return_statement (m2c_parser_context_t p);
-m2c_token_t copy_statement (m2c_parser_context_t p);
-m2c_token_t read_statement (m2c_parser_context_t p);
-m2c_token_t write_statement (m2c_parser_context_t p);
-m2c_token_t if_statement (m2c_parser_context_t p);
-m2c_token_t case_statement (m2c_parser_context_t p);
-m2c_token_t loop_statement (m2c_parser_context_t p);
-m2c_token_t while_statement (m2c_parser_context_t p);
-m2c_token_t repeat_statement (m2c_parser_context_t p);
-m2c_token_t for_statement (m2c_parser_context_t p);
+static m2c_token_t new_statement (m2c_parser_context_t p);
+static m2c_token_t retain_statement (m2c_parser_context_t p);
+static m2c_token_t release_statement (m2c_parser_context_t p);
+static m2c_token_t update_or_proc_call (m2c_parser_context_t p);
+static m2c_token_t return_statement (m2c_parser_context_t p);
+static m2c_token_t copy_statement (m2c_parser_context_t p);
+static m2c_token_t read_statement (m2c_parser_context_t p);
+static m2c_token_t write_statement (m2c_parser_context_t p);
+static m2c_token_t if_statement (m2c_parser_context_t p);
+static m2c_token_t case_statement (m2c_parser_context_t p);
+static m2c_token_t loop_statement (m2c_parser_context_t p);
+static m2c_token_t while_statement (m2c_parser_context_t p);
+static m2c_token_t repeat_statement (m2c_parser_context_t p);
+static m2c_token_t for_statement (m2c_parser_context_t p);
 
-m2c_token_t statement (m2c_parser_context_t p) {
+static m2c_token_t statement (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("statement");
@@ -3685,10 +3683,10 @@ m2c_token_t statement (m2c_parser_context_t p) {
  *  (NEW desigNode) | (NEWINIT desigNode initValNode) | (NEWCAP valueNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t designator (m2c_parser_context_t p);
-m2c_token_t expression (m2c_parser_context_t p);
+static m2c_token_t designator (m2c_parser_context_t p);
+static m2c_token_t expression (m2c_parser_context_t p);
 
-m2c_token_t new_statement (m2c_parser_context_t p) {
+static m2c_token_t new_statement (m2c_parser_context_t p) {
   intstr_t lexeme;
   m2c_token_t lookahead;
   m2c_astnode_t id_node, init_node, capv_node;
@@ -3763,7 +3761,7 @@ m2c_token_t new_statement (m2c_parser_context_t p) {
  *  (RETAIN desigNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t retain_statement (m2c_parser_context_t p) {
+static m2c_token_t retain_statement (m2c_parser_context_t p) {
   intstr_t lexeme;
   m2c_token_t lookahead;
   m2c_astnode_t id_node;
@@ -3800,7 +3798,7 @@ m2c_token_t retain_statement (m2c_parser_context_t p) {
  *  (RELEASE desigNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t release_statement (m2c_parser_context_t p) {
+static m2c_token_t release_statement (m2c_parser_context_t p) {
   intstr_t lexeme;
   m2c_token_t lookahead;
   m2c_astnode_t id_node;
@@ -3838,7 +3836,7 @@ m2c_token_t release_statement (m2c_parser_context_t p) {
  *  
  * ----------------------------------------------------------------------- */
 
-m2c_token_t update_or_proc_call (m2c_parser_context_t p) {
+static m2c_token_t update_or_proc_call (m2c_parser_context_t p) {
   m2c_token_t lookahead;
     
   PARSER_DEBUG_INFO("updateOrProcCall");
@@ -3859,7 +3857,7 @@ m2c_token_t update_or_proc_call (m2c_parser_context_t p) {
  * astnode: (RETURN exprNode) | (RETURN (EMPTY))
  * ----------------------------------------------------------------------- */
 
-m2c_token_t return_statement (m2c_parser_context_t p) {
+static m2c_token_t return_statement (m2c_parser_context_t p) {
   m2c_astnode_t expr_node;
   m2c_token_t lookahead;
     
@@ -3895,7 +3893,7 @@ m2c_token_t return_statement (m2c_parser_context_t p) {
  *   (COPY designatorNode expressionNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t copy_statement (m2c_parser_context_t p) {
+static m2c_token_t copy_statement (m2c_parser_context_t p) {
   m2c_token_t lookahead;
     
   PARSER_DEBUG_INFO("copyStatement");
@@ -3950,9 +3948,9 @@ m2c_token_t copy_statement (m2c_parser_context_t p) {
  *   (READ chanNode inputArgNode+)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t input_arg (m2c_parser_context_t p);
+static m2c_token_t input_arg (m2c_parser_context_t p);
 
-m2c_token_t read_statement (m2c_parser_context_t p) {
+static m2c_token_t read_statement (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_fifo_t arg_list;
   m2c_astnode_t chan_node;
@@ -4035,7 +4033,7 @@ m2c_token_t read_statement (m2c_parser_context_t p) {
  *   (READARG designator) | (READNEW designator)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t input_arg (m2c_parser_context_t p) {
+static m2c_token_t input_arg (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t id_node;
   m2c_ast_nodetype_t node_type;
@@ -4081,7 +4079,7 @@ m2c_token_t input_arg (m2c_parser_context_t p) {
  *   (WRITE chanNode outputArgsNode+)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t write_statement (m2c_parser_context_t p) {
+static m2c_token_t write_statement (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_fifo_t arg_list;
   m2c_astnode_t chan_node;
@@ -4172,7 +4170,7 @@ m2c_token_t write_statement (m2c_parser_context_t p) {
  *   (WRITEARG exprNode | (FMTARG fmtNode exprListNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t output_args (m2c_parser_context_t p) {
+static m2c_token_t output_args (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t fmt_node, args_node;
   
@@ -4255,7 +4253,7 @@ m2c_token_t output_args (m2c_parser_context_t p) {
  *  (IF exprNode stmtSeqNode (ELIF expr stmtSeqNode) ... (ELSE stmtSeqNode))
  * ----------------------------------------------------------------------- */
 
-m2c_token_t if_statement (m2c_parser_context_t p) {
+static m2c_token_t if_statement (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_fifo_t elif_list;
   m2c_astnode_t if_expr_node, if_stmt_seq_node;
@@ -4394,9 +4392,9 @@ m2c_token_t if_statement (m2c_parser_context_t p) {
  * astnode: (SWITCH exprNode (CASELIST caseBranchNode+) elseBranchNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t case_branch (m2c_parser_context_t p);
+static m2c_token_t case_branch (m2c_parser_context_t p);
 
-m2c_token_t case_statement (m2c_parser_context_t p) {
+static m2c_token_t case_statement (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_fifo_t case_list;
   m2c_astnode_t expr_node, case_list_node, else_node;
@@ -4502,7 +4500,7 @@ m2c_token_t case_statement (m2c_parser_context_t p) {
  * astnode: (CASE caseLabelListNode statementSeqNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t case_branch (m2c_parser_context_t p) {
+static m2c_token_t case_branch (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   
   PARSER_DEBUG_INFO("case");
@@ -4563,7 +4561,7 @@ m2c_token_t case_branch (m2c_parser_context_t p) {
  * astnode: (LOOP statementSeqNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t loop_statement (m2c_parser_context_t p) {
+static m2c_token_t loop_statement (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t stmt_seq_node;
   
@@ -4609,7 +4607,7 @@ m2c_token_t loop_statement (m2c_parser_context_t p) {
  * astnode: (WHILE exprNode statementSeqNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t while_statement (m2c_parser_context_t p) {
+static m2c_token_t while_statement (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t expr_node, stmt_seq_node;
   
@@ -4673,7 +4671,7 @@ m2c_token_t while_statement (m2c_parser_context_t p) {
  * astnode: (REPEAT statementSeqNode exprNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t repeat_statement (m2c_parser_context_t p) {
+static m2c_token_t repeat_statement (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t expr_node, stmt_seq_node;
   
@@ -4701,7 +4699,7 @@ m2c_token_t repeat_statement (m2c_parser_context_t p) {
   } /* end if */
     
   /* boolExpression */
-  if (match_set(p, FIRST(EXPRESSION), FOLLOW(REPEAT_STATEMENT))) {
+  if (match_set(p, FIRST(EXPRESSION))) {
     lookahead = expression(p);
     expr_node = p->ast;
   else /* resync */ {
@@ -4735,7 +4733,7 @@ m2c_token_t repeat_statement (m2c_parser_context_t p) {
  *   (FOR (DESC accessorNode valueNode iterExprNode) statementSeqNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t for_statement (m2c_parser_context_t p) {
+static m2c_token_t for_statement (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_ast_nodetype_t node_type;
   m2c_astnode_t acc_node, val_node, expr_node, iter_node, stmt_seq_node;
@@ -4850,7 +4848,9 @@ m2c_token_t for_statement (m2c_parser_context_t p) {
  *   (ITEREXPR identNode rangeNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t iterable_expr (m2c_parser_context_t p) {
+static m2c_token_t value_range (m2c_parser_context_t p);
+
+static m2c_token_t iterable_expr (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t id_node, range_node;
   
@@ -4927,7 +4927,7 @@ m2c_token_t iterable_expr (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 
-m2c_token_t value_range (m2c_parser_context_t p) {
+static m2c_token_t value_range (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t val1_node, val2_node;
   
@@ -4987,9 +4987,9 @@ m2c_token_t value_range (m2c_parser_context_t p) {
  * astnode: identNode | (DEREF expr) | (DESIG headNode tailNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t selector (m2c_parser_context_t p);
+static m2c_token_t selector (m2c_parser_context_t p);
 
-m2c_token_t designator (m2c_parser_context_t p) {
+static m2c_token_t designator (m2c_parser_context_t p) {
   m2c_astnode_t head;
   m2c_token_t lookahead;
     
@@ -5031,9 +5031,9 @@ m2c_token_t designator (m2c_parser_context_t p) {
  * astnode: (FIELD identNode) | (INDEX exprNode+)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t index_list (m2c_parser_context_t p);
+static m2c_token_t index_list (m2c_parser_context_t p);
 
-m2c_token_t selector (m2c_parser_context_t p) {
+static m2c_token_t selector (m2c_parser_context_t p) {
   m2c_string_t ident;
   m2c_token_t lookahead;
   
@@ -5096,7 +5096,7 @@ m2c_token_t selector (m2c_parser_context_t p) {
  * astnode: (INDEX exprNode+)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t index_list (m2c_parser_context_t p) {
+static m2c_token_t index_list (m2c_parser_context_t p) {
   m2c_fifo_t tmplist;
   m2c_token_t lookahead;
   
@@ -5146,9 +5146,9 @@ m2c_token_t index_list (m2c_parser_context_t p) {
    ((_t) == TOKEN_GREATER) || ((_t) == TOKEN_GREATER_EQUAL) || \
    ((_t) == TOKEN_IN))
 
-m2c_token_t simple_expression (m2c_parser_context_t p);
+static m2c_token_t simple_expression (m2c_parser_context_t p);
 
-m2c_token_t expression (m2c_parser_context_t p) {
+static m2c_token_t expression (m2c_parser_context_t p) {
   m2c_ast_nodetype_t nodetype;
   m2c_astnode_t left;
   m2c_token_t lookahead;
@@ -5222,9 +5222,9 @@ m2c_token_t expression (m2c_parser_context_t p) {
 #define IS_LEVEL2_OPERATOR(_t) \
   (((_t) == TOKEN_PLUS) || ((_t) == TOKEN_MINUS) || ((_t) == TOKEN_OR))
 
-m2c_token_t term (m2c_parser_context_t p);
+static m2c_token_t term (m2c_parser_context_t p);
 
-m2c_token_t simple_expression (m2c_parser_context_t p) {
+static m2c_token_t simple_expression (m2c_parser_context_t p) {
   m2c_ast_nodetype_t nodetype;
   m2c_astnode_t left;
   m2c_token_t lookahead;
@@ -5302,9 +5302,9 @@ m2c_token_t simple_expression (m2c_parser_context_t p) {
   (((_t) == TOKEN_ASTERISK) || ((_t) == TOKEN_SOLIDUS) || \
    ((_t) == TOKEN_DIV) || ((_t) == TOKEN_MOD) || ((_t) == TOKEN_AND))
 
-m2c_token_t simple_term (m2c_parser_context_t p);
+static m2c_token_t simple_term (m2c_parser_context_t p);
 
-m2c_token_t term (m2c_parser_context_t p) {
+static m2c_token_t term (m2c_parser_context_t p) {
   m2c_ast_nodetype_t operation;
   m2c_astnode_t left, right;
   m2c_token_t lookahead;
@@ -5365,9 +5365,9 @@ m2c_token_t term (m2c_parser_context_t p) {
  * astnode: (NOT expr) | factorNode
  * ----------------------------------------------------------------------- */
 
-m2c_token_t factor (m2c_parser_context_t p);
+static m2c_token_t factor (m2c_parser_context_t p);
 
-m2c_token_t simple_term (m2c_parser_context_t p) {
+static m2c_token_t simple_term (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   bool negation = false;
   
@@ -5407,11 +5407,10 @@ m2c_token_t simple_term (m2c_parser_context_t p) {
  *  setValNode | designatorNode | funcCallNode | exprNode
  * ----------------------------------------------------------------------- */
 
-m2c_token_t set_value (m2c_parser_context_t p);
+static m2c_token_t set_value (m2c_parser_context_t p);
+static m2c_token_t designator_or_func_call (m2c_parser_context_t p);
 
-m2c_token_t designator_or_func_call (m2c_parser_context_t p);
-
-m2c_token_t factor (m2c_parser_context_t p) {
+static m2c_token_t factor (m2c_parser_context_t p) {
   m2c_string_t lexeme;
   m2c_token_t lookahead;
   
@@ -5492,7 +5491,7 @@ m2c_token_t factor (m2c_parser_context_t p) {
  *  (SETVAL designatorNode elemListNode) | (FCALL designatorNode argsNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t designator_or_func_call (m2c_parser_context_t p) {
+static m2c_token_t designator_or_func_call (m2c_parser_context_t p) {
   m2c_astnode_t desig;
   m2c_token_t lookahead;
     
@@ -5534,9 +5533,9 @@ m2c_token_t designator_or_func_call (m2c_parser_context_t p) {
  * astnode: (SETVAL (EMPTY) elemListNode)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t element (m2c_parser_context_t p);
+static m2c_token_t element (m2c_parser_context_t p);
 
-m2c_token_t set_value (m2c_parser_context_t p) {
+static m2c_token_t set_value (m2c_parser_context_t p) {
   m2c_astnode_t empty, elemlist;
   m2c_ast_fifo_t tmplist;
   m2c_token_t lookahead;
@@ -5599,7 +5598,7 @@ m2c_token_t set_value (m2c_parser_context_t p) {
  * astnode: exprNode | (RANGE expr expr)
  * ----------------------------------------------------------------------- */
 
-m2c_token_t element (m2c_parser_context_t p) {
+static m2c_token_t element (m2c_parser_context_t p) {
   m2c_astnode_t lower;
   m2c_token_t lookahead;
     
