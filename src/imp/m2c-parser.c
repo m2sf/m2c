@@ -4632,7 +4632,7 @@ m2c_token_t while_statement (m2c_parser_context_t p) {
   if (match_token(p, TOKEN_DO)) {
     lookahead = m2c_consume_sym(p->lexer);
   }
-  else /**/ {
+  else /* resync */ {
     lookahead = skip_to_set(p, FIRST(STATEMENT_SEQUENCE));
   } /* end if */
   
@@ -4682,39 +4682,35 @@ m2c_token_t repeat_statement (m2c_parser_context_t p) {
   /* REPEAT */
   lookahead = m2c_consume_sym(p->lexer);
   
-  /* check for empty statement sequence */
-  if (lookahead == TOKEN_UNTIL) {
-  
-    /* empty statement sequence warning */
-    m2c_emit_warning_w_pos
-      (M2C_EMPTY_STMT_SEQ,
-       m2c_lexer_lookahead_line(p->lexer),
-       m2c_lexer_lookahead_column(p->lexer));
-    p->warning_count++;
-  }
   /* statementSequence */
-  else if (match_set(p,
-           FIRST(STATEMENT_SEQUENCE), FOLLOW(STATEMENT_SEQUENCE))) {
-    lookahead = statement_sequence(p);
-    stmtseq = p->ast;
+  if (match_set(p, FIRST(STATEMENT_SEQUENCE)) {
+    stmt_seq_node = p->ast;
   }
   else /* resync */ {
-    lookahead = m2c_next_sym(p->lexer);
+    lookahead =
+      skip_to_token_or_set(p, TOKEN_UNTIL, FIRST(EXPRESSION));
+      stmt_seq_node = m2c_ast_empty_node();
   } /* end if */
     
   /* UNTIL */
-  if (match_token(p, TOKEN_UNTIL, FOLLOW(REPEAT_STATEMENT))) {
+  if (match_token(p, TOKEN_UNTIL)) {
     lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FIRST(EXPRESSION));
+  } /* end if */
     
-    /* boolExpression */
-    if (match_set(p, FIRST(EXPRESSION), FOLLOW(REPEAT_STATEMENT))) {
-      lookahead = expression(p);
-      expr = p->ast;
-    } /* end if */
+  /* boolExpression */
+  if (match_set(p, FIRST(EXPRESSION), FOLLOW(REPEAT_STATEMENT))) {
+    lookahead = expression(p);
+    expr_node = p->ast;
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(REPEAT_STATEMENT));
+    expr_node = m2c_ast_empty_node();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_REPEAT, stmtseq, expr, NULL);
+  p->ast = m2c_ast_new_node(AST_REPEAT, expr_node, stmt_seq_node, NULL);
   
   return lookahead;
 } /* end repeat_statement */
