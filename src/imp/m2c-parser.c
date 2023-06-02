@@ -4981,7 +4981,7 @@ static m2c_token_t value_range (m2c_parser_context_t p) {
  * private function designator()
  * --------------------------------------------------------------------------
  * designator :=
- *   qualident ( '^' | selector )*
+ *   qualident ( derefTail | subscriptTail )?
  *   ;
  *
  * astnode: identNode | (DEREF expr) | (DESIG headNode tailNode)
@@ -4990,31 +4990,31 @@ static m2c_token_t value_range (m2c_parser_context_t p) {
 static m2c_token_t selector (m2c_parser_context_t p);
 
 static m2c_token_t designator (m2c_parser_context_t p) {
-  m2c_astnode_t head;
   m2c_token_t lookahead;
+  m2c_astnode_t head_node, tail_node;
     
   PARSER_DEBUG_INFO("designator");
   
   /* qualident */
   lookahead = qualident(p);
-  /* astnode: (IDENT ident) | (QUALIDENT q0 q1 q2 ... qN ident) */
+  /* p->ast holds ident or qualident node */
   
-  /* ( '^' | selector )* */
-  while ((lookahead == TOKEN_DEREF) ||
-         (lookahead == TOKEN_PERIOD) ||
-         (lookahead == TOKEN_LEFT_BRACKET)) {
-    head = p->ast;
+  /* ( derefTail | subscriptTail )? */
+  while (match_set(p, FIRST_DEREF_AND_SUBSCRIPT)) {
+    head_node = p->ast;
     
-    if /* '^' */ (lookahead == TOKEN_DEREF) {
-      lookahead = m2c_consume_sym(p->lexer);
-      p->ast = m2c_ast_new_node(AST_DEREF, head, NULL);
-      /* astnode: (DEREF expr) */
+    /* derefTail */
+    if (lookahead == TOKEN_DEREF) {
+      lookahead = deref_tail(p);
+      tail_node = p->ast;      
     }
-    else /* selector */ {
-      lookahead = selector(p);
-      p->ast = m2c_ast_new_node(AST_DESIG, head, p->ast, NULL);
-      /* astnode: (DESIG headNode tailNode) */
+    /* | subscriptTail */
+    else  {
+      lookahead = subscript_tail(p);
+      tail_node = p->ast;
     } /* end if */
+    
+    p->ast = m2c_ast_new_node(AST_DESIG, head_node, tail_node, NULL);
   } /* end if */
   
   return lookahead;
@@ -5022,89 +5022,25 @@ static m2c_token_t designator (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function selector()
+ * private function expression_list()
  * --------------------------------------------------------------------------
- * selector :=
- *   '.' Ident | '[' indexList ']'
- *   ;
- *
- * astnode: (FIELD identNode) | (INDEX exprNode+)
- * ----------------------------------------------------------------------- */
-
-static m2c_token_t index_list (m2c_parser_context_t p);
-
-static m2c_token_t selector (m2c_parser_context_t p) {
-  m2c_string_t ident;
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("selector");
-  
-  lookahead = m2c_next_sym(p->lexer);
-      
-  switch (lookahead) {
-    
-    /* '.' Ident */
-    case TOKEN_PERIOD :
-      /* '.' */
-      lookahead = m2c_consume_sym(p->lexer);
-      
-      /* Ident */
-      if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(SELECTOR))) {
-        lookahead = m2c_consume_sym(p->lexer);
-        ident = m2c_lexer_current_lexeme(p->lexer);
-        id = m2c_ast_new_terminal_node(AST_IDENT, ident);
-        p->ast = m2c_ast_new_node(AST_FIELD, id, NULL);
-        /* astnode: (FIELD identNode) */
-      } /* end if */
-      break;
-      
-    /* '[' */
-    case TOKEN_LEFT_BRACKET :
-      /* '[' */
-      lookahead = m2c_consume_sym(p->lexer);
-      
-      /* indexList ']' */
-      if (match_set(p, FIRST(EXPRESSION), FOLLOW(SELECTOR))) {
-      
-        /* indexList */
-        lookahead = index_list(p);
-        /* astnode: (INDEX exprNode+) */
-        
-        /* ']' */
-        if (match_token(p, TOKEN_RIGHT_BRACKET, FOLLOW(SELECTOR))) {
-          lookahead = m2c_consume_sym(p->lexer);
-        } /* end if */
-      } /* end if */
-      break;
-      
-    default : /* unreachable code */
-      /* fatal error -- abort */
-      exit(-1);
-  } /* end switch */
-      
-  return lookahead;
-} /* end selector */
-
-
-/* --------------------------------------------------------------------------
- * private function index_list()
- * --------------------------------------------------------------------------
- * indexList :=
+ * expressionList :=
  *   expression ( ',' expression )*
  *   ;
  *
  * astnode: (INDEX exprNode+)
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t index_list (m2c_parser_context_t p) {
-  m2c_fifo_t tmplist;
+static m2c_token_t expression_list (m2c_parser_context_t p) {
   m2c_token_t lookahead;
+  m2c_fifo_t expr_list;
   
   PARSER_DEBUG_INFO("expressionList");
   
   /* expression */
   lookahead = expression(p);
-  tmplist = m2c_fifo_new_queue(p->ast);
+  
+  expr_list = m2c_fifo_new_queue(p->ast);
   
   /* ( ',' expression )* */
   while (lookahead == TOKEN_COMMA) {
@@ -5112,19 +5048,22 @@ static m2c_token_t index_list (m2c_parser_context_t p) {
     lookahead = m2c_consume_sym(p->lexer);
     
     /* expression */
-    if (match_set(p, FIRST(EXPRESSION), FOLLOW(EXPRESSION))) {
+    if (match_set(p, FIRST(EXPRESSION))) {
       lookahead = expression(p);
-      m2c_fifo_enqueue(tmplist, p->ast);
+      m2c_fifo_enqueue(expr_list, p->ast);
+    }
+    else /* rsync */ {
+      lookahead = skip_to_set(p, FOLLOW(EXPRESSION_LIST));
     } /* end if */
   } /* end while */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_list_node(AST_INDEX, tmplist);
+  p->ast = m2c_ast_new_list_node(AST_INDEX, expr_list);
   
-  m2c_fifo_release(tmplist);
+  m2c_fifo_release(expr_list);
   
   return lookahead;
-} /* end index_list */
+} /* end expression_list */
 
 
 /* --------------------------------------------------------------------------
@@ -5137,8 +5076,9 @@ static m2c_token_t index_list (m2c_parser_context_t p) {
  * .OperL1 := '=' | '#' | '<' | '<=' | '>' | '>=' | '==' | IN ;
  *
  * astnode:
+ *  simpleExprNode |
  *  (EQ expr expr) | (NEQ expr expr) | (LT expr expr) | (LTEQ expr expr) |
- *  (GT expr expr) | (GTEQ expr expr) | (IN expr expr) | simpleExprNode
+ *  (GT expr expr) | (GTEQ expr expr) | (IDTY expr expr) | (IN expr expr) 
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t simple_expression (m2c_parser_context_t p);
@@ -5254,13 +5194,13 @@ static m2c_token_t simple_expression (m2c_parser_context_t p) {
     
     p->ast = m2c_ast_new_node(AST_NEG, expr_node, NULL);
   }
-  /* term (.OperL2 term)* */
+  /* term (OperL2 term)* */
   else {
     /* term */
     lookahead = term(p);
     /* p->ast holds simple term node */
     
-    /* ( .OperL2 term )* */
+    /* (OperL2 term)* */
     while (M2C_IS_OPER_L2_TOKEN(lookahead)) {
       left_node = p->ast;
       
@@ -5332,7 +5272,7 @@ static m2c_token_t term (m2c_parser_context_t p) {
   lookahead = simple_term(p);
   /* p->ast holds simple term node */
   
-  /* ( .OperL3 simpleTerm )* */
+  /* (OperL3 simpleTerm)* */
   while (M2C_IS_OPER_L3_TOKEN(lookahead)) {
     left_node = p->ast;
     
