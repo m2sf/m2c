@@ -303,7 +303,7 @@ static bool match_token
     line = m2c_lexer_lookahead_line(p->lexer);
     column = m2c_lexer_lookahead_column(p->lexer);
     lexeme = m2c_lexer_lookahead_lexeme(p->lexer);
-    lexstr = m2c_string_char_ptr(lexeme);
+    lexstr = intstr_char_ptr(lexeme);
     
     /* report error */
     m2c_emit_syntax_error_w_token
@@ -315,7 +315,7 @@ static bool match_token
     } /* end if */
     
     /* update error count */
-    p->error_count++;
+    m2c_stats_inc(p->stats, M2C_STATS_SYNTAX_ERROR_COUNT);
     
     return false;
   } /* end if */
@@ -349,7 +349,7 @@ static bool match_set
     line = m2c_lexer_lookahead_line(p->lexer);
     column = m2c_lexer_lookahead_column(p->lexer);
     lexeme = m2c_lexer_lookahead_lexeme(p->lexer);
-    lexstr = m2c_string_char_ptr(lexeme);
+    lexstr = intstr_char_ptr(lexeme);
     
     /* report error */
     m2c_emit_syntax_error_w_set
@@ -361,7 +361,7 @@ static bool match_set
     } /* end if */
         
     /* update error count */
-    p->error_count++;
+    m2c_stats_inc(p->stats, M2C_STATS_SYNTAX_ERROR_COUNT);
     
     return false;
   } /* end if */
@@ -494,6 +494,7 @@ static void parse_start_symbol (m2c_parser_context_t p) {
   
   if (lookahead != TOKEN_EOF) {
     /* TO DO: report error -- symbols after end of compilation unit */
+    m2c_stats_inc(p->stats, M2C_STATS_SYNTAX_ERROR_COUNT);
   } /* end if */
   
   /* filename node */
@@ -528,6 +529,7 @@ static m2c_token_t compilation_unit (m2c_parser_context_t p) {
     case TOKEN_DEFINITION :
       if (is_def_suffix(p->suffix) == false) {
         /* TO DO: report error -- incorrect file type */
+        m2c_stats_inc(p->stats, M2C_STATS_SEMANTIC_ERROR_COUNT);
       } /* end if */
       
       p->module_context = DEF_MODULE;
@@ -537,6 +539,7 @@ static m2c_token_t compilation_unit (m2c_parser_context_t p) {
     case TOKEN_IMPLEMENTATION :
       if (is_mod_suffix(p->suffix) == false) {
         /* TO DO: report error -- incorrect file type */
+        m2c_stats_inc(p->stats, M2C_STATS_SEMANTIC_ERROR_COUNT);
       } /* end if */
       
       p->module_context = IMP_MODULE;
@@ -546,6 +549,7 @@ static m2c_token_t compilation_unit (m2c_parser_context_t p) {
     case TOKEN_MODULE:
       if (is_mod_suffix(p->suffix) == false) {
         /* TO DO: report error -- incorrect file type */
+        m2c_stats_inc(p->stats, M2C_STATS_SEMANTIC_ERROR_COUNT);
       } /* end if */
       
       p->module_context = PGM_MODULE;
@@ -611,6 +615,7 @@ static m2c_token_t definition_module (m2c_parser_context_t p) {
     ident1 = m2c_lexer_current_lexeme(p->lexer);
     if (intstr_for_cstr(p->basename) != ident1) {
       /* TO DO: report error -- module identifier does not match filename */
+      m2c_stats_inc(p->stats, M2C_STATS_SEMANTIC_ERROR_COUNT);
     } /* end if */
   }
   else /* resync */ {
@@ -656,6 +661,7 @@ static m2c_token_t definition_module (m2c_parser_context_t p) {
     
     if (ident1 != ident2) {
       /* TO DO: error -- module identifiers don't match */
+      m2c_stats_inc(p->stats, M2C_STATS_SEMANTIC_ERROR_COUNT);
     } /* end if */
   }
   else /* resync */ {
@@ -1049,6 +1055,7 @@ static m2c_token_t const_binding (m2c_parser_context_t p) {
       id_node = m2c_ast_empty_node();
       
       /* TO DO: error -- invalid binding specifier */
+      m2c_stats_inc(p->stats, M2C_STATS_SYNTAX_ERROR_COUNT);
     } /* end if */
   }
   else /* resync */ {
@@ -2925,6 +2932,7 @@ static m2c_token_t program_module (m2c_parser_context_t p) {
     ident1 = m2c_lexer_current_lexeme(p->lexer);
     if (intstr_for_cstr(p->basename) != ident1) {
       /* TO DO: report error -- module identifier does not match filename */
+      m2c_stats_inc(p->stats, M2C_STATS_SEMANTIC_ERROR_COUNT);
     } /* end if */
   }
   else /* resync */ {
@@ -2977,6 +2985,7 @@ static m2c_token_t program_module (m2c_parser_context_t p) {
       
     if (ident1 != ident2) {
       /* TO DO: report error -- module identifiers don't match */ 
+      m2c_stats_inc(p->stats, M2C_STATS_SEMANTIC_ERROR_COUNT);
     } /* end if */
   }
   else /* resync */ {
@@ -3136,6 +3145,7 @@ static m2c_token_t implementation_module (m2c_parser_context_t p) {
     ident1 = m2c_lexer_current_lexeme(p->lexer);
     if (intstr_for_cstr(p->basename) != ident1) {
       /* TO DO: report error -- module identifier does not match filename */
+      m2c_stats_inc(p->stats, M2C_STATS_SEMANTIC_ERROR_COUNT);
     } /* end if */
   }
   else /* resync */ {
@@ -3188,6 +3198,7 @@ static m2c_token_t implementation_module (m2c_parser_context_t p) {
       
     if (ident1 != ident2) {
       /* TO DO: report error -- module identifiers don't match */ 
+      m2c_stats_inc(p->stats, M2C_STATS_SEMANTIC_ERROR_COUNT);
     } /* end if */
   }
   else /* resync */ {
