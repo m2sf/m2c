@@ -457,26 +457,6 @@ static m2c_token_t skip_to_token_list
 } /* end skip_to_token_list */
 
 
-/* --------------------------------------------------------------------------
- * procedure report_error_w_offending_lexeme(error, lexeme, line, column)
- * ----------------------------------------------------------------------- */
-
-static void report_error_w_offending_lexeme
-  (m2c_error_t error,
-   m2c_parser_context_t p,
-   m2c_string_t lexeme, uint_t line, uint_t column) {
-    
-  m2c_emit_error_w_lex(error, line, column, m2c_string_char_ptr(lexeme));
-  
-  if (m2c_option_verbose()) {
-    m2c_print_line_and_mark_column(p->lexer, line, column);
-  } /* end if */
-  
-  p->error_count++;
-  return;
-} /* end report_error_w_offending_lexeme */
-
-
 /* ************************************************************************ *
  * Syntax Analysis                                                          *
  * ************************************************************************ */
