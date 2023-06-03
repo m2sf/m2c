@@ -70,6 +70,7 @@ typedef enum {
 
 typedef enum {
   M2C_PARSER_STATUS_SUCCESS,
+  M2C_PARSER_STATUS_INVALID_PATHNAME,
   M2C_PARSER_STATUS_INVALID_REFERENCE,
   M2C_PARSER_STATUS_INVALID_SOURCETYPE,
   M2C_PARSER_STATUS_ALLOCATION_FAILED,
@@ -78,13 +79,13 @@ typedef enum {
 
 
 /* --------------------------------------------------------------------------
- * function m2c_parse_file(srctype, srcpath, stats, status)
+ * function m2c_parse_file(srcpath, stats, status)
  * --------------------------------------------------------------------------
  * Parses the Modula-2 source file represented by srcpath, builds an abstract
  * syntax tree (AST) and returns it.  Returns an incomplete AST if errors are
  * encountered, or an empty AST if the source file cannot be found or opened,
- * or if memory allocation failed.  Prints warnings and errors  to stderr and
- * passes warning and error count in stats.  Passes the status in status.
+ * or NULL if memory allocation failed.  Prints warnings and errors to stderr
+ * and passes statistics in stats.  Passes the status in status.
  * ----------------------------------------------------------------------- */
  
  m2c_ast_t m2c_parse_file

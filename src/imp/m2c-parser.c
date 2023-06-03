@@ -48,6 +48,7 @@
 #include "m2c-first-sets.h"
 #include "m2c-follow-sets.h"
 #include "m2c-bindables.h"
+#include "m2c-statistics.h"
 #include "m2c-compiler-options.h"
 
 #include <stdio.h>
@@ -191,8 +192,8 @@ typedef struct m2c_parser_context_s m2c_parser_context_s;
  * Parses the Modula-2 source file represented by srcpath, builds an abstract
  * syntax tree (AST) and returns it.  Returns an incomplete AST if errors are
  * encountered, or an empty AST if the source file cannot be found or opened,
- * or if memory allocation failed.  Prints warnings and errors  to stderr and
- * passes warning and error count in stats.  Passes the status in status.
+ * or NULL if memory allocation failed.  Prints warnings and errors to stderr
+ * and passes statistics in stats.  Passes the status in status.
  * ----------------------------------------------------------------------- */
  
  m2c_ast_t m2c_parse_file
@@ -201,19 +202,21 @@ typedef struct m2c_parser_context_s m2c_parser_context_s;
     m2c_parser_status_t *status)   /* out */ {
  
   const char *filename;
+  const char *basename;
+  const char *suffix;
   m2c_parser_context_t p;
   m2c_astnode_t ast;
   
-  if ((srctype < M2C_FIRST_SOURCETYPE) || (srctype > M2C_LAST_SOURCETYPE)) {
-    SET_STATUS(status, M2C_PARSER_STATUS_INVALID_SOURCETYPE);
-    return NULL;
-  } /* end if */
-  
-  if ((srcpath == NULL) || (srcpath[0] == ASCII_NUL)) {
+  if (srcpath == NULL) {
     SET_STATUS(status, M2C_PARSER_STATUS_INVALID_REFERENCE);
-    return NULL;
+    return m2c_ast_empty_node();
   } /* end if */
   
+  if (is_valid_pathname(srcpath) == false) {
+    SET_STATUS(status, M2C_PARSER_STATUS_INVALID_PATHNAME);
+    return m2c_ast_empty_node();
+  } /* end if */
+      
   /* set up parser context */
   p = malloc(sizeof(m2c_parser_context_s));
   
@@ -241,6 +244,8 @@ typedef struct m2c_parser_context_s m2c_parser_context_s;
     return NULL;
   } /* end if */
   
+  split_pathname(srcpath, NULL, &filename, NULL);
+  
   /* init parser context */
   p->filename = filename;
   p->module_context = 0;
@@ -248,7 +253,7 @@ typedef struct m2c_parser_context_s m2c_parser_context_s;
   p->status = 0;
     
   /* parse and build AST */
-  ast = parse_start_symbol(srctype, p);
+  ast = parse_start_symbol(p);
   
   /* update statistics line counter */
   m2c_stats_set_line_count(p->stats, m2c_lexer_current_line(p->lexer));
@@ -258,7 +263,8 @@ typedef struct m2c_parser_context_s m2c_parser_context_s;
   SET_STATUS(status, p->status);
   
   /* clean up and return */
-  m2c_release_lexer(p->lexer, NULL);
+  m2c_stats_release(p->stats);
+  m2c_release_lexer(p->lexer);
   free(p);
   
   return ast;
@@ -468,60 +474,45 @@ static m2c_token_t skip_to_token_list
  * ************************************************************************ */
 
 /* --------------------------------------------------------------------------
- * private procedure parse_start_symbol(srctype, p)
+ * private procedure parse_start_symbol(p)
  * ----------------------------------------------------------------------- */
 
-static void parse_start_symbol
-  (m2c_sourcetype_t srctype, m2c_parser_context_t p) {
-  
-  m2c_astnode_t id, opt;
-  m2c_string_t ident;
+static void parse_start_symbol (m2c_parser_context_t p) {
+  intstr_t ident;
+  const char *basename;
+  const char *suffix;
   m2c_token_t lookahead;
+  m2c_astnode_t id_node, file_node;
+    
+  split_filename(p->filename, &basename, &suffix, NULL);
   
   lookahead = m2c_next_sym(p->lexer);
   
-  switch (srctype) {
-    M2C_ANY_SOURCE :
-      if ((lookahead == TOKEN_DEFINITION) ||
-          (lookahead == TOKEN_IMPLEMENTATION) ||
-          (lookahead == TOKEN_MODULE)) {
-        lookahead = compilation_unit(p);
-      }
-      else /* invalid start symbol */ {
-        /* TO DO: report error */
-        p->status = M2C_PARSER_STATUS_INVALID_START_SYMBOL;
-      } /* end if */
-      break;
-    
-    M2C_DEF_SOURCE :
-      if (lookahead == TOKEN_DEFINITION) {
-        lookahead = definition_module(p);
-      }
-      else /* invalid start symbol */ {
-        /* TO DO: report error */
-        p->status = M2C_PARSER_STATUS_INVALID_START_SYMBOL;
-      } /* end if */
-      break;
-    
-    M2C_MOD_SOURCE :
-      if (lookahead == TOKEN_IMPLEMENTATION) {
-        lookahead = implementation_module(p);
-      }
-      else if (lookahead == TOKEN_MODULE) {
-        lookahead = program_module(p);
-      }
-      else /* invalid start symbol */ {
-        /* TO DO: report error */
-        p->status = M2C_PARSER_STATUS_INVALID_START_SYMBOL;
-      } /* end if */
-      break;
-  } /* end switch */
+  if (is_def_suffix(suffix)) {
+    if (lookahead == TOKEN_DEFINITION) {
+      lookahead = definition_module(p);
+    }
+  }
+  else if (is_mod_suffix(suffix)) {
+    if (lookahead == TOKEN_IMPLEMENTATION) {
+      lookahead = implementation_module(p);
+    }
+    else if (lookahead == TOKEN_MODULE) {
+      lookahead = program_module(p);
+  }
+  else /* error */ {
+    p->status = M2C_PARSER_STATUS_INVALID_START_SYMBOL;
+    p->ast = m2c_ast_empty_node();
+    /* TO DO: report error */
+    return;
+  } /* end if */
+  
+  ident = m2c_get_string(p->filename);
+  id_node = m2c_ast_new_terminal_node(AST_IDENT, ident);
+  file_node = m2c_ast_new_node(AST_FILENAME, id_node);
   
   /* build AST node and pass it back in p->ast */
-  ident = m2c_get_string(p->filename);
-  id = m2c_ast_new_terminal_node(AST_IDENT, ident);
-  opt = m2c_ast_empty_node(); /* TO DO : encode options */
-  p->ast = m2c_ast_new_node(AST_ROOT, id, opt, p->ast, NULL);
+  p->ast = m2c_ast_new_node(AST_ROOT, file_node, p->ast, NULL);
   
   if (lookahead != TOKEN_EOF) {
     /* TO DO: report error -- extra symbols after end of compilation unit */
