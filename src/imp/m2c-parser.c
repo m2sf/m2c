@@ -175,19 +175,21 @@ typedef struct m2c_parser_context_s *m2c_parser_context_t;
  * ----------------------------------------------------------------------- */
 
 struct m2c_parser_context_s {
-  /* filename */            const char *filename;
-  /* lexer */               m2c_lexer_t lexer;
-  /* ast */                 m2c_astnode_t ast;
-  /* module_context */      m2c_module_context_t module_context;
-  /* stats context */       m2c_stats_t stats;
-  /* status */              m2c_parser_status_t status;
+  /* filename */           const char *filename;
+  /* basename */           const char *basename;
+  /* suffix */             const char *suffix;
+  /* lexer */              m2c_lexer_t lexer;
+  /* stats */              m2c_stats_t stats;
+  /* ast */                m2c_astnode_t ast;
+  /* module_context */     m2c_module_context_t module_context;
+  /* status */             m2c_parser_status_t status;
 };
 
 typedef struct m2c_parser_context_s m2c_parser_context_s;
 
 
 /* --------------------------------------------------------------------------
- * function m2c_parse_file(srctype, srcpath, stats, status)
+ * function m2c_parse_file(srcpath, stats, status)
  * --------------------------------------------------------------------------
  * Parses the Modula-2 source file represented by srcpath, builds an abstract
  * syntax tree (AST) and returns it.  Returns an incomplete AST if errors are
@@ -245,15 +247,19 @@ typedef struct m2c_parser_context_s m2c_parser_context_s;
   } /* end if */
   
   split_pathname(srcpath, NULL, &filename, NULL);
+  split_filename(filename, &basename, &suffix, NULL);
   
   /* init parser context */
   p->filename = filename;
+  p->basename = basename;
+  p->suffix = suffix;
   p->module_context = 0;
   p->ast = NULL;
   p->status = 0;
     
   /* parse and build AST */
-  ast = parse_start_symbol(p);
+  parse_start_symbol(p);
+  ast = p->ast;
   
   /* update statistics line counter */
   m2c_stats_set_line_count(p->stats, m2c_lexer_current_line(p->lexer));
@@ -478,45 +484,26 @@ static m2c_token_t skip_to_token_list
  * ----------------------------------------------------------------------- */
 
 static void parse_start_symbol (m2c_parser_context_t p) {
-  intstr_t ident;
-  const char *basename;
-  const char *suffix;
+  intstr_t filename;
   m2c_token_t lookahead;
-  m2c_astnode_t id_node, file_node;
-    
-  split_filename(p->filename, &basename, &suffix, NULL);
+  m2c_astnode_t filename_node, module_node;
   
-  lookahead = m2c_next_sym(p->lexer);
-  
-  if (is_def_suffix(suffix)) {
-    if (lookahead == TOKEN_DEFINITION) {
-      lookahead = definition_module(p);
-    }
-  }
-  else if (is_mod_suffix(suffix)) {
-    if (lookahead == TOKEN_IMPLEMENTATION) {
-      lookahead = implementation_module(p);
-    }
-    else if (lookahead == TOKEN_MODULE) {
-      lookahead = program_module(p);
-  }
-  else /* error */ {
-    p->status = M2C_PARSER_STATUS_INVALID_START_SYMBOL;
-    p->ast = m2c_ast_empty_node();
-    /* TO DO: report error */
-    return;
-  } /* end if */
-  
-  ident = m2c_get_string(p->filename);
-  id_node = m2c_ast_new_terminal_node(AST_IDENT, ident);
-  file_node = m2c_ast_new_node(AST_FILENAME, id_node);
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_ROOT, file_node, p->ast, NULL);
+  /* compilation unit */
+  lookahead = compilation_unit(p);
+  module_node = p->ast;
   
   if (lookahead != TOKEN_EOF) {
-    /* TO DO: report error -- extra symbols after end of compilation unit */
+    /* TO DO: report error -- symbols after end of compilation unit */
   } /* end if */
+  
+  /* filename node */
+  filename = intstr_for_cstr(p->filename);
+  filename_node = m2c_ast_new_terminal_node(AST_FILENAME, filename);
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_FILE, filename_node, module_node, NULL);
+  
+  return;
 } /* end parse_start_symbol */
 
 
@@ -539,16 +526,28 @@ static m2c_token_t compilation_unit (m2c_parser_context_t p) {
   
   switch (lookahead) {
     case TOKEN_DEFINITION :
+      if (is_def_suffix(p->suffix) == false) {
+        /* TO DO: report error -- incorrect file type */
+      } /* end if */
+      
       p->module_context = DEF_MODULE;
       lookahead = definition_module(p);
       break;
       
     case TOKEN_IMPLEMENTATION :
+      if (is_mod_suffix(p->suffix) == false) {
+        /* TO DO: report error -- incorrect file type */
+      } /* end if */
+      
       p->module_context = IMP_MODULE;
       lookahead = implementation_module(p);
       break;
       
     case TOKEN_MODULE:
+      if (is_mod_suffix(p->suffix) == false) {
+        /* TO DO: report error -- incorrect file type */
+      } /* end if */
+      
       p->module_context = PGM_MODULE;
       lookahead = program_module(p);
       break;
@@ -606,8 +605,13 @@ static m2c_token_t definition_module (m2c_parser_context_t p) {
   
   /* moduleIdent */
   if (match_token(p, TOKEN_IDENT)) {
-    lookahead = m2c_consume_sym(p->lexer);
+    lookahead = ident(p);
+    id_node = p->ast;
+    
     ident1 = m2c_lexer_current_lexeme(p->lexer);
+    if (intstr_for_cstr(p->basename) != ident1) {
+      /* TO DO: report error -- module identifier does not match filename */
+    } /* end if */
   }
   else /* resync */ {
     lookahead = skipt_to_token_or_set(p, TOKEN_SEMICOLON, FIRST(IMPORT));
@@ -2915,9 +2919,13 @@ static m2c_token_t program_module (m2c_parser_context_t p) {
   
   /* moduleIdent */
   if (match_token(p, TOKEN_IDENTIFIER)) {
-    ident1 = m2c_lexer_lookahead_lexeme(p->lexer);
     lookahead = ident(p);
     id_node = p->ast;
+    
+    ident1 = m2c_lexer_current_lexeme(p->lexer);
+    if (intstr_for_cstr(p->basename) != ident1) {
+      /* TO DO: report error -- module identifier does not match filename */
+    } /* end if */
   }
   else /* resync */ {
     lookahead =
@@ -3122,9 +3130,13 @@ static m2c_token_t implementation_module (m2c_parser_context_t p) {
   
   /* moduleIdent */
   if (match_token(p, TOKEN_IDENTIFIER)) {
-    ident1 = m2c_lexer_lookahead_lexeme(p->lexer);
     lookahead = ident(p);
     id_node = p->ast;
+    
+    ident1 = m2c_lexer_current_lexeme(p->lexer);
+    if (intstr_for_cstr(p->basename) != ident1) {
+      /* TO DO: report error -- module identifier does not match filename */
+    } /* end if */
   }
   else /* resync */ {
     lookahead =
