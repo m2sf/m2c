@@ -178,44 +178,40 @@ struct m2c_parser_context_s {
   /* lexer */               m2c_lexer_t lexer;
   /* ast */                 m2c_astnode_t ast;
   /* module_context */      m2c_module_context_t module_context;
+  /* stats context */       m2c_stats_t stats;
   /* status */              m2c_parser_status_t status;
-  /* warning_count */       unsigned short warning_count;
-  /* error_count */         unsigned short error_count;
 };
 
 typedef struct m2c_parser_context_s m2c_parser_context_s;
 
 
 /* --------------------------------------------------------------------------
- * function m2c_parse_file(srctype, srcpath, ast, stats, status)
+ * function m2c_parse_file(srctype, srcpath, stats, status)
  * --------------------------------------------------------------------------
- * Parses a Modula-2 source file represented by srcpath and returns status.
- * Builds an abstract syntax tree and passes it back in ast, or NULL upon
- * failure.  Collects simple statistics and passes them back in stats.
+ * Parses the Modula-2 source file represented by srcpath, builds an abstract
+ * syntax tree (AST) and returns it.  Returns an incomplete AST if errors are
+ * encountered, or an empty AST if the source file cannot be found or opened,
+ * or if memory allocation failed.  Prints warnings and errors  to stderr and
+ * passes warning and error count in stats.  Passes the status in status.
  * ----------------------------------------------------------------------- */
-
-static void parse_start_symbol
-  (m2c_sourcetype_t srctype, m2c_parser_context_t p);
  
-void m2c_parse_file
-  (m2c_sourcetype_t srctype,
-   const char *srcpath,
-   m2c_ast_t *ast,
-   m2c_stats_t *stats,
-   m2c_parser_status_t *status) {
-  
+ m2c_ast_t m2c_parse_file
+   (const char *srcpath,           /* in */
+    m2c_stats_t *stats,            /* out */
+    m2c_parser_status_t *status)   /* out */ {
+ 
   const char *filename;
   m2c_parser_context_t p;
-  uint_t line_count;
+  m2c_astnode_t ast;
   
   if ((srctype < M2C_FIRST_SOURCETYPE) || (srctype > M2C_LAST_SOURCETYPE)) {
     SET_STATUS(status, M2C_PARSER_STATUS_INVALID_SOURCETYPE);
-    return;
+    return NULL;
   } /* end if */
   
   if ((srcpath == NULL) || (srcpath[0] == ASCII_NUL)) {
     SET_STATUS(status, M2C_PARSER_STATUS_INVALID_REFERENCE);
-    return;
+    return NULL;
   } /* end if */
   
   /* set up parser context */
@@ -232,30 +228,40 @@ void m2c_parse_file
   if (p->lexer == NULL) {
     SET_STATUS(status, M2C_PARSER_STATUS_ALLOCATION_FAILED);
     free(p);
-    return;
+    return NULL;
   } /* end if */
   
-  /* init context */
-  p->module_context = 0;
+  /* create new statistics object */
+  p->stats = m2c_stats_new();
+  
+  if (p->stats == NULL) {
+    SET_STATUS(status, M2C_PARSER_STATUS_ALLOCATION_FAILED);
+    free(p->lexer);
+    free(p);
+    return NULL;
+  } /* end if */
+  
+  /* init parser context */
   p->filename = filename;
+  p->module_context = 0;
   p->ast = NULL;
-  p->warning_count = 0;
-  p->error_count = 0;
   p->status = 0;
     
   /* parse and build AST */
-  parse_start_symbol(srctype, p);
-  line_count = m2c_lexer_lookahead_line(p->lexer);
+  ast = parse_start_symbol(srctype, p);
   
-  /* pass back AST, statistics and return status */
-  *ast = p->ast;
-  *stats = m2c_stats_new(p->warning_count, p->error_count, line_count);
+  /* update statistics line counter */
+  m2c_stats_set_line_count(p->stats, m2c_lexer_current_line(p->lexer));
+  
+  /* pass back statistics and return status */
+  *stats = p->stats;
   SET_STATUS(status, p->status);
   
   /* clean up and return */
   m2c_release_lexer(p->lexer, NULL);
   free(p);
-  return;
+  
+  return ast;
 } /* end m2c_parse_file */
 
 

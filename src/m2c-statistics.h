@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * m2c-parser.h                                                              *
+ * m2c-statistics.h                                                          *
  *                                                                           *
- * Public interface of Modula-2 parser module.                               *
+ * Public interface for compilation statistics module.                       *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -37,61 +37,109 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef M2C_PARSER_H
-#define M2C_PARSER_H
-
-#include "m2c-common.h"
-
-#include "m2c-ast.h"
-#include "m2c-stats.h"
-
+#ifndef M2C_STATISTICS_H
+#define M2C_STATISTICS_H
 
 /* --------------------------------------------------------------------------
- * type m2c_sourcetype_t
+ * type m2c_stats_type_t
  * --------------------------------------------------------------------------
- * Enumeration representing type of input source.
+ * Enumerated values representing statistics counters.
  * ----------------------------------------------------------------------- */
 
 typedef enum {
-  M2C_ANY_SOURCE,
-  M2C_DEF_SOURCE,
-  M2C_MOD_SOURCE
-} m2c_sourcetype_t;
-
-#define M2C_FIRST_SOURCETYPE M2C_ANY_SOURCE
-#define M2C_LAST_SOURCETYPE M2C_MOD_SOURCE
-
-
-/* --------------------------------------------------------------------------
- * type m2c_parser_status_t
- * --------------------------------------------------------------------------
- * Status codes for operations on type m2c_parser_t.
- * ----------------------------------------------------------------------- */
-
-typedef enum {
-  M2C_PARSER_STATUS_SUCCESS,
-  M2C_PARSER_STATUS_INVALID_REFERENCE,
-  M2C_PARSER_STATUS_INVALID_SOURCETYPE,
-  M2C_PARSER_STATUS_ALLOCATION_FAILED,
-  M2C_PARSER_STATUS_SYNTAX_ERRORS_FOUND
-} m2c_parser_status_t;
+  M2C_STATS_DECL_COUNT,
+  M2C_STATS_PROC_COUNT,
+  M2C_STATS_STMT_COUNT,
+  M2C_STATS_LEX_WARN_COUNT,
+  M2C_STATS_LEX_ERROR_COUNT,
+  M2C_STATS_SYNTAX_WARN_COUNT,
+  M2C_STATS_SYNTAX_ERROR_COUNT,
+  M2C_STATS_SEMANTIC_WARN_COUNT,
+  M2C_STATS_SEMANTIC_ERROR_COUNT,
+  M2C_STATS_END_MARK
+} m2c_stats_type_t;
 
 
 /* --------------------------------------------------------------------------
- * function m2c_parse_file(srctype, srcpath, stats, status)
- * --------------------------------------------------------------------------
- * Parses the Modula-2 source file represented by srcpath, builds an abstract
- * syntax tree (AST) and returns it.  Returns an incomplete AST if errors are
- * encountered, or an empty AST if the source file cannot be found or opened,
- * or if memory allocation failed.  Prints warnings and errors  to stderr and
- * passes warning and error count in stats.  Passes the status in status.
+ * constant STATS_TYPE_COUNT
  * ----------------------------------------------------------------------- */
- 
- m2c_ast_t m2c_parse_file
-   (const char *srcpath,           /* in */
-    m2c_stats_t *stats,            /* out */
-    m2c_parser_status_t *status);  /* out */
 
-#endif /* M2C_PARSER_H */
+#define STATS_TYPE_COUNT M2C_STATS_END_MARK
+
+
+/* --------------------------------------------------------------------------
+ * type m2c_stats_t
+ * --------------------------------------------------------------------------
+ * Type to hold all statistics counters.
+ * ----------------------------------------------------------------------- */
+
+typedef *m2c_stats_t;
+
+
+/* --------------------------------------------------------------------------
+ * macro IS_VALID_STAT_TYPE(p)
+ * --------------------------------------------------------------------------
+ * Returns true it p is a valid statistics type parameter, otherwise false.
+ * ----------------------------------------------------------------------- */
+
+#define IS_VALID_STATS_TYPE(_p) \
+  ((_p >= 0) && (_p < STATS_TYPE_COUNT))
+  
+
+/* --------------------------------------------------------------------------
+ * function m2c_stats_new()
+ * --------------------------------------------------------------------------
+ * Returns a new statistics record.
+ * ----------------------------------------------------------------------- */
+
+m2c_stats_t m2c_stats_new (void);
+
+  
+/* --------------------------------------------------------------------------
+ * function m2c_stats_inc(stats, param)
+ * --------------------------------------------------------------------------
+ * Increments the counter for statistic param of statistics record stats.
+ * ----------------------------------------------------------------------- */
+
+void m2c_stats_inc (m2c_stats_t stats, m2c_stat_type_t param);
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_stats_value(stats)
+ * --------------------------------------------------------------------------
+ * Returns the counter for statistic param of statistics record stats.
+ * ----------------------------------------------------------------------- */
+
+unsigned short m2c_stats_value (m2c_stats_t stats, m2c_stat_type_t param);
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_stats_set_line_count(stats, value)
+ * --------------------------------------------------------------------------
+ * Sets the line count of statistics record stats to value.
+ * ----------------------------------------------------------------------- */
+
+void m2c_stats_set_line_count (m2c_stats_t stats, unsigned short value);
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_stats_line_count(stats)
+ * --------------------------------------------------------------------------
+ * Returns the line count of statistics record stats.
+ * ----------------------------------------------------------------------- */
+
+unsigned short m2c_stats_line_count (m2c_stats_t stats);
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_stats_release(stats)
+ * --------------------------------------------------------------------------
+ * Deallocates statistics record stats.
+ * ----------------------------------------------------------------------- */
+
+void m2c_stats_release (m2c_stats_t stats);
+
+
+#endif /* M2C_STATISTICS_H */
 
 /* END OF FILE */
