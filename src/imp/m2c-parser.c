@@ -198,11 +198,11 @@ typedef struct m2c_parser_context_s m2c_parser_context_s;
  * and passes statistics in stats.  Passes the status in status.
  * ----------------------------------------------------------------------- */
  
- m2c_ast_t m2c_parse_file
-   (const char *srcpath,           /* in */
-    m2c_stats_t *stats,            /* out */
-    m2c_parser_status_t *status)   /* out */ {
- 
+m2c_ast_t m2c_parse_file
+  (const char *srcpath,           /* in */
+   m2c_stats_t *stats,            /* out */
+   m2c_parser_status_t *status)   /* out */ {
+   
   const char *filename;
   const char *basename;
   const char *suffix;
