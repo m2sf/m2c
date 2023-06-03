@@ -224,7 +224,7 @@ m2c_ast_t m2c_parse_file
   
   if (p == NULL) {
     SET_STATUS(status, M2C_PARSER_STATUS_ALLOCATION_FAILED);
-    return;
+    return NULL;
   } /* end if */
   
   /* create lexer object */
@@ -600,11 +600,11 @@ static m2c_token_t definition_module (m2c_parser_context_t p) {
   lookahead = m2c_consume_sym(p->lexer);
   
   /* MODULE */
-  if (match_token(p, TOKEN_MODULE, RESYNC(IMPORT_OR_DEFINITON_OR_END))) {
+  if (match_token(p, TOKEN_MODULE))) {
     lookahead = m2c_consume_sym(p->lexer);
   }
   else /* resync */ {
-    lookahead = skip_to_token(p, TOKEN_IDENT, TOKEN_SEMICOLON);
+    lookahead = skip_to_token_list(p, TOKEN_IDENT, TOKEN_SEMICOLON, NULL);
   } /* end if */
   
   /* moduleIdent */
@@ -677,7 +677,6 @@ static m2c_token_t definition_module (m2c_parser_context_t p) {
   } /* end if */
     
   /* build AST node and pass it back in p->ast */
-  id_node = m2c_ast_new_terminal_node(AST_IDENT, ident1);
   imp_node = m2c_ast_new_term_list_node(AST_IMPORT, imp_list);
   def_node = m2c_ast_new_term_list_node(AST_IMPORT, def_list);
   
@@ -737,7 +736,8 @@ static m2c_token_t import (m2c_parser_context_t p) {
   }
   else /* resync */ {
     lookahead =
-      skip_to_token(p, TOKEN_COMMA, TOKEN_SEMICOLON, TOKEN_IMPORT, NULL);
+      skip_to_token_list
+        (p, TOKEN_COMMA, TOKEN_SEMICOLON, TOKEN_IMPORT, NULL);
   } /* end if */
     
   /* (',' libIdent reExport? )* */
@@ -1031,9 +1031,9 @@ static m2c_token_t ident (m2c_parser_context_t p);
 static m2c_token_t const_expression (m2c_parser_context_t p);
 
 static m2c_token_t const_binding (m2c_parser_context_t p) {
-  intstr_t ident;
+  intstr_t lexeme;
   m2c_token_t lookahead;
-  m2c_ast_node_t id_node, expr_node;
+  m2c_astnode_t id_node, expr_node;
     
   PARSER_DEBUG_INFO("constBinding");
   
@@ -1043,10 +1043,10 @@ static m2c_token_t const_binding (m2c_parser_context_t p) {
   /* COLLATION | TLIMIT */
   if (match_token(p, TOKEN_IDENT)) {
     lookahead = m2c_consume_sym(p->lexer);
-    ident = m2c_current_lexeme(p->lexer);
+    lexeme = m2c_current_lexeme(p->lexer);
     
-    if ((ident == m2c_res_ident(RESIDENT_COLLATION))
-      || (ident == m2c_res_ident(RESIDENT_TLIMIT))) {
+    if ((lexeme == m2c_res_ident(RESIDENT_COLLATION))
+      || (lexeme == m2c_res_ident(RESIDENT_TLIMIT))) {
       lookahead = ident(p);
       id_node = p->ast;
     }
@@ -1111,7 +1111,7 @@ static m2c_token_t const_binding (m2c_parser_context_t p) {
 
 static m2c_token_t const_declaration (m2c_parser_context_t p) {
   m2c_token_t lookahead;
-  m2c_ast_node_t const_id, type_id, expr;
+  m2c_astnode_t const_id, type_id, expr;
   
   PARSER_DEBUG_INFO("constDeclaration");
   
@@ -1428,7 +1428,7 @@ static m2c_token_t alias_type (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t qualident (m2c_parser_context_t p) {
-  m2c_string_t first_ident, tail_ident;
+  intstr_t first_ident, tail_ident;
   m2c_fifo_t lex_list;
   m2c_token_t lookahead;
   
@@ -1574,8 +1574,8 @@ static m2c_token_t subrange_type (m2c_parser_context_t p) {
 static m2c_token_t ident_list (m2c_parser_context_t p);
 
 static m2c_token_t enum_type (m2c_parser_context_t p) {
-  m2c_ast_node_t type_node, list_node;
   m2c_token_t lookahead;
+  m2c_astnode_t type_node, list_node;
   
   PARSER_DEBUG_INFO("enumType");
   
@@ -1645,9 +1645,9 @@ static m2c_token_t enum_type (m2c_parser_context_t p) {
 
 static m2c_token_t ident_list (m2c_parser_context_t p) {
   intstr_t lexeme;
-  m2c_fifo_t tmp_list;
-  uint_t line, column;
   m2c_token_t lookahead;
+  m2c_fifo_t tmp_list;
+  unsigned short line, column;
   
   PARSER_DEBUG_INFO("identList");
   
@@ -1709,7 +1709,7 @@ static m2c_token_t ident_list (m2c_parser_context_t p) {
 
 static m2c_token_t set_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
-  m2c_ast_node_t type_node;
+  m2c_astnode_t type_node;
   
   PARSER_DEBUG_INFO("setType");
   
@@ -1815,8 +1815,8 @@ static m2c_token_t array_type (m2c_parser_context_t p) {
 static m2c_token_t field_list_sequence (m2c_parser_context_t p);
 
 static m2c_token_t record_type (m2c_parser_context_t p) {
-  m2c_astnode_t type_node, list_node;
   m2c_token_t lookahead;
+  m2c_astnode_t type_node, list_node;
   
   PARSER_DEBUG_INFO("recordType");
   
@@ -2124,8 +2124,8 @@ static m2c_token_t opaque_type (m2c_parser_context_t p) {
 static m2c_token_t formal_type (m2c_parser_context_t p);
 
 static m2c_token_t procedure_type (m2c_parser_context_t p) {
-  m2c_astnode_t type_node, list_node;
   m2c_token_t lookahead;
+  m2c_astnode_t type_node, list_node;
   
   PARSER_DEBUG_INFO("procedureType");
   
@@ -2241,7 +2241,7 @@ static m2c_token_t non_attr_formal_type (m2c_parser_context_t p);
 
 static m2c_token_t formal_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
-  m2c_ast_node_t type_node;
+  m2c_astnode_t type_node;
   
   PARSER_DEBUG_INFO("formalType");
   
@@ -2691,7 +2691,7 @@ static m2c_token_t procedure_signature (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t binding_specifier (m2c_parser_context_t p) {
-  intstr_t bind_target;
+  intstr_t lexeme;
   m2c_token_t lookahead;
   
   lookahead = m2c_next_sym(p->lexer);
@@ -2706,15 +2706,15 @@ static m2c_token_t binding_specifier (m2c_parser_context_t p) {
       if (lookahead == TOKEN_PLUS) {
         /* '+' */
         lookahead = m2c_consume_sym(p->lexer);
-        bind_target = m2c_lexeme_for_bindable(BINDABLE_NEWARGS);
+        lexeme = m2c_lexeme_for_bindable(BINDABLE_NEWARGS);
       }
       else if (lookahead == TOKEN_HASH) {
         /* '#' */
         lookahead = m2c_consume_sym(p->lexer);
-        bind_target = m2c_lexeme_for_bindable(BINDABLE_NEWCAP);
+        lexeme = m2c_lexeme_for_bindable(BINDABLE_NEWCAP);
       }
       else /* no flag */ {
-        bind_target = m2c_lexeme_for_bindable(BINDABLE_NEW);
+        lexeme = m2c_lexeme_for_bindable(BINDABLE_NEW);
       } /* end if */
       break;
       
@@ -2726,7 +2726,7 @@ static m2c_token_t binding_specifier (m2c_parser_context_t p) {
       if (lookahead == TOKEN_ASTERISK) {
         /* '*' */
         lookahead = m2c_consume_sym(p->lexer);
-        bind_target = m2c_lexeme_for_bindable(BINDABLE_READNEW);
+        lexeme = m2c_lexeme_for_bindable(BINDABLE_READNEW);
       }
       else /* no flag */ {
         bind_target = m2c_lexeme_for_bindable(BINDABLE_READ);
@@ -2736,13 +2736,13 @@ static m2c_token_t binding_specifier (m2c_parser_context_t p) {
     case TOKEN_RELEASE :
       /* RELEASE */
       lookahead = m2c_consume_sym(p->lexer);
-      bind_target = m2c_lexeme_for_bindable(BINDABLE_RELEASE);
+      lexeme = m2c_lexeme_for_bindable(BINDABLE_RELEASE);
       break;
     
     case TOKEN_RETAIN :
       /* RETAIN */
       lookahead = m2c_consume_sym(p->lexer);
-      bind_target = m2c_lexeme_for_bindable(BINDABLE_RETAIN);
+      lexeme = m2c_lexeme_for_bindable(BINDABLE_RETAIN);
       break;
     
     case TOKEN_WRITE :
@@ -2753,10 +2753,10 @@ static m2c_token_t binding_specifier (m2c_parser_context_t p) {
       if (lookahead == TOKEN_HASH) {
         /* '#' */
         lookahead = m2c_consume_sym(p->lexer);
-        bind_target = m2c_lexeme_for_bindable(BINDABLE_WRITEF);
+        lexeme = m2c_lexeme_for_bindable(BINDABLE_WRITEF);
       }
       else /* no flag */ {
-        bind_target = m2c_lexeme_for_bindable(BINDABLE_WRITE);
+        lexeme = m2c_lexeme_for_bindable(BINDABLE_WRITE);
       } /* end if */
       break;
     
@@ -2764,18 +2764,15 @@ static m2c_token_t binding_specifier (m2c_parser_context_t p) {
       lookahead = m2c_consume_sym(p->lexer);
       lexeme = m2c_current_lexeme(p->lexer);
       
-      if (m2c_bindable_for_lexeme(lexeme) != BINDABLE_INVALID) {
-        bind_target = lexeme;
-      }
-      else /* not bindable */ {
+      if (m2c_bindable_for_lexeme(lexeme) == BINDABLE_INVALID) {
         /* TO DO: report error -- symbol not bindable */
-        bind_target = intstr_empty_string();
+        lexeme = intstr_empty_string();
       } /* end if */
       break;
   } /* end switch */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_BIND, bind_target, NULL);
+  p->ast = m2c_ast_new_terminal_node(AST_BIND, lexeme);
   
   return lookahead;
 } /* end binding_specifier */
@@ -4794,6 +4791,7 @@ static m2c_token_t repeat_statement (m2c_parser_context_t p) {
   if (match_set(p, FIRST(EXPRESSION))) {
     lookahead = expression(p);
     expr_node = p->ast;
+  }
   else /* resync */ {
     lookahead = skip_to_set(p, FOLLOW(REPEAT_STATEMENT));
     expr_node = m2c_ast_empty_node();
@@ -5032,6 +5030,7 @@ static m2c_token_t value_range (m2c_parser_context_t p) {
   if (match_set(p, FIRST(EXPRESSION))) {
     lookahead = expression(p);
     val1_node = p->ast;
+  }
   else /* resync */ {
     lookahead = skip_to_token_or_set(p, TOKEN_DOT_DOT, FIRST(EXPRESSION));
     val1_node = m2c_ast_empty_node();
@@ -5049,6 +5048,7 @@ static m2c_token_t value_range (m2c_parser_context_t p) {
   if (match_set(p, FIRST(EXPRESSION))) {
     lookahead = expression(p);
     val2_node = p->ast;
+  }
   else /* resync */ {
     lookahead = skip_to_token_or_set(p, TOKEN_RBRACKET, FOLLOW(VALUE_RANGE));
     val2_node = m2c_ast_empty_node();
