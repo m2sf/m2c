@@ -354,7 +354,7 @@ static bool match_set
  * private function skip_to_token(p, token);
  * --------------------------------------------------------------------------
  * Consumes symbols  until the lookahead symbol  matches  token target_token.
- * Return the new lookahead symbol.
+ * Returns the new lookahead symbol.
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t skip_to_token
@@ -398,7 +398,7 @@ static m2c_token_t skip_to_set
  * private function skip_to_token_or_set(p, token, set);
  * --------------------------------------------------------------------------
  * Consumes symbols  until the lookahead symbol matches token target_token or
- * any token within set target_set.  Return the new lookahead symbol.
+ * any token within set target_set.  Returns the new lookahead symbol.
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t skip_to_token_or_set
@@ -416,6 +416,45 @@ static m2c_token_t skip_to_token_or_set
   
   return lookahead;
 } /* end skip_to_token_or_set */
+
+
+/* --------------------------------------------------------------------------
+ * private function skip_to_token_list(p, ...);
+ * --------------------------------------------------------------------------
+ * Consumes symbols  until the lookahead symbol matches any token in the list
+ * of tokens passed in.  Returns the new lookahead symbol.
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t skip_to_token_list
+  (m2c_parser_context_t p, m2c_token_t first_token, ...) {
+  m2c_token_t token, lookahead;
+  
+  va_list token_list;
+  
+  lookahead = m2c_next_sym(p->lexer);
+  
+  while (lookahead != TOKEN_EOF) {
+    va_start(token_list, first_token);
+    
+    /* check current lookahead against token list */
+    token = first_token;
+    while ((token != NULL) && (lookahead != token)) {
+      token = va_arg(token_list, m2c_token_t);
+    } /* end while */
+    
+    va_end(token_list);
+    
+    /* match found */
+    if (lookahead == token) {
+      break;
+    } /* end if */
+    
+    /* skip to next symbol */
+    lookahead = m2c_consume_sym(p->lexer);
+  } /* end while */
+    
+  return lookahead;
+} /* end skip_to_token_list */
 
 
 /* --------------------------------------------------------------------------
