@@ -101,6 +101,7 @@ struct m2c_lexer_struct_t {
   m2c_symbol_struct_t lookahead;
   m2c_lexer_status_t status;
   m2c_digest_context_t digest;
+  m2c_digest_mode_t digest_mode;
   match_handler_t match_ident;
   match_handler_t match_ident_or_resword;
 }; /* m2c_lexer_struct_t */
@@ -180,6 +181,7 @@ void m2c_new_lexer
    new_lexer->current = nullsym;
    new_lexer->lookahead = nullsym;
    new_lexer->digest = m2c_digest_init();
+   new_lexer->digest_mode = M2C_DIGEST_DONT_PREPEND_SPACER;
    
    if (m2c_compiler_option_dollar_identifiers()) {
     new_lexer->match_ident = m2c_match_lowline_ident;
@@ -192,6 +194,7 @@ void m2c_new_lexer
       
    /* read first symbol */
    get_new_lookahead_sym(new_lexer);
+   new_lexer->digest_mode = M2C_DIGEST_PREPEND_SPACER;
    
    *lexer = new_lexer;
    return;
@@ -751,11 +754,11 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
   
   /* update module digest */
   if (M2C_IS_SPECIAL_SYMBOL_TOKEN(token)) {
-    m2c_digest_add_token(lexer->digest, token);
+    m2c_digest_add_token(lexer->digest, lexer->digest_mode, token);
   }
   else if ((token == TOKEN_IDENT) || (M2C_IS_RESWORD_TOKEN)
     || (M2C_IS_LITERAL_TOKEN(token)) || (token == TOKEN_PRAGMA)) {
-    m2c_digest_add_lexeme(lexer->digest, lexeme);
+    m2c_digest_add_lexeme(lexer->digest, lexer->digest_mode, lexeme);
   }
   else if (token == TOKEN_EOF) {
     m2c_digest_finalize(lexer->digest);
