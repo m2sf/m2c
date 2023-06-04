@@ -46,6 +46,7 @@
 
 #include "m2c-lexer.h"
 #include "m2c-error.h"
+#include "m2c-digest.h"
 #include "m2c-match-lex.h"
 #include "m2c-compiler-options.h"
 
@@ -99,6 +100,7 @@ struct m2c_lexer_struct_t {
   m2c_symbol_struct_t current;
   m2c_symbol_struct_t lookahead;
   m2c_lexer_status_t status;
+  m2c_digest_context_t digest;
   match_handler_t match_ident;
   match_handler_t match_ident_or_resword;
 }; /* m2c_lexer_struct_t */
@@ -177,7 +179,8 @@ void m2c_new_lexer
    new_lexer->infile = infile;
    new_lexer->current = nullsym;
    new_lexer->lookahead = nullsym;
-      
+   new_lexer->digest = m2c_digest_init();
+   
    if (m2c_compiler_option_dollar_identifiers()) {
     new_lexer->match_ident = m2c_match_lowline_ident;
     new_lexer->match_ident_or_resword = m2c_match_lowline_ident_or_resword;
@@ -218,7 +221,7 @@ void m2c_new_lexer
 m2c_token_t m2c_read_sym (m2c_lexer_t lexer) {
   
   /* release the lexeme of the current symbol */
-  m2c_string_release(lexer->current.lexeme);
+  intstr_release(lexer->current.lexeme);
   
   /* lookahead symbol becomes current symbol */
   lexer->current = lexer->lookahead;
@@ -375,6 +378,19 @@ uint_t m2c_lexer_current_column (m2c_lexer_t lexer) {
 
 
 /* --------------------------------------------------------------------------
+ * function m2c_lexer_digest(lexer)
+ * --------------------------------------------------------------------------
+ * Returns the digest value of the file associated with lexer.
+ * ----------------------------------------------------------------------- */
+
+m2c_digest_value_t m2c_lexer_digest (m2c_lexer_t lexer) {
+  
+  return m2c_digest_value(lexer->digest);
+  
+} /* end m2c_lexer_digest */
+
+
+/* --------------------------------------------------------------------------
  * procedure m2c_release_lexer(lexer, status)
  * --------------------------------------------------------------------------
  * Closes the file associated with lexer, deallocates its file object,
@@ -448,7 +464,7 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
            (next_char == ASCII_LF)) {
       
       /* consume the character and get new lookahead */
-      next_char = infile_skip_char(lexer->infile);
+      next_char = infile_consume_char(lexer->infile);
     } /* end while */
     
     /* get line and column of lookahead */
@@ -732,6 +748,18 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
       } /* end switch */
     } /* end if */
   } /* end while */
+  
+  /* update module digest */
+  if (M2C_IS_SPECIAL_SYMBOL_TOKEN(token)) {
+    m2c_digest_add_token(lexer->digest, token);
+  }
+  else if ((token == TOKEN_IDENT) || (M2C_IS_RESWORD_TOKEN)
+    || (M2C_IS_LITERAL_TOKEN(token)) || (token == TOKEN_PRAGMA)) {
+    m2c_digest_add_lexeme(lexer->digest, lexeme);
+  }
+  else if (token == TOKEN_EOF) {
+    m2c_digest_finalize(lexer->digest);
+  } /* end if */
   
   /* update lexer's lookahead symbol */
   lexer->lexeme = lexeme;

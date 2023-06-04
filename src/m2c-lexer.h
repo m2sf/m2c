@@ -42,6 +42,7 @@
 
 #include "m2c-token.h"
 #include "m2c-common.h"
+#include "m2c-digest.h"
 #include "interned-strings.h"
 
 
@@ -225,6 +226,15 @@ uint_t m2c_lexer_lookahead_column (m2c_lexer_t lexer);
  * ----------------------------------------------------------------------- */
 
 uint_t m2c_lexer_current_column (m2c_lexer_t lexer);
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_lexer_digest(lexer)
+ * --------------------------------------------------------------------------
+ * Returns the digest value of the file associated with lexer.
+ * ----------------------------------------------------------------------- */
+
+m2c_digest_value_t m2c_lexer_digest (m2c_lexer_t lexer);
 
 
 /* --------------------------------------------------------------------------
