@@ -42,6 +42,7 @@
 #include "m2c-parser.h"
 #include "m2c-lexer.h"
 #include "m2c-error.h"
+#include "m2c-digest.h"
 #include "m2c-tokenset.h"
 #include "m2c-fileutils.h"
 #include "m2c-production.h"
@@ -481,12 +482,16 @@ static m2c_token_t skip_to_token_list
 
 /* --------------------------------------------------------------------------
  * private procedure parse_start_symbol(p)
+ * --------------------------------------------------------------------------
+ * startSymbol = compilationUnit ;
+ *
+ * astnode: (FILE (FNAME "Foobar.mod") (KEY 0xF04FC729) moduleNode)
  * ----------------------------------------------------------------------- */
 
 static void parse_start_symbol (m2c_parser_context_t p) {
   intstr_t filename;
   m2c_token_t lookahead;
-  m2c_astnode_t filename_node, module_node;
+  m2c_astnode_t filename_node, key_node, module_node;
   
   /* compilation unit */
   lookahead = compilation_unit(p);
@@ -495,14 +500,19 @@ static void parse_start_symbol (m2c_parser_context_t p) {
   if (lookahead != TOKEN_EOF) {
     /* TO DO: report error -- symbols after end of compilation unit */
     m2c_stats_inc(p->stats, M2C_STATS_SYNTAX_ERROR_COUNT);
+    skip_to_token(p, TOKEN_EOF);
   } /* end if */
   
   /* filename node */
   filename = intstr_for_cstr(p->filename);
-  filename_node = m2c_ast_new_terminal_node(AST_FILENAME, filename);
+  filename_node = m2c_ast_new_terminal_node(AST_FNAME, filename);
+  
+  /* module-key node */
+  key_node = m2c_ast_new_terminal_node(AST_KEY, m2c_lexer_digest(p->lexer));
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_FILE, filename_node, module_node, NULL);
+  p->ast = m2c_ast_new_node(AST_FILE,
+    filename_node, key_node, module_node, NULL);
   
   return;
 } /* end parse_start_symbol */
