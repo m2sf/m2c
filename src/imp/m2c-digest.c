@@ -59,7 +59,6 @@
 typedef struct {
   m2c_digest_value_t c0, c1;
   char remaining_char;
-  bool prepend_spacer;
   bool finalized;
 } m2c_digest_s;
 
@@ -192,7 +191,7 @@ m2c_digest_t m2c_digest_release (m2c_digest_t digest) {
  * a single whitespace depending on mode.
  * ----------------------------------------------------------------------- */
 
-#define IS_ODD(_n) (_n % 2)
+#define IS_ODD(_n) (_n & 1)
 
 static void digest_add_cstr
   (m2c_digest_t digest, m2c_digest_mode_t mode, 
@@ -200,11 +199,12 @@ static void digest_add_cstr
   
   uint16_t word, index;
   
+  /* rolling fletcher-32 digest calculation */
   if (digest->remaining_char != ASCII_NUL) {
     
     word = digest->remaining_char << 8;
     
-    if (prepend_spacer) {
+    if (mode == M2C_DIGEST_PREPEND_SPACER) {
       word = word | 0x20;
       index = 0;
     }
@@ -223,7 +223,7 @@ static void digest_add_cstr
   }
   else /* no remaining character */ {
     
-    if (prepend_spacer) {
+    if (mode == M2C_DIGEST_PREPEND_SPACER) {
       if(IS_ODD(len+1)) {
         len = len - 1;
         digest->remaining_char = lexstr[len];
