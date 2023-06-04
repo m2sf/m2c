@@ -381,13 +381,13 @@ char m2c_match_line_comment
     infile_mark_lexeme(infile);
   } /* end if */
 
-  next_char = infile_consume_char(infile);
+  next_char = infile_skip_char(infile);
 
   while (infile_eof(infile) == false) {
 
     /* end of line terminates line comment */
     if (next_char == ASCII_LF) {
-      next_char = infile_consume_char(infile);
+      next_char = infile_skip_char(infile);
       exit;
     }
     /* illegal control char */
@@ -398,7 +398,7 @@ char m2c_match_line_comment
          next_char, infile_line(infile), infile_column(infile));
      } /* end if */
     
-    next_char = infile_consume_char(infile);
+    next_char = infile_skip_char(infile);
   } /* end while */
   
   if (m2c_compiler_option_preserve_comments()) {
@@ -435,21 +435,21 @@ char m2c_match_block_comment
   } /* end if */
   
   /* consume opening comment delimiter */
-  next_char = infile_consume_char(infile);
-  next_char = infile_consume_char(infile);
+  next_char = infile_skip_char(infile);
+  next_char = infile_skip_char(infile);
   nest_level = 1;
 
   while (nest_level > 0) {
     /* check for '*)' */
     if ((next_char == '*') && (infile_la2_char(infile) == ')')) {
-      next_char = infile_consume_char(infile);
-      next_char = infile_consume_char(infile);
+      next_char = infile_skip_char(infile);
+      next_char = infile_skip_char(infile);
       nest_level--;
     }
     /* check for '(*' */
     else if ((next_char == '(') && (infile_la2_char(infile) == '*')) {
-      next_char = infile_consume_char(infile);
-      next_char = infile_consume_char(infile);
+      next_char = infile_skip_char(infile);
+      next_char = infile_skip_char(infile);
       nest_level++;
     }
     /* premature EOF */
@@ -465,11 +465,11 @@ char m2c_match_block_comment
     /* legal char */
     else if (IS_PRINTABLE_CHAR(next_char)
       || IS_LEGAL_CTRL_CHAR(next_char)) {
-      next_char = infile_consume_char(infile);
+      next_char = infile_skip_char(infile);
     }
     /* illegal control char */
     else {
-      next_char = infile_consume_char(infile);
+      next_char = infile_skip_char(infile);
       /* emit error - illegal control char in comment */
       m2c_emit_lex_error_in_token
         (M2C_ERROR_ILLEGAL_CHAR_IN_TOKEN, infile, TOKEN_BLOCK_COMMENT,
@@ -553,8 +553,8 @@ char m2c_match_disabled_code_block (infile_t infile) {
   char next_char;
 
   /* consume '?' and '<' */
-  next_char = infile_consume_char(infile);
-  next_char = infile_consume_char(infile);
+  next_char = infile_skip_char(infile);
+  next_char = infile_skip_char(infile);
   
   while (NOT((next_char == '>')
     && (infile_column(infile) == 1)
@@ -566,12 +566,12 @@ char m2c_match_disabled_code_block (infile_t infile) {
       return next_char;
     } /* end if */
 
-    next_char = infile_consume_char(infile);
+    next_char = infile_skip_char(infile);
   } /* end while */
   
   /* consume '>' and '?' */
-  next_char = infile_consume_char(infile);
-  next_char = infile_consume_char(infile);
+  next_char = infile_skip_char(infile);
+  next_char = infile_skip_char(infile);
 
   return next_char;
 } /* end m2c_match_disabled_code_block */

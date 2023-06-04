@@ -93,11 +93,23 @@ void infile_close (infile_t *infile);
 /* --------------------------------------------------------------------------
  * function infile_consume_char(infile)
  * --------------------------------------------------------------------------
- * Consumes the current lookahead character in infile. Returns the resulting
+ * Consumes the current lookahead character  in infile,  updating the rolling
+ * hash value  used for file digest calculation,  and  returns the  resulting
  * new lookahead character without consuming it.
  * ----------------------------------------------------------------------- */
 
 char infile_consume_char (infile_t *infile);
+
+
+/* --------------------------------------------------------------------------
+ * function infile_skip_char(infile)
+ * --------------------------------------------------------------------------
+ * Consumes the current lookahead character in infile  WITHOUT  updating  the
+ * rolling hash value  used for file digest calculation,  and returns the re-
+ * sulting  new lookahead character without consuming it.
+ * ----------------------------------------------------------------------- */
+
+char infile_skip_char (infile_t *infile);
 
 
 /* --------------------------------------------------------------------------
@@ -171,6 +183,16 @@ void infile_mark_lexeme (infile_t *infile);
  * ----------------------------------------------------------------------- */
 
 intstr_t *infile_lexeme (infile_t *infile);
+
+
+/* --------------------------------------------------------------------------
+ * function infile_digest(infile)
+ * --------------------------------------------------------------------------
+ * Returns a newly allocated NUL terminated character string with the digest
+ * of infile.  Returns NULL if the end of infile has not been reached yet.
+ * ----------------------------------------------------------------------- */
+
+const char *infile_digest (infile_t *infile);
 
 
 /* --------------------------------------------------------------------------

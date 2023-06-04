@@ -448,7 +448,7 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
            (next_char == ASCII_LF)) {
       
       /* consume the character and get new lookahead */
-      next_char = m2c_consume_char(lexer->infile);
+      next_char = infile_skip_char(lexer->infile);
     } /* end while */
     
     /* get line and column of lookahead */
@@ -486,13 +486,13 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         
         case '#' :
           /* not-equal operator */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_NOTEQUAL;
           break;
         
         case '&' :
           /* concatenation operator */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_CONCAT;
           break;
         
@@ -505,7 +505,7 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         case '(' :
           /* left parenthesis */
           if (m2c_la2_char(lexer->infile) != '*') {
-            next_char = m2c_consume_char(lexer->infile);
+            next_char = infile_consume_char(lexer->infile);
             token = TOKEN_LEFT_PARENTHESIS;
           }
           else /* block comment */ {
@@ -516,23 +516,23 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         
         case ')' :
           /* right parenthesis */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_RIGHT_PARENTHESIS;
           break;
         
         case '*' :
           /* asterisk operator */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_ASTERISK;
           break;
         
         case '+' :
           /* increment or plus */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
         
           /* increment suffix */
           if (next_char == '+') {
-            next_char = m2c_consume_char(lexer->infile);
+            next_char = infile_consume_char(lexer->infile);
             token = TOKEN_PLUS_PLUS;
           }
           /* plus operator */
@@ -543,17 +543,17 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         
         case ',' :
           /* comma */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_COMMA;
           break;
         
         case '-' :
           /* decrement or minus */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           
           /* decrement suffix */
           if (next_char == '-') {
-            next_char = m2c_consume_char(lexer->infile);
+            next_char = infile_consume_char(lexer->infile);
             token = TOKEN_MINUS_MINUS;
           }
           /* minus operator */
@@ -564,16 +564,16 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         
         case '.' :
           /* range or wildcard or period */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           
           /* range */
           if (next_char == '.') {
-            next_char = m2c_consume_char(lexer->infile);
+            next_char = infile_consume_char(lexer->infile);
             token = TOKEN_RANGE;
           }
           /* wildcard */
           else if (next_char == '*') {
-            next_char = m2c_consume_char(lexer->infile);
+            next_char = infile_consume_char(lexer->infile);
             token = TOKEN_WILDCARD;
           }
           /* period */
@@ -584,22 +584,22 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         
         case '/' :
           /* solidus */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_SOLIDUS;
           break;
               
         case ':' :
           /* converstion or assignment or colon */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           
           /* conversion */
           if (next_char == ':') {
-            next_char = m2c_consume_char(lexer->infile);
+            next_char = infile_consume_char(lexer->infile);
             token = TOKEN_CONVERSION;
           }
           /* assignment */ 
           else if (next_char == '=') {
-            next_char = m2c_consume_char(lexer->infile);
+            next_char = infile_consume_char(lexer->infile);
             token = TOKEN_ASSIGNMENT;
           }
           /* colon */
@@ -610,7 +610,7 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         
         case ';' :
           /* semicolon */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_SEMICOLON;
           break;
         
@@ -621,11 +621,11 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
             break;
           }
           /* less-or-equal or less-than */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           
           /* less-or-equal */
           if (next_char == '=') {
-            next_char = m2c_consume_char(lexer->infile);
+            next_char = infile_consume_char(lexer->infile);
             token = TOKEN_LESS_THAN_OR_EQUAL;
           }
           /* less-than */
@@ -636,10 +636,10 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         
         case '=' :
           /* identity or equal */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           
           if (next_char == '=') {
-            next_char = m2c_consume_char(lexer->infile);
+            next_char = infile_consume_char(lexer->infile);
             token = TOKEN_IDENTITY;
           }
           /* equal */
@@ -650,11 +650,11 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
         
         case '>' :
           /* greater-or-equal or equal operator */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           
           /* greater-or-equal */
           if (next_char == '=') {
-            next_char = m2c_consume_char(lexer->infile);
+            next_char = infile_consume_char(lexer->infile);
             token = TOKEN_GREATER_THAN_OR_EQUAL;
           }
           /* greater */
@@ -665,49 +665,49 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
                 
         case '@' :
           /* at sign */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_AT_SIGN;
           break;
         
         case '[' :
           /* left bracket */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_LEFT_BRACKET;
           break;
         
         case '\\' :
           /* backslash */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_BACKSLASH;
           break;
         
         case ']' :
           /* right bracket */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_RIGHT_BRACKET;
           break;
         
         case '^' :
           /* caret */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_DEREF;
           break;
               
         case '{' :
           /* left brace */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_LEFT_BRACE;
           break;
         
         case '|' :
           /* vertical bar */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_BAR;
           break;
         
         case '}' :
           /* right brace */
-          next_char = m2c_consume_char(lexer->infile);
+          next_char = infile_consume_char(lexer->infile);
           token = TOKEN_RIGHT_BRACE;
           break;
                       
@@ -726,7 +726,7 @@ static void get_new_lookahead_sym (m2c_lexer_t lexer) {
             m2c_emit_lex_error
               (M2C_ERROR_ILLEGAL_CHAR, lexer->infile,
                next_char, infile_line(lexer->infile), infile_column(lexer->infile));
-            next_char = m2c_consume_char(lexer->infile);
+            next_char = infile_consume_char(lexer->infile);
             token = TOKEN_UNKNOWN;
           } /* end if */
       } /* end switch */
