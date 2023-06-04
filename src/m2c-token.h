@@ -141,7 +141,7 @@ typedef enum {
   /* Non-Resword Level-1 Operators */
 
   TOKEN_EQUAL,               /* 69 */   /* also used as punctuation */
-  TOKEN_NOT_EQUAL,           /* 70 */
+  TOKEN_NOT_EQUAL,           /* 70 */   /* also used as punctuation */
   TOKEN_LESS,                /* 71 */
   TOKEN_LESS_OR_EQ,          /* 72 */
   TOKEN_GREATER,             /* 73 */
@@ -206,6 +206,7 @@ typedef enum {
  * ----------------------------------------------------------------------- */
 
 #define TOKEN_PERIOD TOKEN_DOT
+#define TOKEN_HASH TOKEN_NOT_EQUAL
 #define TOKEN_LESS_OR_EQUAL TOKEN_LESS_OR_EQ
 #define TOKEN_GREATER_OR_EQUAL TOKEN_GREATER_OR_EQ
 
