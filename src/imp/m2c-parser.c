@@ -5163,7 +5163,7 @@ static m2c_token_t deref_tail (m2c_parser_context_t p) {
     lookahead = subscript_tail(p);
     tail_node = p->ast;
   }
-  else {
+  else /* no tail */ {
     tail_node = m2c_ast_empty_node();
   } /* end if */
   
@@ -5233,7 +5233,7 @@ static m2c_token_t subscript_tail (m2c_parser_context_t p) {
     lookahead = deref_tail(p);
     tail_node = p->ast;
   }
-  else {
+  else /* no tail */ {
     tail_node = m2c_ast_empty_node();
   } /* end if */
   
@@ -5294,7 +5294,38 @@ static m2c_token_t deref_target_tail (m2c_parser_context_t p) {
   
   PARSER_DEBUG_INFO("derefTargetTail");
   
-  /* TO DO */
+  /* deref */
+  lookahead = deref(p);
+  deref_node = p->ast;
+  
+  /* ( '.' targetDesignator | bracketTargetTail )? */
+  
+  /* '.' targetDesignator */
+  if (lookahead == TOKEN_DOT) {
+    /* '.' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* targetDesignator */
+    if (match_set(p, FIRST(TARGET_DESIGNATOR))) {
+      lookahead = target_designator(p);
+      tail_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(DEREF_TARGET_TAIL));
+      tail_node = m2c_ast_empty_node();
+    } /* end if */    
+  }
+  /* bracketTargetTail */
+  else if (lookahead == TOKEN_LBRACKET) {
+    lookahead = bracket_target_tail(p);
+    tail_node = p->ast;
+  }
+  else /* no tail */
+    tail_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_DEREFTAIL, deref_node, tail_node, NULL);
   
   return lookahead;
 } /* end deref_target_tail */
