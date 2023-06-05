@@ -5963,7 +5963,46 @@ static m2c_token_t deref_source_tail (m2c_parser_context_t p) {
   
   PARSER_DEBUG_INFO("derefSourceTail");
   
-  /* TO DO */
+  /* deref */
+  lookahead = deref(p);
+  deref_node = p->ast;
+  
+  /* ( '.' sourceDesignator | functionCallTail | bracketSourceTail )? */
+  
+  /* '.' sourceDesignator */
+  if (lookahead == TOKEN_DOT) {
+    /* '.' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* sourceDesignator */
+    if (match_set(p, FIRST(DESIGNATOR))) {
+      lookahead = designator(p);
+      tail_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(DEREF_SOURCE_TAIL));
+      tail_node = m2c_ast_empty_node();
+    } /* end if */
+  }
+  
+  /* functionCallTail */
+  else if (lookahead == TOKEN_LPAREN) {
+    lookahead = function_call_tail(p);
+    tail_node = p->ast;
+  }
+  
+  /* bracketSourceTail */
+  else if (lookahead == TOKEN_LBRACKET) {
+    lookahead = bracket_source_tail(p);
+    tail_node = p->ast;
+  }
+  
+  else /* no tail */ {
+    tail_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_DEREFTAIL, deref_node, tail_node, NULL);
   
   return lookahead;
 } /* end deref_source_tail */
