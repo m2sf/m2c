@@ -525,7 +525,7 @@ static void parse_start_symbol (m2c_parser_context_t p) {
  *   definitionModule | implementationModule | programModule
  *   ;
  *
- * astnode: defModuleNode | impModuleNode
+ * astnode: defModuleNode | impModuleNode | pgmModuleNode
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t compilation_unit (m2c_parser_context_t p) {
