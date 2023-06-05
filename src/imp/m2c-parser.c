@@ -5360,7 +5360,7 @@ static m2c_token_t bracket_target_tail (m2c_parser_context_t p) {
  *   ( '^' )+
  *   ;
  *
- * astnode:
+ * astnode: (DEREF desigNode)
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t deref (m2c_parser_context_t p) {
@@ -5368,7 +5368,15 @@ static m2c_token_t deref (m2c_parser_context_t p) {
   
   PARSER_DEBUG_INFO("deref");
   
-  /* TO DO */
+  /* '^' */
+  lookahead = m2c_consume_sym(p->lexer);
+  p->ast = m2c_ast_new_node(AST_DEREF, p->ast);
+  
+  /* '^'* */
+  while (lookahead == TOKEN_DEREF) {
+    lookahead = m2c_consume_sym(p->lexer);
+    p->ast = m2c_ast_new_node(AST_DEREF, p->ast);
+  } /* end while */
   
   return lookahead;
 } /* end deref */
