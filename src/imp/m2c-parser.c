@@ -5129,7 +5129,7 @@ static m2c_token_t designator (m2c_parser_context_t p) {
  *   deref ( '.' designator | subscriptTail )?
  *   ;
  *
- * astnode:
+ * astnode: (DEREFTAIL derefNode tailNode)
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t deref_tail (m2c_parser_context_t p) {
@@ -5137,7 +5137,38 @@ static m2c_token_t deref_tail (m2c_parser_context_t p) {
   
   PARSER_DEBUG_INFO("derefTail");
   
-  /* TO DO */
+  /* deref */
+  lookahead = deref(p);
+  deref_node = p->ast;
+  
+  /* ( '.' designator | subscriptTail )? */
+  
+  /* '.' designator */
+  if (lookahead == TOKEN_DOT) {
+    /* '.' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* designator */
+    if (match_set(p, FIRST(DESIGNATOR))) {
+      lookahead = designator(p);
+      tail_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(DEREF_TAIL));
+      tail_node = m2c_ast_empty_node();
+    } /* end if */
+  }
+  /* subscriptTail */
+  else if (lookahead == TOKEN_LBRACKET) {
+    lookahead = subscript_tail(p);
+    tail_node = p->ast;
+  }
+  else {
+    tail_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_DEREFTAIL, deref_node, tail_node, NULL);
   
   return lookahead;
 } /* end deref_tail */
@@ -5158,7 +5189,56 @@ static m2c_token_t subscript_tail (m2c_parser_context_t p) {
   
   PARSER_DEBUG_INFO("subscriptTail");
   
-  /* TO DO */
+  /* '[' */
+  lookahead = m2c_consume_sym(p->lexer);
+  
+  /* expression */
+  if (match_set(p, FIRST(EXPRESSION))) {
+    lookahead = expression(p);
+    expr_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead =
+      skip_to_token_list(p, TOKEN_RBRACKET, TOKEN_DOT, TOKEN_DEREF, NULL);
+    expr_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* '] */
+  if (match_token(p, TOKEN_LBRACKET)) {
+    lookahead = m2c_consume_sym(p);
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_list(p, TOKEN_DOT, TOKEN_DEREF, NULL);
+  } /* end if */
+  
+  /* ( '.' designator | derefTail )? */
+  
+  /* '.' designator */
+  if (lookahead == TOKEN_DOT) {
+    /* '.' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* designator */
+    if (match_set(p, FIRST(DESIGNATOR))) {
+      lookahead = designator(p);
+      tail_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(SUBSCRIPT_TAIL));
+      tail_node = m2c_ast_empty_node();
+    } /* end if */
+  }
+  /* derefTail */
+  else if (lookahead == TOKEN_DEREF) {
+    lookahead = deref_tail(p);
+    tail_node = p->ast;
+  }
+  else {
+    tail_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_SUBSCRTAIL, expr_node, tail_node, NULL);
   
   return lookahead;
 } /* end subscript_tail */
