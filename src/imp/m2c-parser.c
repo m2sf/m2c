@@ -1009,7 +1009,7 @@ static m2c_token_t const_definition (m2c_parser_context_t p);
 
 static m2c_token_t public_const_defn (m2c_parser_context_t p) {
   m2c_token_t lookahead;
-  m2c_astnode_t id_node, def_node;
+  m2c_astnode_t bind_node, def_node;
     
   PARSER_DEBUG_INFO("publicConstDefn");
   
@@ -1028,13 +1028,13 @@ static m2c_token_t public_const_defn (m2c_parser_context_t p) {
       /* bindableIdent = COLLATION | TLIMIT */
       if ((lexeme == m2c_res_ident(RESIDENT_COLLATION))
         || (lexeme == m2c_res_ident(RESIDENT_TLIMIT))) {
-        lookahead = ident(p);
-        id_node = p->ast;
+        lookahead = m2c_consume_sym(p->lexer);
+        bind_node = m2c_new_ast_terminal_node(AST_BINDTO, lexeme);
       }
       /* identifier not bindable */
       else {
         lookahead = m2c_consume_sym(p);
-        id_node = m2c_ast_empty_node();
+        bind_node = m2c_ast_empty_node();
         
         /* TO DO: error -- invalid binding specifier */
         m2c_stats_inc(p->stats, M2C_STATS_SYNTAX_ERROR_COUNT);
@@ -1057,7 +1057,7 @@ static m2c_token_t public_const_defn (m2c_parser_context_t p) {
   
   /* constDefinition */
   if (match_token(p, TOKEN_IDENT)) {
-    p->ast = id_node;
+    p->ast = bind_node;
     lookahead = const_definition(p);
     def_node = p->ast;
   }
@@ -1074,22 +1074,24 @@ static m2c_token_t public_const_defn (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function const_declaration()
+ * private function const_definition()
  * --------------------------------------------------------------------------
- * constDeclaration :=
+ * constDefinition :=
  *   ident ( ':' typeIdent )? '=' constExpression
  *   ;
  *
  * alias constExpression = expression ;
  *
- * astNode: (CONST constId typeId expr)
+ * astNode: (CONST bindNode constIdNode typeIdNode exprNode)
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t const_declaration (m2c_parser_context_t p) {
+static m2c_token_t const_definition (m2c_parser_context_t p) {
   m2c_token_t lookahead;
-  m2c_astnode_t const_id, type_id, expr;
+  m2c_astnode_t bind_id, const_id, type_id, expr_node;
   
   PARSER_DEBUG_INFO("constDeclaration");
+  
+  bind_node = p->ast;
   
   /* ident */
   lookahead = ident(p);
@@ -1123,18 +1125,19 @@ static m2c_token_t const_declaration (m2c_parser_context_t p) {
   /* constExpression */
   if (match_set(p, FIRST(EXPRESSION))) {
     lookahead = const_expression(p);
-    expr = p->ast;
+    expr_node = p->ast;
   }
   else /* resync */ {
     lookahead = skip_to_set(p, FOLLOW(CONST_DECLARATION));
-    expr = m2c_ast_empty_node();
+    expr_node = m2c_ast_empty_node();
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_CONSTDECL, const_id, type_id, expr, NULL);
+  p->ast =
+    m2c_ast_new_node(AST_CONST, bind_node, const_id, type_id, expr_node, NULL);
   
   return lookahead;
-} /* end const_declaration */
+} /* end const_definition */
 
 
 /* --------------------------------------------------------------------------
