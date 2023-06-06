@@ -3294,13 +3294,14 @@ static m2c_token_t implementation_module (m2c_parser_context_t p) {
  * private function private_block()
  * --------------------------------------------------------------------------
  * privateBlock :=
- *   privateDeclaration* ( BEGIN statementSequence )? END
+ *   privateDefinition* ( BEGIN statementSequence )? END
  *
- * astnode: (BLOCK declarationListNode statementSeqNode)
+ * astnode: (BLOCK defnListNode statementSeqNode)
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t private_block (m2c_parser_context_t p) {
   m2c_token_t lookahead;
+  m2c_fifo_t defn_list;
   m2c_astnode_t list_node, sseq_node, empty_node;
   
   PARSER_DEBUG_INFO("privateBlock");
@@ -3308,23 +3309,23 @@ static m2c_token_t private_block (m2c_parser_context_t p) {
   lookahead = m2c_next_sym(p->lexer);
   
   empty_node = m2c_ast_empty_node();
-  tmp_list = m2c_fifo_new_queue(NULL);
+  defn_list = m2c_fifo_new_queue(NULL);
     
-  /* privateDeclaration */
-  while (m2c_tokenset_element(FIRST(DECLARATION), lookahead)) {
-    lookahead = declaration(p);
-    m2c_fifo_enqueue(tmp_list, p->ast);
+  /* privateDefinition */
+  while (m2c_tokenset_element(FIRST(DEFINITION), lookahead)) {
+    lookahead = definition(p);
+    m2c_fifo_enqueue(defn_list, p->ast);
   } /* end while */
   
-  /* construct declaration list node */
-  if (m2c_fifo_entry_count(tmplist) > 0) {
-    list_node = m2c_ast_new_list_node(AST_DECLLIST, tmp_list);
+  /* construct definition list node */
+  if (m2c_fifo_entry_count(defn_list) > 0) {
+    list_node = m2c_ast_new_list_node(AST_DEFNLIST, defn_list);
   }
   else /* no declarations */ {
     list_node = m2c_ast_empty_node();
   } /* end if */
   
-  m2c_fifo_release(tmp_list);
+  m2c_fifo_release(defn_list);
   
   /* ( BEGIN statementSequence )? */
   if (lookahead == TOKEN_BEGIN)) {
@@ -3416,70 +3417,25 @@ static m2c_token_t private_pointer_type (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function var_declaration()
+ * private function procedure_definition()
  * --------------------------------------------------------------------------
- * varDeclaration :=
- *   identList ':' ( typeIdent | subrangeType | arrayType | procedureType )
- *   ;
- *
- * astNode: (VARDECL identListNode typeNode)
- * ----------------------------------------------------------------------- */
-
-static m2c_token_t var_declaration (m2c_parser_context_t p) {
-  m2c_token_t lookahead;
-  m2c_astnode_t type_node, list_node;
-    
-  PARSER_DEBUG_INFO("varDeclaration");
-  
-  /* IdentList */
-  lookahead = ident_list(p);
-  list_node = p->ast;
-  
-  /* ':' */
-  if (match_token(p, TOKEN_COLON)) {
-    lookahead = m2c_consume_sym(p->lexer);
-  }
-  else /* resync */ {
-    lookahead = skip_to_set(p, FIRST(ANON_TYPE));
-  } /* end if */
-    
-  /* typeIdent | subrangeType | arrayType | procedureType */
-  if (match_set(p, FIRST(ANON_TYPE))) {
-    lookahead = anon_type(p);
-    type_node = p->ast;
-  }
-  else /* resync */ {
-    lookahead = skip_to_set(p, FOLLOW(FIELD_LIST));
-    type_node = m2c_ast_empty_node();
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_VAR_DECL, list_node, type_node, NULL);
-  
-  return lookahead;
-} /* end var_declaration */
-
-
-/* --------------------------------------------------------------------------
- * private function procedure_declaration()
- * --------------------------------------------------------------------------
- * procedureDeclaration :=
+ * procedureDefinition :=
  *   procedureHeader ';' block Ident
  *   ;
  *
  * astnode: (PROC procDefinitionNode blockNode)
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t procedure_declaration (m2c_parser_context_t p) {
+static m2c_token_t procedure_definition (m2c_parser_context_t p) {
   intstr_t ident;
   m2c_token_t lookahead;
-  m2c_astnode_t def_node, block_node;
+  m2c_astnode_t decl_node, block_node;
   
-  PARSER_DEBUG_INFO("procedureDeclaration");
+  PARSER_DEBUG_INFO("procedureDefinition");
   
   /* procedureHeader */
   lookahead = procedure_header(p);
-  def_node = p->ast;
+  decl_node = p->ast;
   
   /* ';' */
   if (match_token(p, TOKEN_SEMICOLON)) {
@@ -3495,7 +3451,7 @@ static m2c_token_t procedure_declaration (m2c_parser_context_t p) {
     block_node = p->ast;
   }
   else /* resync */ {
-    lookahead = skip_to_token_or_set(p, TOKEN_IDENT, FOLLOW(DECLARATION));
+    lookahead = skip_to_token_or_set(p, TOKEN_IDENT, FOLLOW(DEFINITION));
     block_node = m2c_ast_empty_node();
   } /* end if */
       
@@ -3507,14 +3463,14 @@ static m2c_token_t procedure_declaration (m2c_parser_context_t p) {
     /* TO DO: check if procedure identifiers match */
   }
   else /* resync */ {
-    lookahead = skip_to_set(p, FOLLOW(DECLARATION));
+    lookahead = skip_to_set(p, FOLLOW(DEFINITION));
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_PROC, def_node, block_node, NULL);
+  p->ast = m2c_ast_new_node(AST_PROC, decl_node, block_node, NULL);
   
   return lookahead;
-} /* end procedure_declaration */
+} /* end procedure_definition */
 
 
 /* --------------------------------------------------------------------------
