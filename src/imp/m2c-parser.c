@@ -1089,8 +1089,9 @@ static m2c_token_t const_definition (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_astnode_t bind_id, const_id, type_id, expr_node;
   
-  PARSER_DEBUG_INFO("constDeclaration");
+  PARSER_DEBUG_INFO("constDefinition");
   
+  /* bind node left in p->ast by caller */
   bind_node = p->ast;
   
   /* ident */
@@ -1134,7 +1135,8 @@ static m2c_token_t const_definition (m2c_parser_context_t p) {
   
   /* build AST node and pass it back in p->ast */
   p->ast =
-    m2c_ast_new_node(AST_CONST, bind_node, const_id, type_id, expr_node, NULL);
+    m2c_ast_new_node
+      (AST_CONST, bind_node, const_id, type_id, expr_node, NULL);
   
   return lookahead;
 } /* end const_definition */
