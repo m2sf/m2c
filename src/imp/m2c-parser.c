@@ -886,28 +886,28 @@ m2c_token_t declaration (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function def_or_decl_list(context, p)
+ * private function definition_list(context, p)
  * --------------------------------------------------------------------------
- * Parses one of  constDefinitionList, typeDefinitionList, varDefinitionList,
- * constDeclarationList, typeDeclarationList  and varDeclarationList,  depen-
- * ding on context, constructs its AST node, passes it in p->ast  and returns
- * the new lookahead symbol.
+ * Parses one of  publicConstDefnList, publicTypeDefnList, varDefinitionList,
+ * constDefinitionList,  impModTypeDefnList  and  pgmModTypeDefnList,  depen-
+ * ding on parameter context,  constructs its AST node,  passes it  in p->ast
+ * and returns the new lookahead symbol.
  *
- * (1) const definition list context:
+ * (1) public const definition list context:
  *
- * constDefinitionList :=
- *   constDefinition ';' (constDefinition ';')*
+ * publicConstDefnList :=
+ *   publicConstDefn ';' (publicConstDefn ';')*
  *   ;
  *
- * astnode: (CONSTDEFLIST constDefNode1 constDefNode2 ... constDefNodeN)
+ * astnode: (CONSTDEFLIST constDefnNode1 constDefnNode2 ... constDefnNodeN)
  *
- * (2) type definition list context:
+ * (2) public type definition list context:
  *
- * typeDefinitionList :=
- *   typeDefinition ';' (typeDefinition ';')*
+ * publicTypeDefnList :=
+ *   publicTypeDefn ';' (publicTypeDefn ';')*
  *   ;
  *
- * astnode: (TYPEDEFLIST typeDefNode1 typeDefNode2 ... typeDefNodeN)
+ * astnode: (TYPEDEFLIST typeDefnNode1 typeDefnNode2 ... typeDefnNodeN)
  *
  * (3) var definition list context:
  *
@@ -915,34 +915,34 @@ m2c_token_t declaration (m2c_parser_context_t p) {
  *   varDefinition ';' (varDefinition ';')*
  *   ;
  *
- * astnode: (VARDEFLIST varDefNode1 varDefNode2 ... varDefNodeN)
+ * astnode: (VARDEFLIST varDefnNode1 varDefnNode2 ... varDefnNodeN)
  *
- * (4) const declaration list context:
+ * (4) const definition list context:
  *
- * constDeclarationList :=
- *   constDeclaration ';' (constDeclaration ';')*
+ * constDefinitionList :=
+ *   constDefinition ';' (constDefinition ';')*
  *   ;
  *
- * astnode: (CONSTDECLLIST constDeclNode1 constDeclNode2 ... constDeclNodeN)
+ * astnode: (CONSTDEFLIST constDefnNode1 constDefnNode2 ... constDefnNodeN)
  *
- * (5) type declaration list context:
+ * (5) implementation module type definition list context:
  *
- * typeDeclarationList :=
- *   typeDeclaration ';' (typeDeclaration ';')*
+ * impModTypeDefnList :=
+ *   impModTypeDefn ';' (impModTypeDefn ';')*
  *   ;
  *
- * astnode: (TYPEDECLLIST typeDeclNode1 typeDeclNode2 ... typeDeclNodeN)
+ * astnode: (TYPEDEFNLIST typeDefnNode1 typeDefnNode2 ... typeDefnNodeN)
  *
- * (6) var declaration list context:
+ * (6) program module type definition list context:
  *
- * varDeclarationList :=
- *   varDeclaration ';' (varDeclaration ';')*
+ * pgmModTypeDefnList :=
+ *   pgmModTypeDefn ';' (pgmModTypeDefn ';')*
  *   ;
  *
- * astnode: (VARDECLLIST varDeclNode1 varDeclNode2 ... varDeclNodeN)
+ * astnode: (TYPEDEFNLIST typeDefnNode1 typeDefnNode2 ... typeDefnNodeN)
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t def_or_decl_list
+static m2c_token_t definition_list
   (def_decl_context_t *context, m2c_parser_context_t p) {
   
   m2c_token_t lookahead;
@@ -950,9 +950,9 @@ static m2c_token_t def_or_decl_list
   
   node_list = m2c_fifo_new_queue(NULL);
   
-  /* const/type/varDefinition/Declaration ';' */
+  /* const/type/var/Definition ';' */
   
-  /* const/type/varDefinition/Declaration */
+  /* const/type/varDefinition */
   if (match_token(p, TOKEN_IDENT)) {
     lookahead = context->def_or_decl(p);
     m2c_fifo_enqueue(node_list, p->ast);
@@ -971,9 +971,9 @@ static m2c_token_t def_or_decl_list
     lookahead = skip_to_set(p, FOLLOW(context->production));
   } /* end if */
   
-  /* (const/type/varDefinition/Declaration ';')* */
+  /* (const/type/varDefinition ';')* */
   
-  /* const/type/varDefinition/Declaration */
+  /* const/type/varDefinition */
   while (match_token(p, TOKEN_IDENT)) {
     lookahead = context->def_or_decl(p); /* p-ast holds ast-node */
     m2c_fifo_enqueue(node_list, p->ast);
@@ -994,7 +994,7 @@ static m2c_token_t def_or_decl_list
   m2c_fifo_releast(node_list);
   
   return lookahead;
-} /* end def_or_decl_list */
+} /* end definition_list */
 
 
 /* --------------------------------------------------------------------------
