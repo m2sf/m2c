@@ -799,11 +799,11 @@ static m2c_token_t import (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function definition()
+ * private function public_defn_or_decl()
  * --------------------------------------------------------------------------
- * definition :=
- *   CONST ( constDefinition ';' )+ |
- *   TYPE ( typeDefinition ';' )+ |
+ * publicDefnOrDecl :=
+ *   CONST ( publicConstDefn ';' )+ |
+ *   TYPE ( publicTypeDefn ';' )+ |
  *   VAR ( varDefinition ';' )+ |
  *   procedureHeader ';' |
  *   toDoList ';'
@@ -818,10 +818,10 @@ static m2c_token_t definition_list
 static m2c_token_t procedure_header (m2c_parser_context_t p);
 static m2c_token_t to_do_list (m2c_parser_context_t p);
 
-m2c_token_t definition (m2c_parser_context_t p) {
+m2c_token_t public_defn_or_decl (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   
-  PARSER_DEBUG_INFO("definition");
+  PARSER_DEBUG_INFO("publicDefnOrDecl");
   
   lookahead = m2c_next_sym(p->lexer);
   
@@ -829,13 +829,13 @@ m2c_token_t definition (m2c_parser_context_t p) {
     
     /* CONST */
     case TOKEN_CONST :
-      /* (constDefinition ';')+ */
+      /* (publicConstDefn ';')+ */
       lookahead = const_definition_list(p);
       break;
       
     /* | TYPE */
     case TOKEN_TYPE :
-      /* (typeDefinition ';')+ */
+      /* (publicTypeDefn ';')+ */
       lookahead = type_definition_list(p);
       break;
       
@@ -879,7 +879,7 @@ m2c_token_t definition (m2c_parser_context_t p) {
   /* AST node is passed through in p->ast */
   
   return lookahead;
-} /* end definition */
+} /* end public_defn_or_decl */
 
 
 /* --------------------------------------------------------------------------
@@ -995,36 +995,82 @@ static m2c_token_t def_or_decl_list
 
 
 /* --------------------------------------------------------------------------
- * private function constDefinition()
+ * private function public_const_defn()
  * --------------------------------------------------------------------------
- * constDefinition :=
- *   constBinding | constDeclaration
+ * publicConstDefn :=
+ *   ( '[' bindableIdent ']' )?  constDefinition
  *   ;
  *
- * astNode: (BIND ident expr) | (CONST constId typeId expr)
+ * astNode: (CONST (BINDTO idNode) constDefNode)
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t const_binding (m2c_parser_context_t p);
-static m2c_token_t const_declaration (m2c_parser_context_t p);
+static m2c_token_t const_definition (m2c_parser_context_t p);
 
-static m2c_token_t const_definition (m2c_parser_context_t p) {
+static m2c_token_t public_const_defn (m2c_parser_context_t p) {
   m2c_token_t lookahead;
+  m2c_astnode_t id_node, def_node;
     
-  PARSER_DEBUG_INFO("constDefinition");
+  PARSER_DEBUG_INFO("publicConstDefn");
   
   lookahead = m2c_next_sym(p->lexer);
   
-  /* constBinding | */
+  /* ( '[' bindableIdent ']' )? */
   if (lookahead == TOKEN_LBRACKET) {
-    lookahead = const_binding(p);
-  }
-  /* constDeclaration */
-  else /* lookahead is identifier */
-    lookahead = const_declaration(p);
+    /* '[' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* bindableIdent */
+    if (match_token(p, TOKEN_IDENT)) {
+      lookahead = m2c_consume_sym(p->lexer);
+      lexeme = m2c_current_lexeme(p->lexer);
+      
+      /* bindableIdent = COLLATION | TLIMIT */
+      if ((lexeme == m2c_res_ident(RESIDENT_COLLATION))
+        || (lexeme == m2c_res_ident(RESIDENT_TLIMIT))) {
+        lookahead = ident(p);
+        id_node = p->ast;
+      }
+      /* identifier not bindable */
+      else {
+        lookahead = m2c_consume_sym(p);
+        id_node = m2c_ast_empty_node();
+        
+        /* TO DO: error -- invalid binding specifier */
+        m2c_stats_inc(p->stats, M2C_STATS_SYNTAX_ERROR_COUNT);
+      } /* end if */
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token_list(p, TOKEN_RBRACKET, TOKEN_IDENT, NULL);
+    } /* end if */
+    
+    /* ']' */
+    if (match_token(p, TOKEN_RBRACKET)) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_IDENT, FOLLOW(CONST_DEFINITION));
+    } /* end if */
   } /* end if */
   
+  /* constDefinition */
+  if (match_token(p, TOKEN_IDENT)) {
+    p->ast = id_node;
+    lookahead = const_definition(p);
+    def_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(CONST_DEFINITION));
+    def_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* pass AST node back in p->ast */
+  p->ast = def_node;
+  
   return lookahead;
-} /* end const_definition */
+} /* end public_const_defn */
 
 
 /* --------------------------------------------------------------------------
@@ -1047,31 +1093,6 @@ static m2c_token_t const_binding (m2c_parser_context_t p) {
     
   PARSER_DEBUG_INFO("constBinding");
   
-  /* '[' */
-  lookahead = m2c_consume_sym(p->lexer);
-  
-  /* COLLATION | TLIMIT */
-  if (match_token(p, TOKEN_IDENT)) {
-    lookahead = m2c_consume_sym(p->lexer);
-    lexeme = m2c_current_lexeme(p->lexer);
-    
-    if ((lexeme == m2c_res_ident(RESIDENT_COLLATION))
-      || (lexeme == m2c_res_ident(RESIDENT_TLIMIT))) {
-      lookahead = ident(p);
-      id_node = p->ast;
-    }
-    else {
-      lookahead = m2c_consume_sym(p);
-      id_node = m2c_ast_empty_node();
-      
-      /* TO DO: error -- invalid binding specifier */
-      m2c_stats_inc(p->stats, M2C_STATS_SYNTAX_ERROR_COUNT);
-    } /* end if */
-  }
-  else /* resync */ {
-    lookahead =
-      skip_to_token_or_set(p, TOKEN_RBRACKET, FIRST(CONST_EXPRESSION));
-  } /* end if */
   
   /* '=' */
   if (match_token(p, TOKEN_EQUAL)) {
@@ -1099,10 +1120,7 @@ static m2c_token_t const_binding (m2c_parser_context_t p) {
   else /* resync */ {
     lookahead = skip_to_set(p, FOLLOW(CONST_BINDING));
   } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = new_ast_new_node(AST_BIND, id_node, expr_node, NULL);
-  
+    
   return lookahead;
 } /* end const_binding */
 
