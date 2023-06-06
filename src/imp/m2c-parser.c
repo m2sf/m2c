@@ -1074,58 +1074,6 @@ static m2c_token_t public_const_defn (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function const_binding()
- * --------------------------------------------------------------------------
- * constBinding :=
- *   '[' ( StdIdent=COLLATION | StdIdent=TLIMIT ) ']' '=' constExpression
- *   ;
- *
- * astNode: (BIND ident expr)
- * ----------------------------------------------------------------------- */
-
-static m2c_token_t ident (m2c_parser_context_t p);
-static m2c_token_t const_expression (m2c_parser_context_t p);
-
-static m2c_token_t const_binding (m2c_parser_context_t p) {
-  intstr_t lexeme;
-  m2c_token_t lookahead;
-  m2c_astnode_t id_node, expr_node;
-    
-  PARSER_DEBUG_INFO("constBinding");
-  
-  
-  /* '=' */
-  if (match_token(p, TOKEN_EQUAL)) {
-    lookahead = m2c_consume_sym(p->lexer);
-  }
-  else /* resync */ {
-    lookahead =
-      skip_to_token_or_set(p, TOKEN_RBRACKET, FIRST(CONST_EXPRESSION));
-  } /* end if */
-  
-  /* ']' */
-  if (match_token(p, TOKEN_RBRACKET)) {
-    lookahead = m2c_consume_sym(p->lexer);
-  }
-  else /* resync */ {
-    lookahead =
-      skip_to_set_or_set(p, FIRST(CONST_EXPRESSION), FOLLOW(CONST_BINDING));
-  } /* end if */
-  
-  /* constExpression */
-  if (match_set(FIRST(CONST_EXPRESSION)) {
-    lookahead = const_expression(p);
-    expr_node = p->ast;
-  }
-  else /* resync */ {
-    lookahead = skip_to_set(p, FOLLOW(CONST_BINDING));
-  } /* end if */
-    
-  return lookahead;
-} /* end const_binding */
-
-
-/* --------------------------------------------------------------------------
  * private function const_declaration()
  * --------------------------------------------------------------------------
  * constDeclaration :=
