@@ -1082,7 +1082,9 @@ static m2c_token_t public_const_defn (m2c_parser_context_t p) {
  *
  * alias constExpression = expression ;
  *
- * astNode: (CONST bindNode constIdNode typeIdNode exprNode)
+ * astNode:
+ *   (CONST (EMPTY) (ID constId) (ID typeId) exprNode) |
+ *   (CONST (BINDTO bindId) (ID constId) (ID typeId) exprNode)
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t const_definition (m2c_parser_context_t p) {
@@ -1195,11 +1197,11 @@ static m2c_token_t type_definition (m2c_parser_context_t p) {
     lookahead = m2c_consume_sym(p->lexer);
   }
   else /* resync */ {
-    lookahead = skip_to_set(p, FIRST(DEFINITION_TYPES));
+    lookahead = skip_to_set(p, FIRST(PUBLIC_TYPES));
   } /* end if */
   
   /* type */
-  if (match_set(p, FIRST(DEFINITION_TYPES)) {
+  if (match_set(p, FIRST(PUBLIC_TYPES)) {
     lookahead = type(p);
     type_node = p->ast;
   }
@@ -1221,7 +1223,7 @@ static m2c_token_t type_definition (m2c_parser_context_t p) {
  * Parses rule type or privateType depending on p->module_context, constructs
  * its AST node, passes it in p->ast and returns the new lookahead symbol.
  *
- * (1) definition module context:
+ * (1) interface module context:
  *
  * type :=
  *   aliasType | derivedType | subrangeType | enumType | setType |
@@ -1239,14 +1241,13 @@ static m2c_token_t type_definition (m2c_parser_context_t p) {
  *
  * privateType :=
  *   aliasType | derivedType | subrangeType | enumType | setType |
- *   arrayType | recordType | octetSeqType | privatePointerType |
- *   procedureType
+ *   arrayType | recordType | privatePointerType | procedureType
  *   ;
  *
  * astNode: aliasTypeNode | derivedTypeNode | subrangeTypeNode |
  *   enumTypeNode | setTypeNode | arrayTypeNode | recordTypeNode |
- *   pointerTypeNode | opaqueTypeNode | octetSeqTypeNode |
- *   indeterminateTypeNode | procedureTypeNode
+ *   pointerTypeNode | opaqueTypeNode | indeterminateTypeNode |
+ *   procedureTypeNode
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t derived_type (m2c_parser_context_t p);
@@ -1277,20 +1278,9 @@ static m2c_token_t type (m2c_parser_context_t p) {
       lookahead = array_type(p); /* p->ast holds ast-node */
       break;
       
-    /* | octetseqType */
-    case TOKEN_OCTETSEQ :
-      if (p->module_context == IMP_MODULE) {
-        lookahead = octetseq_type(p); /* p->ast holds ast-node */
-      }
-      else {
-        /* fatal error -- we should never get here */
-        exit (-1)
-      } /* end if */
-      break;
-      
     /* | opaqueType */
     case TOKEN_OPAQUE :
-      if (p->module_context == DEF_MODULE) {
+      if (p->module_context == IFC_MODULE) {
         lookahead = opaque_type(p); /* p->ast holds ast-node */
       }
       else {
@@ -1905,94 +1895,12 @@ static m2c_token_t field_list_sequence (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function field_list()
+ * private macro field_list()
  * --------------------------------------------------------------------------
- * fieldList :=
- *   identList ':' ( typeIdent | subrangeType | arrayType | procedureType )
- *   ;
- *
- * astNode: (FIELDLIST identListNode typeNode)
+ * alias fieldList = varDefinition ;
  * ----------------------------------------------------------------------- */
-
-static m2c_token_t anon_type (m2c_parser_context_t p);
-
-static m2c_token_t field_list (m2c_parser_context_t p) {
-  m2c_token_t lookahead;
-  m2c_astnode_t type_node, list_node;
-    
-  PARSER_DEBUG_INFO("fieldList");
-  
-  /* IdentList */
-  lookahead = ident_list(p);
-  list_node = p->ast;
-  
-  /* ':' */
-  if (match_token(p, TOKEN_COLON)) {
-    lookahead = m2c_consume_sym(p->lexer);
-  }
-  else /* resync */ {
-    lookahead = skip_to_token(p,
-      TOKEN_IDENT, TOKEN_LBRACKET, TOKEN_ARRAY, TOKEN_PROCEDURE, NULL);
-  } /* end if */
-    
-  /* typeIdent | subrangeType | arrayType | procedureType */
-  if (match_set(p, FIRST(ANON_TYPE))) {
-    lookahead = anon_type(p);
-    type_node = p->ast;
-  }
-  else /* resync */ {
-    lookahead = skip_to_set(p, FOLLOW(FIELD_LIST));
-    type_node = m2c_ast_empty_node();
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_FIELDLIST, list_node, type_node, NULL);
-  
-  return lookahead;
-} /* end field_list */
-
-
-/* --------------------------------------------------------------------------
- * private function anon_type()
- * --------------------------------------------------------------------------
- * anonType :=
- *   typeIdent | subrangeType | arrayType | procedureType
- *   ;
- * ----------------------------------------------------------------------- */
-
-static m2c_token_t anon_type (m2c_parser_context_t p) {
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("fieldList");
-  
-  lookahead = m2c_next_sym(p->lexer);
-  
-  switch (lookahead) {
-    case TOKEN_ARRAY :
-      lookahead = array_type(p);
-      break;
-        
-    case TOKEN_PROCEDURE :
-      lookahead = procedure_type(p);
-      break;
-        
-    case TOKEN_IDENT :
-      lookahead = qualident(p);
-      break;
-        
-    case TOKEN_LBRACKET :
-      lookahead = subrange_type(p);
-      break;
-        
-    default :
-      /* fatal error -- abort */
-      exit (-1);
-  } /* end switch */
-  
-  /* AST node is passed through in p->ast */
-  
-  return lookahead;
-} /* end anon_type */
+ 
+#define field_list(_p) var_definition(_p)
 
 
 /* --------------------------------------------------------------------------
@@ -2476,7 +2384,7 @@ static m2c_token_t variadic_formal_type (m2c_parser_context_t p) {
  *   identList ':' typeIdent
  *   ;
  *
- * astNode: (VARDECL idlist typeId)
+ * astNode: (VARDEF idlistNode typeId)
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t var_definition (m2c_parser_context_t p) {
@@ -2510,10 +2418,53 @@ static m2c_token_t var_definition (m2c_parser_context_t p) {
   } /* end if */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_VARDECL, list_node, type_node, NULL);
+  p->ast = m2c_ast_new_node(AST_VARDEF, list_node, type_node, NULL);
   
   return lookahead;
 } /* end var_definition */
+
+
+/* --------------------------------------------------------------------------
+ * private function anon_type()
+ * --------------------------------------------------------------------------
+ * anonType :=
+ *   typeIdent | subrangeType | arrayType | procedureType
+ *   ;
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t anon_type (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("anonType");
+  
+  lookahead = m2c_next_sym(p->lexer);
+  
+  switch (lookahead) {
+    case TOKEN_ARRAY :
+      lookahead = array_type(p);
+      break;
+        
+    case TOKEN_PROCEDURE :
+      lookahead = procedure_type(p);
+      break;
+        
+    case TOKEN_IDENT :
+      lookahead = qualident(p);
+      break;
+        
+    case TOKEN_LBRACKET :
+      lookahead = subrange_type(p);
+      break;
+        
+    default :
+      /* fatal error -- abort */
+      exit (-1);
+  } /* end switch */
+  
+  /* AST node is passed through in p->ast */
+  
+  return lookahead;
+} /* end anon_type */
 
 
 /* --------------------------------------------------------------------------
@@ -2583,84 +2534,6 @@ static m2c_token_t procedure_header (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function procedure_signature()
- * --------------------------------------------------------------------------
- * procedureSignature :=
- *   Ident ( '(' formalParamList ')' )? ( ':' returnedType )?
- *   ;
- *
- * astnode: (PSIG identNode formalParamListNode returnTypeNode)
- * ----------------------------------------------------------------------- */
-
-static m2c_token_t formal_param_list (m2c_parser_context_t p);
-
-static m2c_token_t procedure_signature (m2c_parser_context_t p) {
-  m2c_token_t lookahead;
-  m2c_astnode_t id_node, list_node, type_node;
-  
-  PARSER_DEBUG_INFO("procedureSignature");
-  
-  /* Ident */
-  lookahead = ident(p);
-  id_node = p->ast;
-    
-  /* ( '(' formalParams ')' )? */
-  if (lookahead == TOKEN_LEFT_PAREN) {
-    
-    /* '(' */
-    lookahead = m2c_consume_sym(p->lexer);
-    
-    /* formalParamList */
-    if (match_set(p, FIRST(FORMAL_PARAMS))) {
-      lookahead = formal_param_list(p);
-      list_node = p->ast;
-    }
-    else /* resync */ {
-      lookahead =
-        skip_to_token(p, TOKEN_RPAREN, TOKEN_COLON, TOKEN_IDENT, NULL);
-      list_node = m2c_ast_empty_node();
-    } /* end if */
-        
-    /* ')' */
-    if (match_token(p, TOKEN_RPAREN)) {
-      lookahead = m2c_consume_sym(p->lexer);
-    }
-    else /* resync */ {
-      lookahead =
-        skip_to_token_or_set(p, TOKEN_IDENT, FOLLOW(PROCEDURE_SIGNATURE));
-    } /* end if */
-  }
-  else /* no formal parameter list */ {
-    list_node = m2c_ast_empty_node();
-  } /* end if */
-  
-  /* ( ':' returnedType )? */
-  if (lookahead == TOKEN_COLON) {
-    /* ':' */
-    lookahead = m2c_consume_sym(p->lexer);
-    
-    /* returnedType */
-    if (match_token(p, TOKEN_IDENTIFIER)) {
-      lookahead = qualident(p);
-      type_node = p->ast;
-    }
-    else /* resync */ {
-      lookahead = skip_to_set(p, FOLLOW(PROCEDURE_TYPE));
-      type_node = m2c_ast_empty_node();
-    } /* end if */
-  }
-  else /* no return type */ {
-    type_node = m2c_ast_empty_node();
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_PSIG, id_node, list_node, type_node, NULL);
-  
-  return lookahead;
-} /* end procedure_signature */
-
-
-/* --------------------------------------------------------------------------
  * private function binding_specifier()
  * --------------------------------------------------------------------------
  * bindingSpecifier :=
@@ -2668,7 +2541,8 @@ static m2c_token_t procedure_signature (m2c_parser_context_t p) {
  *   READ allocFlag? | WRITE formatFlag? | bindableIdent
  *   ;
  *
- * astnode: (BINDTO "NEW") | (BINDTO "NEW+") | (BINDTO "NEW*") |
+ * astnode:
+ *   (BINDTO "NEW") | (BINDTO "NEW+") | (BINDTO "NEW*") | (BINDTO "ident")
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t binding_specifier (m2c_parser_context_t p) {
@@ -2753,10 +2627,88 @@ static m2c_token_t binding_specifier (m2c_parser_context_t p) {
   } /* end switch */
   
   /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_terminal_node(AST_BIND, lexeme);
+  p->ast = m2c_ast_new_terminal_node(AST_BINDTO, lexeme);
   
   return lookahead;
 } /* end binding_specifier */
+
+
+/* --------------------------------------------------------------------------
+ * private function procedure_signature()
+ * --------------------------------------------------------------------------
+ * procedureSignature :=
+ *   Ident ( '(' formalParamList ')' )? ( ':' returnedType )?
+ *   ;
+ *
+ * astnode: (PSIG identNode formalParamListNode returnTypeNode)
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t formal_param_list (m2c_parser_context_t p);
+
+static m2c_token_t procedure_signature (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  m2c_astnode_t id_node, list_node, type_node;
+  
+  PARSER_DEBUG_INFO("procedureSignature");
+  
+  /* Ident */
+  lookahead = ident(p);
+  id_node = p->ast;
+    
+  /* ( '(' formalParams ')' )? */
+  if (lookahead == TOKEN_LEFT_PAREN) {
+    
+    /* '(' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* formalParamList */
+    if (match_set(p, FIRST(FORMAL_PARAMS))) {
+      lookahead = formal_param_list(p);
+      list_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token(p, TOKEN_RPAREN, TOKEN_COLON, TOKEN_IDENT, NULL);
+      list_node = m2c_ast_empty_node();
+    } /* end if */
+        
+    /* ')' */
+    if (match_token(p, TOKEN_RPAREN)) {
+      lookahead = m2c_consume_sym(p->lexer);
+    }
+    else /* resync */ {
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_IDENT, FOLLOW(PROCEDURE_SIGNATURE));
+    } /* end if */
+  }
+  else /* no formal parameter list */ {
+    list_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* ( ':' returnedType )? */
+  if (lookahead == TOKEN_COLON) {
+    /* ':' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* returnedType */
+    if (match_token(p, TOKEN_IDENTIFIER)) {
+      lookahead = qualident(p);
+      type_node = p->ast;
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(PROCEDURE_TYPE));
+      type_node = m2c_ast_empty_node();
+    } /* end if */
+  }
+  else /* no return type */ {
+    type_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_PSIG, id_node, list_node, type_node, NULL);
+  
+  return lookahead;
+} /* end procedure_signature */
 
 
 /* --------------------------------------------------------------------------
@@ -3025,40 +2977,41 @@ static m2c_token_t private_import (m2c_parser_context_t p) {
  * private function block()
  * --------------------------------------------------------------------------
  * block :=
- *   declaration* BEGIN statementSequence END
+ *   definition* BEGIN statementSequence END
  *   ;
  *
- * astnode: (BLOCK declarationListNode statementSeqNode)
+ * astnode: (BLOCK defnListNode statementSeqNode)
  * ----------------------------------------------------------------------- */
 
-static m2c_token_t declaration (m2c_parser_context_t p);
+static m2c_token_t definition (m2c_parser_context_t p);
 static m2c_token_t statement_sequence (m2c_parser_context_t p);
 
 static m2c_token_t block (m2c_parser_context_t p) {
   m2c_token_t lookahead;
+  m2c_fifo_t defn_list;
   m2c_astnode_t list_node, sseq_node;
   
   PARSER_DEBUG_INFO("block");
   
   lookahead = m2c_next_sym(p->lexer);
   
-  tmp_list = m2c_fifo_new_queue(NULL);
+  defn_list = m2c_fifo_new_queue(NULL);
     
-  /* declaration */
+  /* definition */
   while (m2c_tokenset_element(FIRST(DECLARATION), lookahead)) {
-    lookahead = declaration(p);
-    m2c_fifo_enqueue(tmp_list, p->ast);
+    lookahead = definition(p);
+    m2c_fifo_enqueue(defn_list, p->ast);
   } /* end while */
   
-  /* construct declaration list node */
-  if (m2c_fifo_entry_count(tmplist) > 0) {
-    list_node = m2c_ast_new_list_node(AST_DECLLIST, tmp_list);
+  /* construct definition list node */
+  if (m2c_fifo_entry_count(defn_list) > 0) {
+    list_node = m2c_ast_new_list_node(AST_DEFNLIST, defn_list);
   }
-  else /* no declarations */ {
+  else /* no definitions */ {
     list_node = m2c_ast_empty_node();
   } /* end if */
   
-  m2c_fifo_release(tmp_list);
+  m2c_fifo_release(defn_list);
   
   /* BEGIN */
   if (match_token(p, TOKEN_BEGIN)) {
@@ -3083,6 +3036,149 @@ static m2c_token_t block (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end block */
+
+
+/* --------------------------------------------------------------------------
+ * private function definition()
+ * --------------------------------------------------------------------------
+ * definition :=
+ *   CONST ( constDefinition ';' )+ |
+ *   TYPE ( typeDefinition ';' )+ |
+ *   VAR ( varDefinition ';' )+ |
+ *   procedureHeader ';' block ident ';' |
+ *   aliasDefinition ';' |
+ *   toDoList ';'
+ *   ;
+ * ----------------------------------------------------------------------- */
+
+#define const_definition_list(_p) def_or_decl_list(const_defn, _p)
+#define type_definition_list(_p) def_or_decl_list(type_defn, _p)
+#define var_definition_list(_p) def_or_decl_list(var_defn, _p)
+static m2c_token_t procedure_definition (m2c_parser_context_t p);
+static m2c_token_t alias_definition (m2c_parser_context_t p);
+static m2c_token_t to_do_list (m2c_parser_context_t p);
+
+static m2c_token_t definition (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("definition");
+  
+  lookahead = m2c_next_sym(p->lexer);
+  
+  switch (lookahead) {
+    
+    /* CONST */
+    case TOKEN_CONST :
+      /* (constDefinition ';')+ */
+      lookahead = const_definition_list(p);
+      break;
+      
+    /* | procedureDefinition */
+    case TOKEN_PROCEDURE :
+      lookahead = procedure_definition(p); /* p->ast holds ast-node */
+      
+      /* ';' */
+      if (match_token(p, TOKEN_SEMICOLON)) {
+        lookahead = m2c_consume_sym(p->lexer);
+      }
+      else /* resync */ {
+        lookahead = skip_to_set(p, FOLLOW(DECLARATION));
+      } /* end if */
+      break;
+      
+    /* | toDoList */
+    case TOKEN_TO :
+      lookahead = to_do_list(p); /* p->ast holds ast-node */
+      
+      /* ';' */
+      if (match_token(p, TOKEN_SEMICOLON)) {
+        lookahead = m2c_consume_sym(p->lexer);
+      }
+      else /* resync */ {
+        lookahead = skip_to_set(p, FOLLOW(DECLARATION));
+      } /* end if */
+      break;
+      
+    /* | TYPE */
+    case TOKEN_TYPE :
+      /* (typeDefinition';')+ */
+      lookahead = type_definition_list(p);
+      break;
+      
+    /* aliasDefinition ';' */
+    case TOKEN_UNQUALIFIED :
+      /* aliasDefinition */
+      lookahead = alias_definition(p);
+      
+      /* ';' */
+      if (match_token(p, TOKEN_SEMICOLON)) {
+        lookahead = m2c_consume_sym(p->lexer);
+      }
+      else /* resync */ {
+        lookahead = skip_to_set(p, FOLLOW(DECLARATION));
+      } /* end if */
+      break;
+    
+    /* | VAR */
+    case TOKEN_VAR :
+      /* (varDefinition ';')+ */
+      lookahead = var_definition_list(p);
+      break;
+      
+    default : /* unreachable code */
+      /* fatal error -- abort */
+      exit(-1);
+  } /* end switch */
+  
+  /* AST node is passed through in p->ast */
+  
+  return lookahead;
+} /* end definition */
+
+
+/* --------------------------------------------------------------------------
+ * private function type_definition()
+ * --------------------------------------------------------------------------
+ * typeDeclaration :=
+ *   Ident '=' type
+ *   ;
+ *
+ * astnode: (TYPEDEF identNode typeConstructorNode)
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t type_definition (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  m2c_astnode_t id_node, type_node;
+    
+  PARSER_DEBUG_INFO("typeDefinition");
+  
+  /* Ident */
+  lookahead = ident(p);
+  id_node = p->ast;
+  
+  /* '=' */
+  if (match_token(p, TOKEN_EQUAL)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FIRST(PGM_MODULE_TYPES))
+  } /* end if */
+  
+  /* type */
+  if (match_set(p, FIRST(PGM_MODULE_TYPES)) {
+    lookahead = type(p);
+    type_node = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FOLLOW(TYPE_DEFINITION));
+    type_node = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_TYPEDEF, id_node, type_node, NULL);
+  
+  return lookahead;
+} /* end type_definition */
 
 
 /* --------------------------------------------------------------------------
@@ -3258,149 +3354,6 @@ static m2c_token_t private_block (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end private_block */
-
-
-/* --------------------------------------------------------------------------
- * private function declaration()
- * --------------------------------------------------------------------------
- * declaration :=
- *   CONST ( constDeclaration ';' )+ |
- *   TYPE ( typeDeclaration ';' )+ |
- *   VAR ( varDeclaration ';' )+ |
- *   aliasDeclaration ';' |
- *   procedureHeader ';' block ident ';' |
- *   toDoList ';'
- *   ;
- * ----------------------------------------------------------------------- */
-
-#define const_declaration_list(_p) def_or_decl_list(const_decl, _p)
-#define type_declaration_list(_p) def_or_decl_list(type_decl, _p)
-#define var_declaration_list(_p) def_or_decl_list(var_decl, _p)
-static m2c_token_t alias_declaration (m2c_parser_context_t p);
-static m2c_token_t procedure_declaration (m2c_parser_context_t p);
-static m2c_token_t to_do_list (m2c_parser_context_t p);
-
-static m2c_token_t declaration (m2c_parser_context_t p) {
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("declaration");
-  
-  lookahead = m2c_next_sym(p->lexer);
-  
-  switch (lookahead) {
-    
-    /* CONST */
-    case TOKEN_CONST :
-      /* (constDeclaration ';')+ */
-      lookahead = const_declaration_list(p);
-      break;
-      
-    /* | procedureDeclaration */
-    case TOKEN_PROCEDURE :
-      lookahead = procedure_declaration(p); /* p->ast holds ast-node */
-      
-      /* ';' */
-      if (match_token(p, TOKEN_SEMICOLON)) {
-        lookahead = m2c_consume_sym(p->lexer);
-      }
-      else /* resync */ {
-        lookahead = skip_to_set(p, FOLLOW(DECLARATION));
-      } /* end if */
-      break;
-      
-    /* | toDoList */
-    case TOKEN_TO :
-      lookahead = to_do_list(p); /* p->ast holds ast-node */
-      
-      /* ';' */
-      if (match_token(p, TOKEN_SEMICOLON)) {
-        lookahead = m2c_consume_sym(p->lexer);
-      }
-      else /* resync */ {
-        lookahead = skip_to_set(p, FOLLOW(DECLARATION));
-      } /* end if */
-      break;
-      
-    /* | TYPE */
-    case TOKEN_TYPE :
-      /* (typeDeclaration ';')+ */
-      lookahead = type_declaration_list(p);
-      break;
-      
-    /* aliasDeclaration ';' */
-    case TOKEN_UNQUALIFIED :
-      /* aliasDeclaration */
-      lookahead = alias_declaration(p);
-      
-      /* ';' */
-      if (match_token(p, TOKEN_SEMICOLON)) {
-        lookahead = m2c_consume_sym(p->lexer);
-      }
-      else /* resync */ {
-        lookahead = skip_to_set(p, FOLLOW(DECLARATION));
-      } /* end if */
-      break;
-    
-    /* | VAR */
-    case TOKEN_VAR :
-      /* (varDeclaration ';')+ */
-      lookahead = var_declaration_list(p);
-      break;
-      
-    default : /* unreachable code */
-      /* fatal error -- abort */
-      exit(-1);
-  } /* end switch */
-  
-  /* AST node is passed through in p->ast */
-  
-  return lookahead;
-} /* end declaration */
-
-
-/* --------------------------------------------------------------------------
- * private function type_declaration()
- * --------------------------------------------------------------------------
- * typeDeclaration :=
- *   Ident '=' type
- *   ;
- *
- * astnode: (TYPEDECL identNode typeConstructorNode)
- * ----------------------------------------------------------------------- */
-
-static m2c_token_t type_declaration (m2c_parser_context_t p) {
-  m2c_token_t lookahead;
-  m2c_astnode_t id_node, type_node;
-    
-  PARSER_DEBUG_INFO("typeDeclaration");
-  
-  /* Ident */
-  lookahead = ident(p);
-  id_node = p->ast;
-  
-  /* '=' */
-  if (match_token(p, TOKEN_EQUAL)) {
-    lookahead = m2c_consume_sym(p->lexer);
-  }
-  else /* resync */ {
-    lookahead = skip_to_set(p, FIRST(DECLARATION_TYPES))
-  } /* end if */
-  
-  /* type */
-  if (match_set(p, FIRST(DECLARATION_TYPES)) {
-    lookahead = type(p);
-    type_node = p->ast;
-  }
-  else /* resync */ {
-    lookahead = skip_to_set(p, FOLLOW(TYPE_DECLARATION));
-    type_node = m2c_ast_empty_node();
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_TYPEDECL, id_node, type_node, NULL);
-  
-  return lookahead;
-} /* end type_declaration */
 
 
 /* --------------------------------------------------------------------------
