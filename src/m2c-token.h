@@ -63,18 +63,18 @@ typedef enum {
   TOKEN_CASE,                 /* 6 */
   TOKEN_CONST,                /* 7 */
   TOKEN_COPY,                 /* 8 */
-  TOKEN_DEFINITION,           /* 9 */
-  TOKEN_DIV,                 /* 10 */   /* operator */
-  TOKEN_DO,                  /* 11 */
-  TOKEN_ELSE,                /* 12 */
-  TOKEN_ELSIF,               /* 13 */
-  TOKEN_END,                 /* 14 */
-  TOKEN_EXIT,                /* 15 */
-  TOKEN_FOR,                 /* 16 */
-  TOKEN_IF,                  /* 17 */
-  TOKEN_IMPLEMENTATION,      /* 18 */
-  TOKEN_IMPORT,              /* 19 */
-  TOKEN_IN,                  /* 20 */   /* operator */
+  TOKEN_DIV,                  /* 9 */   /* operator */
+  TOKEN_DO,                  /* 10 */
+  TOKEN_ELSE,                /* 11 */
+  TOKEN_ELSIF,               /* 12 */
+  TOKEN_END,                 /* 13 */
+  TOKEN_EXIT,                /* 14 */
+  TOKEN_FOR,                 /* 15 */
+  TOKEN_IF,                  /* 16 */
+  TOKEN_IMPLEMENTATION,      /* 17 */
+  TOKEN_IMPORT,              /* 18 */
+  TOKEN_IN,                  /* 19 */   /* operator */
+  TOKEN_INTERFACE,           /* 20 */
   TOKEN_LOOP,                /* 21 */
   TOKEN_MOD,                 /* 22 */   /* operator */
   TOKEN_MODULE,              /* 23 */
@@ -207,6 +207,7 @@ typedef enum {
 
 #define TOKEN_PERIOD TOKEN_DOT
 #define TOKEN_HASH TOKEN_NOT_EQUAL
+#define TOKEN_DEFINITION TOKEN_INTERFACE
 #define TOKEN_LESS_OR_EQUAL TOKEN_LESS_OR_EQ
 #define TOKEN_GREATER_OR_EQUAL TOKEN_GREATER_OR_EQ
 

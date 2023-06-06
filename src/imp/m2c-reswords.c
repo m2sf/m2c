@@ -492,20 +492,43 @@ m2c_token_t m2c_resword_token_for_lexeme
       
     case /* length = 8 */ 8 :
       /* OCTETSEQ */
-	  if (lexeme == lextab[TOKEN_OCTETSEQ]) {
-	    return TOKEN_OCTETSEQ;
-	  } /* end if */
+	    if (lexeme == lextab[TOKEN_OCTETSEQ]) {
+	      return TOKEN_OCTETSEQ;
+	    } /* end if */
           
       return default_token;
       
     case /* length = 9 */ 9 :
-      /* PROCEDURE */
-	  if (lexeme == lextab[TOKEN_PROCEDURE]) {
-	    return TOKEN_PROCEDURE;
-	  } /* end if */
+      switch (lexstr[0]) {
+        
+        case 'I' :
+          /* INTERFACE */
+	        if (lexeme == lextab[TOKEN_INTERFACE]) {
+	          return TOKEN_INTERFACE;
+	        } /* end if */
           
+          return default_token;
+          
+        case 'P' :
+          /* PROCEDURE */
+	        if (lexeme == lextab[TOKEN_PROCEDURE]) {
+	          return TOKEN_PROCEDURE;
+	        } /* end if */
+          
+          return default_token;
+            
+	      default :
+	        return default_token;
+      } /* end switch */
+      
+    case /* length = 10 */ 10 :
+      /* Synonym DEFINITION */
+      if (lexeme == intstr_for_cstr("DEFINITION", NULL);) {
+	      return TOKEN_INTERFACE;
+      } /* end if */
+      
       return default_token;
-	
+    
     case /* length = 11 */ 11 :
       /* UNQUALIFIED */
       if (lexeme == lextab[TOKEN_UNQUALIFIED]) {
