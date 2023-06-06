@@ -27,11 +27,11 @@ grammar m2bsk;
 /* * *   R e s e r v e d   W o r d s   * * */
 
 reserved
-  ALIAS, AND, ARGLIST, ARRAY, BEGIN, CASE, CONST, COPY, DEFINITION, DIV, DO,
-  ELSE, ELSIF, END, EXIT, FOR, IF, IMPLEMENTATION, IMPORT, IN, LOOP, MOD,
-  MODULE, NEW, NOP, NOT, OCTETSEQ, OF, OPAQUE, OR, POINTER, PROCEDURE, READ,
-  RECORD, RELEASE, REPEAT RETAIN, RETURN, SET, THEN, TO, TYPE, UNQUALIFIED,
-  UNTIL, VAR, WHILE, WRITE;
+  ALIAS, AND, ARGLIST, ARRAY, BEGIN, CASE, CONST, COPY, DIV, DO, ELSE, ELSIF,
+  END, EXIT, FOR, IF, IMPLEMENTATION, IMPORT, IN, INTERFACE, LOOP, MOD, MODULE,
+  NEW, NOP, NOT, OCTETSEQ, OF, OPAQUE, OR, POINTER, PROCEDURE, READ, RECORD,
+  RELEASE, REPEAT RETAIN, RETURN, SET, THEN, TO, TYPE, UNQUALIFIED, UNTIL, VAR,
+  WHILE, WRITE;
 
 /* ADDRESS, CAPACITY, CAST and NIL are Schroedinger's Tokens */
 
@@ -41,17 +41,17 @@ reserved
 /* Compilation Unit */
 
 compilationUnit :=
-  definitionModule | implementationModule | programModule
+  interfaceModule | implementationModule | programModule
   ;
 
 
-/*** Definition Module Syntax ***/
+/*** Interface Module Syntax ***/
 
-/* Definition Module */
+/* Interface Module */
 
-definitionModule :=
-  DEFINITION MODULE moduleIdent ';'
-  import* definition* END moduleIdent '.'
+interfaceModule :=
+  INTERFACE MODULE moduleIdent ';'
+  import* publicDefnOrDecl* END moduleIdent '.'
   ;
 
 /* Module Identifier */
@@ -72,31 +72,33 @@ alias libIdent = StdIdent ;
 alias reExport = '+' ;
 
 
-/* Definition */
+/* Public Definition or Declaration */
 
-definition :=
-  CONST ( constDefinition ';' )+ |
-  TYPE ( typeDefinition ';' )+ |
-  VAR ( identList ':' typeIdent ';' )+ |
+publicDefnOrDecl :=
+  CONST ( publicConstDefn ';' )+ |
+  TYPE ( publicTypeDefn ';' )+ |
+  VAR ( varDefinition ';' )+ |
   procedureHeader ';' |
   toDoList ';'
   ;
 
 
+/* Public Constant Definition */
+
+publicConstDefn :=
+  ( '[' bindableIdent ']' )?  constDefinition
+  ;
+  
+/* Bindable Identifier */
+
+.bindableIdent := Pervasive | Primitive ;
+
+/* Constant bindable identifiers: COLLATION, TLIMIT */
+
+
 /* Constant Definition */
 
 constDefinition :=
-  constBinding | constDeclaration
-  ;
-  
-constBinding :=
-  '[' ( COLLATION | TLIMIT ) ']' '=' constExpression
-  ;
-
-
-/* Constant Declaration */
-
-constDeclaration :=
   ident ( ':' typeIdent )? '=' constExpression
   ;
 
@@ -111,9 +113,9 @@ alias ident = StdIdent ;
 alias constExpression = expression ;
 
 
-/* Type Definition */
+/* Public Type Definition */
 
-typeDefinition :=
+publicTypeDefinition :=
   ident '='
     ( aliasType | derivedType | subrangeType | enumType | setType |
       arrayType | recordType | pointerType | opaqueType | procedureType )
@@ -225,9 +227,7 @@ recTypeToExtend :=
 
 /* Field List */
 
-fieldList :=
-  identList ':' ( typeIdent | arrayType | subrangeType | procedureType )
-  ;
+alias fieldList = varDefinition ;
 
 
 /* Pointer Type */
@@ -285,13 +285,24 @@ castingFormalType :=
   CAST ( OCTETSEQ | ADDRESS )
   ;
 
-/* Syntax enabled by import of module UNSAFE */
+/* Casting Syntax enabled by import of module UNSAFE */
 
 
 /* Variadic Formal Type */
 
 variadicFormalType :=
   ARGLIST OF simpleFormalType
+  ;
+
+
+/* Variable Definition */
+
+varDefinition :=
+  identList ':' typeIdent | anonType
+  ;
+
+.anonType :=
+  subrangeType | arrayType | procedureType
   ;
 
 
@@ -318,10 +329,8 @@ alias allocFlag = '*' ;
 
 alias formatFlag = '#' ;
 
-
-/* Bindable Identifier */
-
-.bindableIdent := Pervasive | Primitive ;
+/* Procedure bindable identifiers:
+   APPEND, INSERT, REMOVE, COUNT, LENGTH, and all primitives */
 
 
 /* Procedure Signature */
@@ -358,26 +367,26 @@ privateImport :=
 /* Block */
 
 block :=
-  declaration*
+  definition*
   BEGIN statementSequence END
   ;
 
 
-/* Declaration */
+/* Definition */
 
-declaration :=
-  CONST ( constDeclaration ';' )+ |
-  TYPE ( typeDeclaration ';' )+ |
-  VAR ( varDeclaration ';' )+ |
+definition :=
+  CONST ( constDefinition ';' )+ |
+  TYPE ( typeDefinition ';' )+ |
+  VAR ( varDefinition ';' )+ |
   procedureHeader ';' block ident ';' |
-  aliasDeclaration ';' |
+  aliasDefinition ';' |
   toDoList ';'
   ;
 
 
-/* Type Declaration */
+/* Type Definition */
 
-typeDeclaration :=
+typeDefinition :=
   ident '='
     ( aliasType | derivedType | subrangeType | enumType | setType |
       arrayType | recordType | pointerType | procedureType )
@@ -395,26 +404,26 @@ implementationModule :=
 /* Private Block */
 
 privateBlock :=
-  privateDeclaration*
+  privateDefinition*
   ( BEGIN statementSequence )? END
   ;
 
 
-/* Private Declaration */
+/* Private Definition */
 
-privateDeclaration :=
-  CONST ( constDeclaration ';' )+ |
-  TYPE ( privateTypeDeclaration ';' )+ |
-  VAR ( varDeclaration ';' )+ |
+privateDefinition :=
+  CONST ( constDefinition ';' )+ |
+  TYPE ( privateTypeDefn ';' )+ |
+  VAR ( varDefinition ';' )+ |
   procedureHeader ';' block ident ';' |
-  aliasDeclaration ';' |
+  aliasDefinition ';' |
   toDoList ';'
   ;
 
 
-/* Private Type Declaration */
+/* Private Type Definition */
 
-privateTypeDeclaration :=
+privateTypeDefn :=
   ident '='
     ( aliasType | derivedType | subrangeType | enumType | setType |
       arrayType | recordType | privatePointerType | procedureType )
@@ -449,14 +458,9 @@ indeterminateField :=
 alias capacityField = ident ;
 
 
-/* Variable Declaration */
+/* Alias Definition */
 
-alias varDeclaration = fieldList ;
-
-
-/* Alias Declaration */
-
-aliasDeclaration :=
+aliasDefinition :=
   UNQUALIFIED nameSelector ( ',' nameSelector )*
   ;
 
@@ -510,7 +514,7 @@ releaseStatement :=
 /* Update Or Procedure Call */
 
 updateOrProcCall :=
-  designator ( IncOrDecSuffix | '(' expressionList ')' )? |
+  designator -> ( IncOrDecSuffix | '(' expressionList ')' )? |
   targetDesignator -> ':=' expression
   ;
 
@@ -519,7 +523,7 @@ updateOrProcCall :=
 .IncOrDecSuffix := '++' | '--' ;
 
 
-/* RETURN or YIELD Statement */
+/* RETURN Statement */
 
 returnStatement :=
   RETURN expression?
