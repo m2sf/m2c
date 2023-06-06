@@ -1168,8 +1168,6 @@ static m2c_token_t ident (m2c_parser_context_t p) {
 } /* end ident */
 
 
-m2c_token_t type_definition (m2c_parser_context_t p);
-
 /* --------------------------------------------------------------------------
  * private function type_definition()
  * --------------------------------------------------------------------------
@@ -1184,9 +1182,25 @@ static m2c_token_t type (m2c_parser_context_t p);
 
 static m2c_token_t type_definition (m2c_parser_context_t p) {
   m2c_token_t lookahead;
+  m2c_tokenset_t first_set;
   m2c_astnode_t ident_node, type_node;
     
   PARSER_DEBUG_INFO("typeDefinition");
+  
+  /* FIRST(interfaceType) | FIRST(implementationType) | FIRST(programType) */
+  switch (p->module_context) {
+    case IFC_MODULE :
+      first_set = FIRST(IFC_MOD_TYPE);
+      break;
+      
+    case IMP_MODULE :
+      first_set = FIRST(IMP_MOD_TYPE);
+      break;
+    
+    case PGM_MODULE :
+      first_set = FIRST(PGM_MOD_TYPE);
+      break;
+  } /* end switch */
   
   /* Ident */
   lookahead = ident(p);
@@ -1197,11 +1211,11 @@ static m2c_token_t type_definition (m2c_parser_context_t p) {
     lookahead = m2c_consume_sym(p->lexer);
   }
   else /* resync */ {
-    lookahead = skip_to_set(p, FIRST(PUBLIC_TYPES));
+    lookahead = skip_to_set(p, FIRST(first_set));
   } /* end if */
   
   /* type */
-  if (match_set(p, FIRST(PUBLIC_TYPES)) {
+  if (match_set(p, first_set)) {
     lookahead = type(p);
     type_node = p->ast;
   }
@@ -1220,26 +1234,27 @@ static m2c_token_t type_definition (m2c_parser_context_t p) {
 /* --------------------------------------------------------------------------
  * private function type()
  * --------------------------------------------------------------------------
- * Parses rule type or privateType depending on p->module_context, constructs
- * its AST node, passes it in p->ast and returns the new lookahead symbol.
+ * Parses rule interfaceType, implementationType or programType  depending on
+ * p->module_context,  constructs  its  AST node,  passes it  in  p->ast  and
+ * returns the new lookahead symbol.
  *
  * (1) interface module context:
  *
- * type :=
+ * interfaceType :=
  *   aliasType | derivedType | subrangeType | enumType | setType |
  *   arrayType | recordType | pointerType | opaqueType | procedureType
  *   ;
  *
  * (2) program module context:
  *
- * type :=
+ * programType :=
  *   aliasType | derivedType | subrangeType | enumType | setType |
  *   arrayType | recordType | pointerType | procedureType
  *   ;
  *
  * (3) implementation module context:
  *
- * privateType :=
+ * implementationType :=
  *   aliasType | derivedType | subrangeType | enumType | setType |
  *   arrayType | recordType | privatePointerType | procedureType
  *   ;
@@ -3134,51 +3149,6 @@ static m2c_token_t definition (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end definition */
-
-
-/* --------------------------------------------------------------------------
- * private function type_definition()
- * --------------------------------------------------------------------------
- * typeDeclaration :=
- *   Ident '=' type
- *   ;
- *
- * astnode: (TYPEDEF identNode typeConstructorNode)
- * ----------------------------------------------------------------------- */
-
-static m2c_token_t type_definition (m2c_parser_context_t p) {
-  m2c_token_t lookahead;
-  m2c_astnode_t id_node, type_node;
-    
-  PARSER_DEBUG_INFO("typeDefinition");
-  
-  /* Ident */
-  lookahead = ident(p);
-  id_node = p->ast;
-  
-  /* '=' */
-  if (match_token(p, TOKEN_EQUAL)) {
-    lookahead = m2c_consume_sym(p->lexer);
-  }
-  else /* resync */ {
-    lookahead = skip_to_set(p, FIRST(PGM_MODULE_TYPES))
-  } /* end if */
-  
-  /* type */
-  if (match_set(p, FIRST(PGM_MODULE_TYPES)) {
-    lookahead = type(p);
-    type_node = p->ast;
-  }
-  else /* resync */ {
-    lookahead = skip_to_set(p, FOLLOW(TYPE_DEFINITION));
-    type_node = m2c_ast_empty_node();
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_TYPEDEF, id_node, type_node, NULL);
-  
-  return lookahead;
-} /* end type_definition */
 
 
 /* --------------------------------------------------------------------------
