@@ -587,7 +587,7 @@ static m2c_token_t compilation_unit (m2c_parser_context_t p) {
  * --------------------------------------------------------------------------
  * interfaceModule :=
  *   INTERFACE MODULE moduleIdent ';'
- *   import* publicDefnOrDecl* END moduleIdent '.'
+ *   import* declaration* END moduleIdent '.'
  *   ;
  *
  * moduleIdent := Ident ;
@@ -596,7 +596,7 @@ static m2c_token_t compilation_unit (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t import (m2c_parser_context_t p);
-static m2c_token_t public_defn_or_decl (m2c_parser_context_t p);
+static m2c_token_t declaration (m2c_parser_context_t p);
 
 static m2c_token_t interface_module (m2c_parser_context_t p) {
   intstr_t ident1, ident2;
@@ -650,9 +650,9 @@ static m2c_token_t interface_module (m2c_parser_context_t p) {
   
   dd_list = m2c_fifo_new_queue(NULL);
   
-  /* publicDefnOrDecl* */
-  while (m2c_tokenset_element(FIRST(PUBLIC_DEFN_OR_DECL), lookahead)) {
-    lookahead = public_defn_or_decl(p);
+  /* declaration* */
+  while (m2c_tokenset_element(FIRST(DECLARATION), lookahead)) {
+    lookahead = declaration(p);
     m2c_fifo_enqueue(dd_list, p->ast);
   } /* end while */
   
@@ -799,29 +799,32 @@ static m2c_token_t import (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function public_defn_or_decl()
+ * private function declaration()
  * --------------------------------------------------------------------------
- * publicDefnOrDecl :=
+ * declaration :=
  *   CONST ( publicConstDefn ';' )+ |
  *   TYPE ( publicTypeDefn ';' )+ |
  *   VAR ( varDefinition ';' )+ |
- *   procedureHeader ';' |
+ *   procedureDeclaration ';' |
  *   toDoList ';'
  *   ;
+ *
+ * alias procedureDeclaration = ProcedureHeader ;
  * ----------------------------------------------------------------------- */
 
 #define const_definition_list(_p) def_or_decl_list(const_def, _p)
 #define type_definition_list(_p) def_or_decl_list(type_def, _p)
 #define var_definition_list(_p) def_or_decl_list(var_def, _p)
 static m2c_token_t definition_list
-  (def_decl_context_t *context, m2c_parser_context_t p)
+  (def_decl_context_t *context, m2c_parser_context_t p);
+#define procedure_declaration(_p) procedureHeader(_p)
 static m2c_token_t procedure_header (m2c_parser_context_t p);
 static m2c_token_t to_do_list (m2c_parser_context_t p);
 
-m2c_token_t public_defn_or_decl (m2c_parser_context_t p) {
+m2c_token_t declaration (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   
-  PARSER_DEBUG_INFO("publicDefnOrDecl");
+  PARSER_DEBUG_INFO("declaration");
   
   lookahead = m2c_next_sym(p->lexer);
   
@@ -845,9 +848,9 @@ m2c_token_t public_defn_or_decl (m2c_parser_context_t p) {
       lookahead = var_definition_list(p);
       break;
       
-    /* | procedureHeader */
+    /* | procedureDeclaration */
     case TOKEN_PROCEDURE :
-      lookahead = procedure_header(p); /* p->ast holds ast-node */
+      lookahead = procedure_declaration(p); /* p->ast holds ast-node */
       
       /* ';' */
       if (match_token(p, TOKEN_SEMICOLON)) {
@@ -879,7 +882,7 @@ m2c_token_t public_defn_or_decl (m2c_parser_context_t p) {
   /* AST node is passed through in p->ast */
   
   return lookahead;
-} /* end public_defn_or_decl */
+} /* end declaration */
 
 
 /* --------------------------------------------------------------------------
