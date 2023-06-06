@@ -71,7 +71,7 @@
  * ----------------------------------------------------------------------- */
 
 typedef enum {
-  DEF_MODULE,   /* DEFINITION MODULE */
+  IFC_MODULE,   /* INTERFACE MODULE */
   IMP_MODULE,   /* IMPLEMENATION MODULE */
   PGM_MODULE    /* (*PROGRAM*) MODULE */
 } m2c_module_context_t;
@@ -522,10 +522,10 @@ static void parse_start_symbol (m2c_parser_context_t p) {
  * private function compilation_unit()
  * --------------------------------------------------------------------------
  * compilationUnit :=
- *   definitionModule | implementationModule | programModule
+ *   interfaceModule | implementationModule | programModule
  *   ;
  *
- * astnode: defModuleNode | impModuleNode | pgmModuleNode
+ * astnode: ifcModuleNode | impModuleNode | pgmModuleNode
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t compilation_unit (m2c_parser_context_t p) {
@@ -536,14 +536,14 @@ static m2c_token_t compilation_unit (m2c_parser_context_t p) {
   m2c_token_t lookahead = m2c_next_sym(p->lexer);
   
   switch (lookahead) {
-    case TOKEN_DEFINITION :
+    case TOKEN_INTERFACE :
       if (is_def_suffix(p->suffix) == false) {
         /* TO DO: report error -- incorrect file type */
         m2c_stats_inc(p->stats, M2C_STATS_SEMANTIC_ERROR_COUNT);
       } /* end if */
       
-      p->module_context = DEF_MODULE;
-      lookahead = definition_module(p);
+      p->module_context = IFC_MODULE;
+      lookahead = interface_module(p);
       break;
       
     case TOKEN_IMPLEMENTATION :
@@ -583,30 +583,30 @@ static m2c_token_t compilation_unit (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private function definition_module()
+ * private function interface_module()
  * --------------------------------------------------------------------------
- * definitionModule :=
- *   DEFINITION MODULE moduleIdent ';'
- *   import* definition* END moduleIdent '.'
+ * interfaceModule :=
+ *   INTERFACE MODULE moduleIdent ';'
+ *   import* publicDefnOrDecl* END moduleIdent '.'
  *   ;
  *
  * moduleIdent := Ident ;
  *
- * astnode: (DEFMOD identNode implist deflist)
+ * astnode: (INTERFACE identNode impList defDeclList)
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t import (m2c_parser_context_t p);
-static m2c_token_t definition (m2c_parser_context_t p);
+static m2c_token_t public_defn_or_decl (m2c_parser_context_t p);
 
-static m2c_token_t definition_module (m2c_parser_context_t p) {
+static m2c_token_t interface_module (m2c_parser_context_t p) {
   intstr_t ident1, ident2;
   m2c_token_t lookahead;
-  m2c_fifo_t imp_list, def_list;
-  m2c_astnode_t id_node, imp_node, def_node;
+  m2c_fifo_t imp_list, dd_list;
+  m2c_astnode_t id_node, imp_node, dd_node;
   
-  PARSER_DEBUG_INFO("definitionModule");
+  PARSER_DEBUG_INFO("interfaceModule");
   
-  /* DEFINITION */
+  /* INTERFACE */
   lookahead = m2c_consume_sym(p->lexer);
   
   /* MODULE */
@@ -648,12 +648,12 @@ static m2c_token_t definition_module (m2c_parser_context_t p) {
     m2c_fifo_enqueue(imp_list, p->ast);
   } /* end while */
   
-  def_list = m2c_fifo_new_queue(NULL);
+  dd_list = m2c_fifo_new_queue(NULL);
   
-  /* definition* */
-  while (m2c_tokenset_element(FIRST(DEFINITION), lookahead)) {
-    lookahead = definition(p);
-    m2c_fifo_enqueue(def_list, p->ast);
+  /* publicDefnOrDecl* */
+  while (m2c_tokenset_element(FIRST(PUBLIC_DEFN_OR_DECL), lookahead)) {
+    lookahead = public_defn_or_decl(p);
+    m2c_fifo_enqueue(dd_list, p->ast);
   } /* end while */
   
   /* END */
@@ -688,15 +688,15 @@ static m2c_token_t definition_module (m2c_parser_context_t p) {
     
   /* build AST node and pass it back in p->ast */
   imp_node = m2c_ast_new_term_list_node(AST_IMPORT, imp_list);
-  def_node = m2c_ast_new_term_list_node(AST_IMPORT, def_list);
+  dd_node = m2c_ast_new_term_list_node(AST_DEFDECL, dd_list);
   
-  p->ast = m2c_ast_new_node(AST_DEFMOD, id_node, imp_node, def_node, NULL);
+  p->ast = m2c_ast_new_node(AST_INTERFACE, id_node, imp_node, dd_node, NULL);
   
   m2c_fifo_release(imp_list);
-  m2c_fifo_release(def_list);
+  m2c_fifo_release(dd_list);
   
   return lookahead;
-} /* end definition_module */
+} /* end interface_module */
 
 
 /* --------------------------------------------------------------------------
