@@ -697,7 +697,7 @@ alias descender = '--' ;
 /* Iterable Expression */
 
 iterableExpr :=
-  valueRange OF typeIdent | collection valueRange?
+  subrangeType | qualident valueRange?
   ;
 
 /* Value Range */
@@ -709,11 +709,6 @@ valueRange :=
 /* First and Last Value */
 
 alias firstValue, lastValue = expression ;
-
-
-/* Collection */
-
-alias collection = qualident ;
 
 
 /* Designator */
