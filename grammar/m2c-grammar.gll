@@ -395,7 +395,7 @@ definition :=
   CONST ( constDefinition ';' )+ |
   TYPE ( pgmTypeDefinition ';' )+ |
   VAR ( varDefinition ';' )+ |
-  procedureHeader ';' block ident ';' |
+  procedureDefinition ';' |
   aliasDefinition ';' |
   toDoList ';'
   ;
@@ -412,6 +412,12 @@ pgmTypeDefinition :=
 programType :=
   aliasType | derivedType | subrangeType | enumType | setType |
   arrayType | recordType | pointerType | procedureType
+  ;
+
+/* Procedure Definition */
+
+procedureDefinition :=
+  procedureHeader ';' block ident ';'
   ;
 
 
@@ -449,11 +455,11 @@ impTypeDefinition :=
   ident '=' implementationType
   ;
   
-/* Intra-Implementation Module Type Constructor */
+/* Intra-Implementation Type Constructor */
 
 implementationType :=
   aliasType | derivedType | subrangeType | enumType | setType |
-  arrayType | recordType | privatePointerType | procedureType )
+  arrayType | recordType | privatePointerType | procedureType
   ;  
 
 
