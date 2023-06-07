@@ -96,14 +96,14 @@ typedef struct {
   m2c_nonterminal_f parse_defn;
   m2c_production_t production;
   ast_node_type_t node_type;
-} def_decl_context_t;
+} deflist_context_t;
 
 
 /* --------------------------------------------------------------------------
  * constDefinitionList context
  * ----------------------------------------------------------------------- */
 
-static def_decl_context_t *const_defn = {
+static deflist_context_t *const_defn = {
   const_definition,   /* parse function */
   CONST_DEFINITION,   /* production rule */
   AST_CONSTDEFLIST    /* AST node type */
@@ -113,7 +113,7 @@ static def_decl_context_t *const_defn = {
  * typeDefinitionList context
  * ----------------------------------------------------------------------- */
 
-static def_decl_context_t *type_defn = {
+static deflist_context_t *type_defn = {
   type_definition,   /* parse function */
   TYPE_DEFINITION,   /* production rule */
   AST_TYPEDEFLIST    /* AST node type */
@@ -123,7 +123,7 @@ static def_decl_context_t *type_defn = {
  * varDefinitionList context
  * ----------------------------------------------------------------------- */
 
-static def_decl_context_t *var_defn = {
+static deflist_context_t *var_defn = {
   var_definition,   /* parse function */
   VAR_DEFINITION,   /* production rule */
   AST_VARDEFLIST    /* AST node type */
@@ -768,6 +768,7 @@ static m2c_token_t import (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 #define proc_declaration(_p) procedureHeader(_p)
+static m2c_token_t procedure_header (m2c_parser_context_t p);
 
 
 /* --------------------------------------------------------------------------
@@ -782,12 +783,12 @@ static m2c_token_t import (m2c_parser_context_t p) {
  *   ;
  * ----------------------------------------------------------------------- */
 
-#define const_definition_list(_p) def_or_decl_list(const_def, _p)
-#define type_definition_list(_p) def_or_decl_list(type_def, _p)
-#define var_definition_list(_p) def_or_decl_list(var_def, _p)
+#define const_definition_list(_p) definition_list(const_defn, _p)
+#define type_definition_list(_p) definition_list(type_defn, _p)
+#define var_definition_list(_p) definition_list(var_defn, _p)
+
 static m2c_token_t definition_list
-  (def_decl_context_t *context, m2c_parser_context_t p);
-static m2c_token_t procedure_header (m2c_parser_context_t p);
+  (deflist_context_t *context, m2c_parser_context_t p);
 static m2c_token_t to_do_list (m2c_parser_context_t p);
 
 m2c_token_t declaration (m2c_parser_context_t p) {
@@ -887,7 +888,7 @@ m2c_token_t declaration (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t definition_list
-  (def_decl_context_t *context, m2c_parser_context_t p) {
+  (deflist_context_t *context, m2c_parser_context_t p) {
   
   m2c_token_t lookahead;
   m2c_fifo_t node_list;
@@ -1099,15 +1100,6 @@ static m2c_token_t const_binding (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private macro const_expression()
- * --------------------------------------------------------------------------
- * alias constExpression = expression ;
- * ----------------------------------------------------------------------- */
-
-#define const_expression(_p) expression(_p)
-
-
-/* --------------------------------------------------------------------------
  * private function ident()
  * --------------------------------------------------------------------------
  * alias ident = StdIdent ;
@@ -1129,6 +1121,69 @@ static m2c_token_t ident (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end ident */
+
+
+/* --------------------------------------------------------------------------
+ * private function qualident()
+ * --------------------------------------------------------------------------
+ * qualident :=
+ *   Ident ( '.' Ident )*
+ *   ;
+ *
+ * astnode: (IDENT ident) | (QUALIDENT q0 q1 q2 ... qN ident)
+ * ----------------------------------------------------------------------- */
+
+static m2c_token_t qualident (m2c_parser_context_t p) {
+  intstr_t first_ident, tail_ident;
+  m2c_fifo_t lex_list;
+  m2c_token_t lookahead;
+  
+  PARSER_DEBUG_INFO("qualident");
+  
+  /* Ident */
+  lookahead = m2c_consume_sym(p->lexer);
+  first_ident = m2c_lexer_current_lexeme(p->lexer);
+  
+  /* add ident to temporary list */
+  lex_list = m2c_fifo_new_queue(first_ident);
+  
+  /* ( '.' Ident )* */
+  while (lookahead == TOKEN_PERIOD) {
+    /* '.' */
+    lookahead = m2c_consume_sym(p->lexer);
+    
+    /* Ident */
+    if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(QUALIDENT))) {
+      lookahead = m2c_consume_sym(p->lexer);
+      tail_ident = m2c_lexer_current_lexeme(p->lexer);
+      m2c_fifo_enqueue(lex_list, tail_ident);
+    }
+    else /* resync */ {
+      lookahead = skip_to_set(p, FOLLOW(QUALIDENT));
+    } /* end if */
+  } /* end while */
+  
+  /* build AST node and pass it back in p->ast */
+  if (m2c_fifo_entry_count(tmplist) == 1) {
+    p->ast = m2c_ast_new_terminal_node(AST_IDENT, first_ident, NULL);
+  }
+  else {
+    p->ast = m2c_ast_new_terminal_list_node(AST_QUALIDENT, lex_list);
+  } /* end if */
+  
+  m2c_fifo_release(lex_list);
+  
+  return lookahead;
+} /* end qualident */
+
+
+/* --------------------------------------------------------------------------
+ * private macro const_expression()
+ * --------------------------------------------------------------------------
+ * alias constExpression = expression ;
+ * ----------------------------------------------------------------------- */
+
+#define const_expression(_p) expression(_p)
 
 
 /* --------------------------------------------------------------------------
@@ -1343,12 +1398,8 @@ static m2c_token_t type (m2c_parser_context_t p) {
  *   ALIAS OF typeIdent
  *   ;
  *
- * alias typeIdent = qualident ;
- *
  * astNode: (ALIAS baseType)
  * ----------------------------------------------------------------------- */
-
-static m2c_token_t qualident (m2c_parser_context_t p);
 
 static m2c_token_t alias_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
@@ -1382,60 +1433,6 @@ static m2c_token_t alias_type (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end alias_type */
-
-
-/* --------------------------------------------------------------------------
- * private function qualident()
- * --------------------------------------------------------------------------
- * qualident :=
- *   Ident ( '.' Ident )*
- *   ;
- *
- * astnode: (IDENT ident) | (QUALIDENT q0 q1 q2 ... qN ident)
- * ----------------------------------------------------------------------- */
-
-static m2c_token_t qualident (m2c_parser_context_t p) {
-  intstr_t first_ident, tail_ident;
-  m2c_fifo_t lex_list;
-  m2c_token_t lookahead;
-  
-  PARSER_DEBUG_INFO("qualident");
-  
-  /* Ident */
-  lookahead = m2c_consume_sym(p->lexer);
-  first_ident = m2c_lexer_current_lexeme(p->lexer);
-  
-  /* add ident to temporary list */
-  lex_list = m2c_fifo_new_queue(first_ident);
-  
-  /* ( '.' Ident )* */
-  while (lookahead == TOKEN_PERIOD) {
-    /* '.' */
-    lookahead = m2c_consume_sym(p->lexer);
-    
-    /* Ident */
-    if (match_token(p, TOKEN_IDENTIFIER, FOLLOW(QUALIDENT))) {
-      lookahead = m2c_consume_sym(p->lexer);
-      tail_ident = m2c_lexer_current_lexeme(p->lexer);
-      m2c_fifo_enqueue(lex_list, tail_ident);
-    }
-    else /* resync */ {
-      lookahead = skip_to_set(p, FOLLOW(QUALIDENT));
-    } /* end if */
-  } /* end while */
-  
-  /* build AST node and pass it back in p->ast */
-  if (m2c_fifo_entry_count(tmplist) == 1) {
-    p->ast = m2c_ast_new_terminal_node(AST_IDENT, first_ident, NULL);
-  }
-  else {
-    p->ast = m2c_ast_new_terminal_list_node(AST_QUALIDENT, lex_list);
-  } /* end if */
-  
-  m2c_fifo_release(lex_list);
-  
-  return lookahead;
-} /* end qualident */
 
 
 /* --------------------------------------------------------------------------
@@ -1489,7 +1486,8 @@ static m2c_token_t subrange_type (m2c_parser_context_t p) {
     upper_bound = p->ast;
   }
   else /* resync */ {
-    lookahead = skip_to_token(p, TOKEN_RBRACKET, TOKEN_OF, NULL);
+    lookahead =
+      skip_to_token_list(p, TOKEN_RBRACKET, TOKEN_OF, TOKEN_IDENT, NULL);
     upper_bound = m2c_ast_empty_node();
   } /* end if */
   
@@ -1498,7 +1496,7 @@ static m2c_token_t subrange_type (m2c_parser_context_t p) {
     lookahead = m2c_consume_sym(p->lexer);
   }
   else /* resync */ {
-    lookahead = skip_to_token(p, TOKEN_OF, TOKEN_IDENT, NULL);
+    lookahead = skip_to_token_list(p, TOKEN_OF, TOKEN_IDENT, NULL);
   } /* end if */
   
   /* OF */
@@ -4768,10 +4766,8 @@ static m2c_token_t for_statement (m2c_parser_context_t p) {
  * private function iterable_expr()
  * --------------------------------------------------------------------------
  * iterableExpr :=
- *   valueRange OF typeIdent | collectionOrTypeIdent valueRange?
+ *   subrangeType | qualident valueRange?
  *   ;
- *
- * alias typeIdent, collectionOrTypeIdent = qualident ;
  *
  * astnode:
  *   (ITEREXPR identNode rangeNode)
@@ -4781,47 +4777,32 @@ static m2c_token_t value_range (m2c_parser_context_t p);
 
 static m2c_token_t iterable_expr (m2c_parser_context_t p) {
   m2c_token_t lookahead;
-  m2c_astnode_t id_node, range_node;
+  m2c_astnode_t type_node, id_node, range_node;
   
-  /* valueRange OF typeIdent */
+  /* subrangeType */
   if (lookahead = TOKEN_LBRACKET) {
     /* valueRange */
     if (match_token(p, TOKEN_LBRACKET)) {
-      lookahead = value_range(p);
-      range_node = p->ast;
+      lookahead = subrangeType(p);
+      type_node = p->ast;
     }
     else /* resync */ {
-      lookahead = skip_to_token_list(p, TOKEN_OF, TOKEN_IDENT, NULL);
-      range_node = m2c_ast_empty_node();
+      lookahead = skip_to_set(p, FOLLOW(ITERABLE_EXPR));
+      type_node = m2c_ast_empty_node();
     } /* end if */
     
-    /* OF */
-    if (match_token(p, TOKEN_OF)) {
-      lookahead = m2c_consume_sym(p->lexer);
-    }
-    else /* resync */ {
-      lookahead = skip_to_token_list(p, TOKEN_IDENT, TOKEN_IN, NULL));
-    } /* end if */
-    
-    /* typeIdent */
-    if (match_token(p, TOKEN_IDENT)) {
-      lookahead = qualident(p);
-      id_node = p->ast;
-    }
-    else /* resync */ {
-      lookahead = skip_to_token(p, TOKEN_IN);
-      id_node = m2c_ast_empty_node();
-    } /* end if */
+    p->ast = m2c_ast_new_node(AST_ITEREXPR, type_node, NULL);
   }
-  /* | collectionOrTypeIdent valueRange? */
+  /* | qualident valueRange? */
   else {
-    /* collectionOrTypeIdent */
+    /* qualident */
     match_token(p, TOKEN_IDENT) {
       lookahead = qualident(p);
       id_node = p->ast;
     }
     else /* resync */ {
-      lookahead = skip_to_token_list(p, TOKEN_LBRACKET, TOKEN_IN, NULL);
+      lookahead =
+        skip_to_token_or_set(p, TOKEN_LBRACKET, FOLLOW(ITERABLE_EXPR));
       id_node = m2c_ast_empty_node();
     } /* end if */
     
@@ -4834,10 +4815,9 @@ static m2c_token_t iterable_expr (m2c_parser_context_t p) {
       lookahead = skip_to_token(p, TOKEN_IN);
       range_node = m2c_ast_empty_node();
     } /* end if */
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_ITEREXPR, id_node, range_node, NULL);
+    
+    p->ast = m2c_ast_new_node(AST_ITEREXPR, id_node, range_node, NULL);
+  } /* end if */  
   
   return lookahead;
 } /* end iterable_expr */
