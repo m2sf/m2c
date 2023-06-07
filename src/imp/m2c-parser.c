@@ -93,7 +93,7 @@ typedef m2c_token_t (m2c_nonterminal_f) (m2c_parser_context_t);
  * ----------------------------------------------------------------------- */
 
 typedef struct {
-  m2c_nonterminal_f def_or_decl;
+  m2c_nonterminal_f parse_defn;
   m2c_production_t production;
   ast_node_type_t node_type;
 } def_decl_context_t;
@@ -103,7 +103,7 @@ typedef struct {
  * constDefinitionList context
  * ----------------------------------------------------------------------- */
 
-static def_decl_context_t *const_def = {
+static def_decl_context_t *const_defn = {
   const_definition,   /* parse function */
   CONST_DEFINITION,   /* production rule */
   AST_CONSTDEFLIST    /* AST node type */
@@ -113,7 +113,7 @@ static def_decl_context_t *const_def = {
  * typeDefinitionList context
  * ----------------------------------------------------------------------- */
 
-static def_decl_context_t *type_def = {
+static def_decl_context_t *type_defn = {
   type_definition,   /* parse function */
   TYPE_DEFINITION,   /* production rule */
   AST_TYPEDEFLIST    /* AST node type */
@@ -123,40 +123,10 @@ static def_decl_context_t *type_def = {
  * varDefinitionList context
  * ----------------------------------------------------------------------- */
 
-static def_decl_context_t *var_def = {
+static def_decl_context_t *var_defn = {
   var_definition,   /* parse function */
   VAR_DEFINITION,   /* production rule */
   AST_VARDEFLIST    /* AST node type */
-};
-
-/* --------------------------------------------------------------------------
- * constDeclarationList context
- * ----------------------------------------------------------------------- */
-
-static def_decl_context_t *const_decl = {
-  const_declaration,   /* parse function */
-  CONST_DECLARATION,   /* production rule */
-  AST_CONSTDECLLIST    /* AST node type */
-};
-
-/* --------------------------------------------------------------------------
- * typeDeclarationList context
- * ----------------------------------------------------------------------- */
-
-static def_decl_context_t *type_decl = {
-  type_declaration,   /* parse function */
-  TYPE_DECLARATION,   /* production rule */
-  AST_TYPEDECLLIST    /* AST node type */
-};
-
-/* --------------------------------------------------------------------------
- * varDeclarationList context
- * ----------------------------------------------------------------------- */
-
-static def_decl_context_t *var_decl = {
-  var_declaration,   /* parse function */
-  VAR_DECLARATION,   /* production rule */
-  AST_VARDECLLIST    /* AST node type */
 };
 
 
@@ -792,17 +762,24 @@ static m2c_token_t import (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
+ * private macro procedure_declaration()
+ * --------------------------------------------------------------------------
+ * alias procedureDeclaration = procedureHeader ;
+ * ----------------------------------------------------------------------- */
+
+#define procedure_declaration(_p) procedureHeader(_p)
+
+
+/* --------------------------------------------------------------------------
  * private function declaration()
  * --------------------------------------------------------------------------
  * declaration :=
- *   CONST ( publicConstDefn ';' )+ |
- *   TYPE ( publicTypeDefn ';' )+ |
+ *   CONST ( publicConstDefinition ';' )+ |
+ *   TYPE ( publicTypeDefinition ';' )+ |
  *   VAR ( varDefinition ';' )+ |
  *   procedureDeclaration ';' |
  *   toDoList ';'
  *   ;
- *
- * alias procedureDeclaration = ProcedureHeader ;
  * ----------------------------------------------------------------------- */
 
 #define const_definition_list(_p) def_or_decl_list(const_def, _p)
@@ -810,7 +787,6 @@ static m2c_token_t import (m2c_parser_context_t p) {
 #define var_definition_list(_p) def_or_decl_list(var_def, _p)
 static m2c_token_t definition_list
   (def_decl_context_t *context, m2c_parser_context_t p);
-#define procedure_declaration(_p) procedureHeader(_p)
 static m2c_token_t procedure_header (m2c_parser_context_t p);
 static m2c_token_t to_do_list (m2c_parser_context_t p);
 
@@ -881,23 +857,22 @@ m2c_token_t declaration (m2c_parser_context_t p) {
 /* --------------------------------------------------------------------------
  * private function definition_list(context, p)
  * --------------------------------------------------------------------------
- * Parses one of  publicConstDefnList, publicTypeDefnList, varDefinitionList,
- * constDefinitionList,  impModTypeDefnList  and  pgmModTypeDefnList,  depen-
- * ding on parameter context,  constructs its AST node,  passes it  in p->ast
- * and returns the new lookahead symbol.
+ * Parses rules constDefinitionList, typeDefinitionList or varDefinitionList,
+ * depending  on  parameter  context,  constructs its AST node,  passes it in
+ * p->ast and returns the new lookahead symbol.
  *
- * (1) public const definition list context:
+ * (1) const definition list context:
  *
- * publicConstDefnList :=
- *   publicConstDefn ';' (publicConstDefn ';')*
+ * constDefinitionList :=
+ *   constDefinition ';' (constDefinition ';')*
  *   ;
  *
  * astnode: (CONSTDEFLIST constDefnNode1 constDefnNode2 ... constDefnNodeN)
  *
- * (2) public type definition list context:
+ * (2) type definition list context:
  *
- * publicTypeDefnList :=
- *   publicTypeDefn ';' (publicTypeDefn ';')*
+ * typeDefinitionList :=
+ *   typeDefinition ';' (typeDefinition ';')*
  *   ;
  *
  * astnode: (TYPEDEFLIST typeDefnNode1 typeDefnNode2 ... typeDefnNodeN)
@@ -909,30 +884,6 @@ m2c_token_t declaration (m2c_parser_context_t p) {
  *   ;
  *
  * astnode: (VARDEFLIST varDefnNode1 varDefnNode2 ... varDefnNodeN)
- *
- * (4) const definition list context:
- *
- * constDefinitionList :=
- *   constDefinition ';' (constDefinition ';')*
- *   ;
- *
- * astnode: (CONSTDEFLIST constDefnNode1 constDefnNode2 ... constDefnNodeN)
- *
- * (5) implementation module type definition list context:
- *
- * impModTypeDefnList :=
- *   impModTypeDefn ';' (impModTypeDefn ';')*
- *   ;
- *
- * astnode: (TYPEDEFNLIST typeDefnNode1 typeDefnNode2 ... typeDefnNodeN)
- *
- * (6) program module type definition list context:
- *
- * pgmModTypeDefnList :=
- *   pgmModTypeDefn ';' (pgmModTypeDefn ';')*
- *   ;
- *
- * astnode: (TYPEDEFNLIST typeDefnNode1 typeDefnNode2 ... typeDefnNodeN)
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t definition_list
@@ -947,7 +898,7 @@ static m2c_token_t definition_list
   
   /* const/type/varDefinition */
   if (match_token(p, TOKEN_IDENT)) {
-    lookahead = context->def_or_decl(p);
+    lookahead = context->parse_defn(p);
     m2c_fifo_enqueue(node_list, p->ast);
       
     /* ';' */
@@ -968,7 +919,7 @@ static m2c_token_t definition_list
   
   /* const/type/varDefinition */
   while (match_token(p, TOKEN_IDENT)) {
-    lookahead = context->def_or_decl(p); /* p-ast holds ast-node */
+    lookahead = context->parse_defn(p); /* p-ast holds ast-node */
     m2c_fifo_enqueue(node_list, p->ast);
     
     /* ';' */
@@ -1026,7 +977,7 @@ static m2c_token_t const_definition (m2c_parser_context_t p) {
   
   lookahead = m2c_next_sym(p->lexer);
   
-  /* !!! interface module context only !!! */
+  /* !! interface module context only !! */
   
   /* constBinding? */
   if ((p->module_context == IFC_MODULE)
@@ -1038,7 +989,7 @@ static m2c_token_t const_definition (m2c_parser_context_t p) {
     bind_node = m2c_ast_empty_node();
   } /* end if */
   
-  /* !!! any module context !!! */
+  /* !! any module context !! */
 
   /* constDefinition */
   
@@ -1183,11 +1134,29 @@ static m2c_token_t ident (m2c_parser_context_t p) {
 /* --------------------------------------------------------------------------
  * private function type_definition()
  * --------------------------------------------------------------------------
- * typeDefinition :=
- *   ident '=' type
+ * Parses rules  ifcTypeDefinition,  impTypeDefinition  or  pgmTypeDefinition
+ * depending on  p->module_context,  constructs  its  AST node,  passes it in
+ * p->ast  and returns the new lookahead symbol.
+ *
+ * (1) interface module context:
+ *
+ * ifcTypeDefinition :=
+ *   ident '=' interfaceType
  *   ;
  *
- * astNode: (TYPE identNode typeNode)
+ * (2) implementation module context:
+ *
+ * impTypeDefinition :=
+ *   ident '=' implementationType
+ *   ;
+ *
+ * (3) program module context:
+ *
+ * pgmTypeDefinition :=
+ *   ident '=' programType
+ *   ;
+ *
+ * astNode: (TYPEDEF identNode typeNode)
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t type (m2c_parser_context_t p);
@@ -1318,11 +1287,11 @@ static m2c_token_t type (m2c_parser_context_t p) {
     
     /* | pointerType | privatePointerType */
     case TOKEN_POINTER :
-      if ((p->module_context != IMP_MODULE)) {
-        lookahead = pointer_type(p); /* p->ast holds ast-node */
+      if ((p->module_context == IMP_MODULE)) {
+        lookahead = private_pointer_type(p); /* p->ast holds ast-node */
       }
       else /* IMP_MODULE */ {
-        lookahead = private_pointer_type(p); /* p->ast holds ast-node */
+        lookahead = pointer_type(p); /* p->ast holds ast-node */
       } /* end if */
       break;
       
@@ -1385,7 +1354,7 @@ static m2c_token_t alias_type (m2c_parser_context_t p) {
   m2c_token_t lookahead;
   m2c_ast_node_t type_node;
   
-  PARSER_DEBUG_INFO("type");
+  PARSER_DEBUG_INFO("aliasType");
   
   /* ALIAS */
   lookahead = m2c_consume_sym(p->lexer);
@@ -1883,8 +1852,6 @@ static m2c_token_t record_type (m2c_parser_context_t p) {
  *
  * astnode: (FIELDLISTSEQ fieldListNode+)
  * ----------------------------------------------------------------------- */
-
-static m2c_token_t field_list (m2c_parser_context_t p);
 
 static m2c_token_t field_list_sequence (m2c_parser_context_t p) {
   m2c_token_t lookahead;
@@ -2455,7 +2422,7 @@ static m2c_token_t var_definition (m2c_parser_context_t p) {
  * private function anon_type()
  * --------------------------------------------------------------------------
  * anonType :=
- *   typeIdent | subrangeType | arrayType | procedureType
+ *   subrangeType | arrayType | procedureType
  *   ;
  * ----------------------------------------------------------------------- */
 

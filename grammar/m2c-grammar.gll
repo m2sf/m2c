@@ -75,8 +75,8 @@ alias reExport = '+' ;
 /* Public Definition or Declaration */
 
 publicDefnOrDecl :=
-  CONST ( publicConstDefn ';' )+ |
-  TYPE ( publicTypeDefn ';' )+ |
+  CONST ( publicConstDefinition ';' )+ |
+  TYPE ( publicTypeDefinition ';' )+ |
   VAR ( varDefinition ';' )+ |
   procedureHeader ';' |
   toDoList ';'
@@ -85,10 +85,16 @@ publicDefnOrDecl :=
 
 /* Public Constant Definition */
 
-publicConstDefn :=
-  ( '[' bindableIdent ']' )?  constDefinition
+publicConstDefinition :=
+  constBinding?  constDefinition
   ;
   
+/* Constant Binding */
+
+constBinding :=
+  '[' bindableIdent ']'
+  ;
+
 /* Bindable Identifier */
 
 .bindableIdent := Pervasive | Primitive ;
@@ -116,9 +122,14 @@ alias constExpression = expression ;
 /* Public Type Definition */
 
 publicTypeDefinition :=
-  ident '='
-    ( aliasType | derivedType | subrangeType | enumType | setType |
-      arrayType | recordType | pointerType | opaqueType | procedureType )
+  ident '=' publicType
+  ;
+
+/* Public Type */
+
+publicType :=
+  aliasType | derivedType | subrangeType | enumType | setType |
+  arrayType | recordType | pointerType | opaqueType | procedureType
   ;
 
 
