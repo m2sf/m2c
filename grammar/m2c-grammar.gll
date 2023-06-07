@@ -387,7 +387,7 @@ block :=
 
 definition :=
   CONST ( constDefinition ';' )+ |
-  TYPE ( typeDefinition ';' )+ |
+  TYPE ( pgmTypeDefinition ';' )+ |
   VAR ( varDefinition ';' )+ |
   procedureHeader ';' block ident ';' |
   aliasDefinition ';' |
@@ -395,9 +395,9 @@ definition :=
   ;
 
 
-/* Type Definition */
+/* Program Type Definition */
 
-typeDefinition :=
+pgmTypeDefinition :=
   ident '='
     ( aliasType | derivedType | subrangeType | enumType | setType |
       arrayType | recordType | pointerType | procedureType )
@@ -424,7 +424,7 @@ privateBlock :=
 
 privateDefinition :=
   CONST ( constDefinition ';' )+ |
-  TYPE ( privateTypeDefn ';' )+ |
+  TYPE ( impTypeDefinition ';' )+ |
   VAR ( varDefinition ';' )+ |
   procedureHeader ';' block ident ';' |
   aliasDefinition ';' |
@@ -432,9 +432,9 @@ privateDefinition :=
   ;
 
 
-/* Private Type Definition */
+/* Implementation Type Definition */
 
-privateTypeDefn :=
+impTypeDefinition :=
   ident '='
     ( aliasType | derivedType | subrangeType | enumType | setType |
       arrayType | recordType | privatePointerType | procedureType )

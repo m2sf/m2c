@@ -1134,14 +1134,14 @@ static m2c_token_t ident (m2c_parser_context_t p) {
 /* --------------------------------------------------------------------------
  * private function type_definition()
  * --------------------------------------------------------------------------
- * Parses rules  ifcTypeDefinition,  impTypeDefinition  or  pgmTypeDefinition
+ * Parses rules publicTypeDefinition, impTypeDefinition  or pgmTypeDefinition
  * depending on  p->module_context,  constructs  its  AST node,  passes it in
  * p->ast  and returns the new lookahead symbol.
  *
  * (1) interface module context:
  *
- * ifcTypeDefinition :=
- *   ident '=' interfaceType
+ * publicTypeDefinition :=
+ *   ident '=' publicType
  *   ;
  *
  * (2) implementation module context:
@@ -1171,15 +1171,15 @@ static m2c_token_t type_definition (m2c_parser_context_t p) {
   /* FIRST(interfaceType) | FIRST(implementationType) | FIRST(programType) */
   switch (p->module_context) {
     case IFC_MODULE :
-      first_set = FIRST(IFC_MOD_TYPE);
+      first_set = FIRST(PUBLIC_TYPE);
       break;
       
     case IMP_MODULE :
-      first_set = FIRST(IMP_MOD_TYPE);
+      first_set = FIRST(IMPLEMENTATION_TYPE);
       break;
     
     case PGM_MODULE :
-      first_set = FIRST(PGM_MOD_TYPE);
+      first_set = FIRST(PROGRAM_TYPE);
       break;
   } /* end switch */
   
@@ -1215,13 +1215,13 @@ static m2c_token_t type_definition (m2c_parser_context_t p) {
 /* --------------------------------------------------------------------------
  * private function type()
  * --------------------------------------------------------------------------
- * Parses rule interfaceType, implementationType or programType  depending on
+ * Parses rule  publicType,  implementationType  or programType  depending on
  * p->module_context,  constructs  its  AST node,  passes it  in  p->ast  and
  * returns the new lookahead symbol.
  *
  * (1) interface module context:
  *
- * interfaceType :=
+ * publicType :=
  *   aliasType | derivedType | subrangeType | enumType | setType |
  *   arrayType | recordType | pointerType | opaqueType | procedureType
  *   ;
