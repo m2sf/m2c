@@ -51,7 +51,7 @@ compilationUnit :=
 
 interfaceModule :=
   INTERFACE MODULE moduleIdent ';'
-  import* publicDefnOrDecl* END moduleIdent '.'
+  import* declaration* END moduleIdent '.'
   ;
 
 /* Module Identifier */
@@ -74,19 +74,19 @@ alias reExport = '+' ;
 
 /* Public Definition or Declaration */
 
-publicDefnOrDecl :=
-  CONST ( publicConstDefinition ';' )+ |
-  TYPE ( publicTypeDefinition ';' )+ |
+declaration :=
+  CONST ( constDefinition ';' )+ |
+  TYPE ( typeDefinition ';' )+ |
   VAR ( varDefinition ';' )+ |
-  procedureHeader ';' |
+  procDeclaration ';' |
   toDoList ';'
   ;
 
 
-/* Public Constant Definition */
+/* Constant Definition */
 
-publicConstDefinition :=
-  constBinding?  constDefinition
+constDefinition :=
+  constBinding?  simpleConstDefinition
   ;
   
 /* Constant Binding */
@@ -102,9 +102,9 @@ constBinding :=
 /* Constant bindable identifiers: COLLATION, TLIMIT */
 
 
-/* Constant Definition */
+/* Simple Constant Definition */
 
-constDefinition :=
+simpleConstDefinition :=
   ident ( ':' typeIdent )? '=' constExpression
   ;
 
@@ -119,13 +119,13 @@ alias ident = StdIdent ;
 alias constExpression = expression ;
 
 
-/* Public Type Definition */
+/* Type Definition */
 
-publicTypeDefinition :=
+typeDefinition :=
   ident '=' publicType
   ;
 
-/* Public Type */
+/* Public Type Constructor */
 
 publicType :=
   aliasType | derivedType | subrangeType | enumType | setType |
@@ -133,7 +133,7 @@ publicType :=
   ;
 
 
-/* Alias Type */
+/* Alias Type Constructor */
 
 aliasType :=
   ALIAS OF typeIdent
@@ -156,7 +156,7 @@ qualident :=
 alias derivedType = typeIdent ;
 
 
-/* Subrange Type */
+/* Subrange Type Constructor */
 
 subrangeType :=
   constRange OF countableType
@@ -181,7 +181,7 @@ alias upperBound = constExpression ;
 alias countableType = typeIdent ;
 
 
-/* Enumeration Type */
+/* Enumeration Type Constructor */
 
 enumType :=
   '(' ( '+' enumTypeToExtend ',' )? identList ')'
@@ -203,14 +203,14 @@ identList :=
   ;
 
 
-/* Set Type */
+/* Set Type Constructor */
 
 setType :=
   SET OF enumTypeIdent
   ;
 
 
-/* Array Type */
+/* Array Type Constructor */
 
 arrayType :=
   ARRAY valueCount OF typeIdent
@@ -221,7 +221,7 @@ arrayType :=
 alias valueCount = constExpression ;
 
 
-/* Record Type */
+/* Record Type Constructor */
 
 recordType :=
   RECORD ( '(' recTypeToExtend ')' )?
@@ -241,14 +241,14 @@ recTypeToExtend :=
 alias fieldList = varDefinition ;
 
 
-/* Pointer Type */
+/* Pointer Type Constructor */
 
 pointerType :=
   POINTER TO typeIdent
   ;
 
 
-/* Opaque Type */
+/* Opaque Type Declarator */
 
 opaqueType :=
   OPAQUE ( '[' allocSize ']' )?
@@ -259,7 +259,7 @@ opaqueType :=
 alias allocSize = constExpression ;
 
 
-/* Procedure Type */
+/* Procedure Type Constructor */
 
 procedureType :=
   PROCEDURE ( '(' formalType ( ';' formalType )* ')' )? ( ':' returnedType )?

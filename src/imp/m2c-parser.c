@@ -651,7 +651,7 @@ static m2c_token_t interface_module (m2c_parser_context_t p) {
     
   /* build AST node and pass it back in p->ast */
   imp_node = m2c_ast_new_term_list_node(AST_IMPORT, imp_list);
-  dd_node = m2c_ast_new_term_list_node(AST_DEFDECL, dd_list);
+  dd_node = m2c_ast_new_term_list_node(AST_DECL, dd_list);
   
   p->ast = m2c_ast_new_node(AST_INTERFACE, id_node, imp_node, dd_node, NULL);
   
@@ -762,22 +762,22 @@ static m2c_token_t import (m2c_parser_context_t p) {
 
 
 /* --------------------------------------------------------------------------
- * private macro procedure_declaration()
+ * private macro proc_declaration()
  * --------------------------------------------------------------------------
- * alias procedureDeclaration = procedureHeader ;
+ * alias procDeclaration = procedureHeader ;
  * ----------------------------------------------------------------------- */
 
-#define procedure_declaration(_p) procedureHeader(_p)
+#define proc_declaration(_p) procedureHeader(_p)
 
 
 /* --------------------------------------------------------------------------
  * private function declaration()
  * --------------------------------------------------------------------------
  * declaration :=
- *   CONST ( publicConstDefinition ';' )+ |
- *   TYPE ( publicTypeDefinition ';' )+ |
+ *   CONST ( constDefinition ';' )+ |
+ *   TYPE ( typeDefinition ';' )+ |
  *   VAR ( varDefinition ';' )+ |
- *   procedureDeclaration ';' |
+ *   procDeclaration ';' |
  *   toDoList ';'
  *   ;
  * ----------------------------------------------------------------------- */
@@ -801,13 +801,13 @@ m2c_token_t declaration (m2c_parser_context_t p) {
     
     /* CONST */
     case TOKEN_CONST :
-      /* (publicConstDefn ';')+ */
+      /* (constDefinition ';')+ */
       lookahead = const_definition_list(p);
       break;
       
     /* | TYPE */
     case TOKEN_TYPE :
-      /* (publicTypeDefn ';')+ */
+      /* (typeDefinition ';')+ */
       lookahead = type_definition_list(p);
       break;
       
@@ -817,16 +817,16 @@ m2c_token_t declaration (m2c_parser_context_t p) {
       lookahead = var_definition_list(p);
       break;
       
-    /* | procedureDeclaration */
+    /* | procDeclaration */
     case TOKEN_PROCEDURE :
-      lookahead = procedure_declaration(p); /* p->ast holds ast-node */
+      lookahead = proc_declaration(p); /* p->ast holds ast-node */
       
       /* ';' */
       if (match_token(p, TOKEN_SEMICOLON)) {
         lookahead = m2c_consume_sym(p->lexer);
       }
       else /* resync */ {
-        lookahead = skip_to_set(p, FOLLOW(DEFINITION));
+        lookahead = skip_to_set(p, FOLLOW(DECLARATION));
       } /* end if */
       break;
       
@@ -839,7 +839,7 @@ m2c_token_t declaration (m2c_parser_context_t p) {
         lookahead = m2c_consume_sym(p->lexer);
       }
       else /* resync */ {
-        lookahead = skip_to_set(p, FOLLOW(DEFINITION));
+        lookahead = skip_to_set(p, FOLLOW(DECLARATION));
       } /* end if */
       break;
       
@@ -944,21 +944,21 @@ static m2c_token_t definition_list
 /* --------------------------------------------------------------------------
  * private function const_definition()
  * --------------------------------------------------------------------------
- * Parses rules publicConstDefinition or constDefinition, depending on module
- * context,  builds its AST node, passes it in p->ast and returns the new
- * lookahead symbol.
+ * Parses  rules  constDefinition  or  simpleConstDefinition,   depending  on
+ * p->module_context,  builds its AST node,  passes it in p->ast  and returns
+ * the new lookahead symbol.
  *
  * (1) interface module context:
  *
- * publicConstDefinition :=
- *   constBinding?  constDefinition
+ * constDefinition :=
+ *   constBinding?  simpleConstDefinition
  *   ;
  *
  * astnode: (CONST (BINDTO bindId) (ID constId) (ID typeId) exprNode)
  *
  * (2) implementation and program module context:
  *
- * constDefinition :=
+ * simpleConstDefinition :=
  *   ident ( ':' typeIdent )? '=' constExpression
  *   ;
  *
@@ -991,7 +991,7 @@ static m2c_token_t const_definition (m2c_parser_context_t p) {
   
   /* !! any module context !! */
 
-  /* constDefinition */
+  /* simpleConstDefinition */
   
   /* ident */
   lookahead = ident(p);
@@ -1134,13 +1134,13 @@ static m2c_token_t ident (m2c_parser_context_t p) {
 /* --------------------------------------------------------------------------
  * private function type_definition()
  * --------------------------------------------------------------------------
- * Parses rules publicTypeDefinition, impTypeDefinition  or pgmTypeDefinition
- * depending on  p->module_context,  constructs  its  AST node,  passes it in
+ * Parses rules typeDefinition, impTypeDefinition  or pgmTypeDefinition,  de-
+ * pending  on  p->module_context,  constructs  its  AST node,  passes it  in
  * p->ast  and returns the new lookahead symbol.
  *
  * (1) interface module context:
  *
- * publicTypeDefinition :=
+ * typeDefinition :=
  *   ident '=' publicType
  *   ;
  *
