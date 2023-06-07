@@ -309,7 +309,7 @@ variadicFormalType :=
 /* Variable Definition */
 
 varDefinition :=
-  identList ':' typeIdent | anonType
+  identList ':' ( typeIdent | anonType )
   ;
 
 .anonType :=
@@ -320,12 +320,18 @@ varDefinition :=
 /* Procedure Header */
 
 procedureHeader :=
-  PROCEDURE ( '[' bindingSpecifier ']' )? procedureSignature
+  procBinding? procedureSignature
   ;
   
+/* Procedure Binding */
+
+procBinding :=
+  '[' bindingSpecifier ']'
+  ;
+
 /* Binding Specifier */
 
-bindingSpecifier :=
+.bindingSpecifier :=
   NEW ( argListFlag | capacityFlag )? | RETAIN | RELEASE |
   READ allocFlag? | WRITE formatFlag? | bindableIdent
   ;
@@ -398,9 +404,14 @@ definition :=
 /* Program Type Definition */
 
 pgmTypeDefinition :=
-  ident '='
-    ( aliasType | derivedType | subrangeType | enumType | setType |
-      arrayType | recordType | pointerType | procedureType )
+  ident '=' programType
+  ;
+  
+/* Intra-Program Type Constructor */
+
+programType :=
+  aliasType | derivedType | subrangeType | enumType | setType |
+  arrayType | recordType | pointerType | procedureType
   ;
 
 
@@ -435,9 +446,14 @@ privateDefinition :=
 /* Implementation Type Definition */
 
 impTypeDefinition :=
-  ident '='
-    ( aliasType | derivedType | subrangeType | enumType | setType |
-      arrayType | recordType | privatePointerType | procedureType )
+  ident '=' implementationType
+  ;
+  
+/* Intra-Implementation Module Type Constructor */
+
+implementationType :=
+  aliasType | derivedType | subrangeType | enumType | setType |
+  arrayType | recordType | privatePointerType | procedureType )
   ;  
 
 
