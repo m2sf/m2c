@@ -1442,15 +1442,10 @@ static m2c_token_t alias_type (m2c_parser_context_t p) {
  *   constRange OF countableType
  *   ;
  *
- * constRange :=
- *   '[' lowerBound '..' upperBound ']'
- *   ;
- *
+ * alias constRange = valueRange ;
  * alias countableType = typeIdent ;
  *
- * alias upperBound, lowerBound = constExpression ;
- *
- * astNode: (SUBR baseType lowerBound upperBound)
+ * astNode: (SUBR typeNode valueRangeNode)
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t subrange_type (m2c_parser_context_t p) {
@@ -1459,45 +1454,9 @@ static m2c_token_t subrange_type (m2c_parser_context_t p) {
   
   PARSER_DEBUG_INFO("subrangeType");
   
-  /* '[' */
-  lookahead = m2c_consume_sym(p->lexer);
-  
-  /* lowerBound */
-  if (match_set(p, FIRST(EXPRESSION))) {
-    lookahead = expression(p);
-    lower_bound = p->ast;
-  }
-  else /* resync */ {
-    lookahead = skip_to_token_or_set(p, TOKEN_DOT_DOT, FIRST(EXPRESSION));
-    lower_bound = m2c_ast_empty_node();
-  } /* end if */
-  
-  /* '..' */
-  if (match_token(p, TOKEN_DOT_DOT)) {
-    lookahead = m2c_consume_sym(p->lexer);
-  }
-  else /* resync */ {
-    lookahead = skip_to_set(p, FIRST(EXPRESSION));
-  } /* end if */
-  
-  /* upperBound */
-  if (match_set(p, FIRST(EXPRESSION))) {
-    lookahead = expression(p);
-    upper_bound = p->ast;
-  }
-  else /* resync */ {
-    lookahead =
-      skip_to_token_list(p, TOKEN_RBRACKET, TOKEN_OF, TOKEN_IDENT, NULL);
-    upper_bound = m2c_ast_empty_node();
-  } /* end if */
-  
-  /* ']' */
-  if (match_token(p, TOKEN_RBRACKET)) {
-    lookahead = m2c_consume_sym(p->lexer);
-  }
-  else /* resync */ {
-    lookahead = skip_to_token_list(p, TOKEN_OF, TOKEN_IDENT, NULL);
-  } /* end if */
+  /* constRange */
+  lookahead = value_range(p);
+  range_node = p->ast;
   
   /* OF */
   if (match_token(p, TOKEN_OF)) {
@@ -1516,10 +1475,75 @@ static m2c_token_t subrange_type (m2c_parser_context_t p) {
   } /* end if */
     
   /* build AST node and pass back in p->ast */
-  p->ast = m2c_ast_new_node(AST_SUBR, type_node, lower_bound, upper_bound);
+  p->ast = m2c_ast_new_node(AST_SUBR, type_node, range_node);
   
   return lookahead;
 } /* end subrange_type */
+
+
+/* --------------------------------------------------------------------------
+ * private function value_range()
+ * --------------------------------------------------------------------------
+ * valueRange :=
+ *   '[' lowerBound '..' upperBound ']'
+ *   ;
+ *
+ * alias lowerBound, upperBound = expression;
+ *
+ * astnode: (RANGE exprNode exprNode)
+ * ----------------------------------------------------------------------- */
+
+
+static m2c_token_t value_range (m2c_parser_context_t p) {
+  m2c_token_t lookahead;
+  m2c_astnode_t lower_bound, upper_bound;
+  
+  PARSER_DEBUG_INFO("valueRange");
+  
+  /* '[' */
+  lookahead = m2c_consume_sym(p->lexer);
+  
+  /* firstValue */
+  if (match_set(p, FIRST(EXPRESSION))) {
+    lookahead = expression(p);
+    lower_bound = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_DOT_DOT, FIRST(EXPRESSION));
+    lower_bound = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* '..' */
+  if (match_token(p, TOKEN_DOT_DOT)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_set(p, FIRST(EXPRESSION));
+  } /* end if */
+  
+  /* lastValue */
+  if (match_set(p, FIRST(EXPRESSION))) {
+    lookahead = expression(p);
+    upper_bound = p->ast;
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, TOKEN_RBRACKET, FOLLOW(VALUE_RANGE));
+    upper_bound = m2c_ast_empty_node();
+  } /* end if */
+  
+  /* ']' */
+  if (match_token(p, TOKEN_RBRACKET)) {
+    lookahead = m2c_consume_sym(p->lexer);
+  }
+  else /* resync */ {
+    lookahead = skip_to_token_or_set(p, FOLLOW(VALUE_RANGE));
+  } /* end if */
+  
+  /* build AST node and pass it back in p->ast */
+  p->ast = m2c_ast_new_node(AST_RANGE, lower_bound, upper_bound, NULL);
+  
+  return lookahead;
+} /* end value_range */
 
 
 /* --------------------------------------------------------------------------
@@ -4821,71 +4845,6 @@ static m2c_token_t iterable_expr (m2c_parser_context_t p) {
   
   return lookahead;
 } /* end iterable_expr */
-
-
-/* --------------------------------------------------------------------------
- * private function value_range()
- * --------------------------------------------------------------------------
- * valueRange :=
- *   '[' firstValue '..' lastValue ']'
- *   ;
- *
- * alias firstValue, lastValue = expression;
- *
- * astnode: (RANGE valueNode valueNode)
- * ----------------------------------------------------------------------- */
-
-
-static m2c_token_t value_range (m2c_parser_context_t p) {
-  m2c_token_t lookahead;
-  m2c_astnode_t val1_node, val2_node;
-  
-  PARSER_DEBUG_INFO("valueRange");
-  
-  /* '[' */
-  lookahead = m2c_consume_sym(p->lexer);
-  
-  /* firstValue */
-  if (match_set(p, FIRST(EXPRESSION))) {
-    lookahead = expression(p);
-    val1_node = p->ast;
-  }
-  else /* resync */ {
-    lookahead = skip_to_token_or_set(p, TOKEN_DOT_DOT, FIRST(EXPRESSION));
-    val1_node = m2c_ast_empty_node();
-  } /* end if */
-  
-  /* '..' */
-  if (match_token(p, TOKEN_DOT_DOT)) {
-    lookahead = m2c_consume_sym(p->lexer);
-  }
-  else /* resync */ {
-    lookahead = skip_to_set(p, FIRST(EXPRESSION));
-  } /* end if */
-  
-  /* lastValue */
-  if (match_set(p, FIRST(EXPRESSION))) {
-    lookahead = expression(p);
-    val2_node = p->ast;
-  }
-  else /* resync */ {
-    lookahead = skip_to_token_or_set(p, TOKEN_RBRACKET, FOLLOW(VALUE_RANGE));
-    val2_node = m2c_ast_empty_node();
-  } /* end if */
-  
-  /* ']' */
-  if (match_token(p, TOKEN_RBRACKET)) {
-    lookahead = m2c_consume_sym(p->lexer);
-  }
-  else /* resync */ {
-    lookahead = skip_to_token_or_set(p, FOLLOW(VALUE_RANGE));
-  } /* end if */
-  
-  /* build AST node and pass it back in p->ast */
-  p->ast = m2c_ast_new_node(AST_RANGE, val1_node, val2_node, NULL);
-  
-  return lookahead;
-} /* end value_range */
 
 
 /* --------------------------------------------------------------------------

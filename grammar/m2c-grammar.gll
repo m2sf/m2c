@@ -114,6 +114,18 @@ simpleConstDefinition :=
 alias ident = StdIdent ;
 
 
+/* Type Identifier */
+
+alias typeIdent = qualident ;
+
+
+/* Qualified Identifier */
+
+qualident :=
+  StdIdent ( '.' StdIdent )*
+  ;
+
+
 /* Constant Expression */
 
 alias constExpression = expression ;
@@ -138,18 +150,6 @@ publicType :=
 aliasType :=
   ALIAS OF typeIdent
   ;
-
-/* Type Identifier */
-
-alias typeIdent = qualident ;
-
-
-/* Qualified Identifier */
-
-qualident :=
-  StdIdent ( '.' StdIdent )*
-  ;
-
 
 /* Derived Type */
 
