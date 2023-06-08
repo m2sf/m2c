@@ -44,7 +44,7 @@
  * imports
  * ----------------------------------------------------------------------- */
 
-#include "intstr.h"
+#include "interned-strings.h"
 
 
 /* --------------------------------------------------------------------------
@@ -135,7 +135,8 @@ typedef enum {
   
   PREDEF_VALUE,            /* VALUE */
   PREDEF_ATVALUE,          /* ATVALUE */
-  PREDEF_STORE,            /* ATSTORE */
+  PREDEF_STORE,            /* STORE */
+  PREDEF_ATSTORE,          /* ATSTORE */
   PREDEF_ATINSERT,         /* ATINSERT */
   PREDEF_ATREMOVE,         /* ATREMOVE */
   PREDEF_ALLOC,            /* ALLOC */
@@ -151,6 +152,13 @@ typedef enum {
     
   PREDEF_END_MARK          /* marks the end of the enumeration */
 } m2c_predef_ident_t;
+
+
+/* --------------------------------------------------------------------------
+ * predefined identifier count
+ * ----------------------------------------------------------------------- */
+
+#define PREDEF_IDENT_COUNT (PREDEF_END_MARK-2)
 
 
 /* --------------------------------------------------------------------------
@@ -275,8 +283,8 @@ m2c_predef_ident_t m2c_predef_for_lexeme (intstr_t lexstr);
 /* --------------------------------------------------------------------------
  * function m2c_lexeme_for_predef(value)
  * --------------------------------------------------------------------------
- * Returns the  interned lexeme  of the predefined identifier  represented by
- * value,  or NULL if value is invalid.
+ * Returns the interned string with the lexeme for the predefined identifier
+ * represented by value,  or NULL if value is invalid.
  * ----------------------------------------------------------------------- */
 
 intstr_t m2c_lexeme_for_predef (m2c_predef_ident_t value);
