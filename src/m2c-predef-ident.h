@@ -86,7 +86,7 @@ typedef enum {
   
   PREDEF_REGISTER,         /* ASSEMBLER.REGISTER */
   
-  Predefined Procedure Identifiers */
+  /* Predefined Procedure Identifiers */
   
   PREDEF_APPEND,           /* APPEND */
   PREDEF_INSERT,           /* INSERT */
