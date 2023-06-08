@@ -164,7 +164,11 @@ subrangeType :=
 
 /* Constant Range */
 
-constRange :=
+alias constRange = valueRange ;
+
+/* Value Range */
+
+valueRange :=
   '[' lowerBound '..' upperBound ']'
   ;
 
@@ -699,16 +703,6 @@ alias descender = '--' ;
 iterableExpr :=
   subrangeType | qualident valueRange?
   ;
-
-/* Value Range */
-
-valueRange :=
-  '[' firstValue '..' lastValue ']'
-  ;
-
-/* First and Last Value */
-
-alias firstValue, lastValue = expression ;
 
 
 /* Designator */
