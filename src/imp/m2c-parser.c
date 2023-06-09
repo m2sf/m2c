@@ -50,6 +50,7 @@
 #include "m2c-follow-sets.h"
 #include "m2c-statistics.h"
 #include "m2c-predef-ident.h"
+#include "m2c-schroed-token.h"
 #include "m2c-bindable-ident.h"
 #include "m2c-compiler-options.h"
 
@@ -63,6 +64,9 @@
         m2c_lexer_lookahead_line(p->lexer), \
         m2c_lexer_lookahead_column(p->lexer), \
         m2c_string_char_ptr(m2c_lexer_lookahead_lexeme(p->lexer))); }
+
+
+static intstr_t schroed_ident_table[SCHROED_TOKEN_COUNT];
 
 
 /* --------------------------------------------------------------------------
@@ -2304,7 +2308,7 @@ static m2c_token_t non_attr_formal_type (m2c_parser_context_t p) {
       lexeme = m2c_lookahead_lexeme(p->lexer);
       
       /* CAST */
-      if (lexeme == m2c_res_ident(RESIDENT_CAST)) {
+      if (lexeme == m2c_lexeme_for_schroed(SCHROED_CAST)) {
         lookahead = casting_formal_type(p);
       }
       /* Ident */
@@ -2409,7 +2413,7 @@ static m2c_token_t casting_formal_type (m2c_parser_context_t p) {
   lookahead = m2c_consume_sym(p->lexer);
   
   /* OCTETSEQ | ADDRESS */
-  lexeme = m2c_res_ident(RESIDENT_ADDRESS);
+  lexeme = m2c_lexeme_for_schroed(SCHROED_ADDRESS);
   if (match_token_or_lexeme(p, TOKEN_OCTETSEQ, lexeme)) {
     
     /* OCTETSEQ */
@@ -2722,12 +2726,7 @@ static m2c_token_t binding_specifier (m2c_parser_context_t p) {
       lexeme = m2c_current_lexeme(p->lexer);
       
       /* check for bindable identifier */
-      if (m2c_is_proc_bindable_ident(lexeme)) {
-        bind_node = m2c_ast_new_terminal_node(AST_BINDTO, lexeme);
-      }
-      else /* identifier not bindable */ {
-        bind_node = m2c_ast_new_terminal_node(AST_BINDTO, NULL);
-        
+      if (m2c_is_proc_bindable_ident(lexeme) == false) {
         /* TO DO: report error -- invalid binding specifier */
         m2c_stats_inc(p->stats, M2C_STATS_SYNTAX_ERROR_COUNT);
       } /* end if */
@@ -3751,7 +3750,7 @@ static m2c_token_t new_statement (m2c_parser_context_t p) {
     p->ast = m2c_ast_new_node(AST_NEWINIT, id_node, init_node, NULL);
   }
   else if ((lookahead == TOKEN_IDENT) 
-    && (lexeme == m2c_res_ident(RESIDENT_CAPACITY))) {
+    && (lexeme == m2c_lexeme_for_schroed(SCHROED_CAPACITY))) {
     /* CAPACITY */
     lookahead = m2c_consume_sym(p);
     
