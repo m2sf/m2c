@@ -274,6 +274,15 @@ typedef enum {
 
 
 /* --------------------------------------------------------------------------
+ * function m2c_is_predef_ident(lexeme)
+ * --------------------------------------------------------------------------
+ * Returns true if lexeme is a predefined identifier, otherwise false.
+ * ----------------------------------------------------------------------- */
+
+bool m2c_is_predef_ident (intstr_t lexeme);
+
+
+/* --------------------------------------------------------------------------
  * function m2c_predef_for_lexeme(lexeme)
  * --------------------------------------------------------------------------
  * Returns the  predefined token  for lexeme,  or PREDEF_INVALID if lexeme is
