@@ -42,7 +42,6 @@
  * ----------------------------------------------------------------------- */
 
 #include "m2c-bindable-ident.h"
-#include <stdbool.h>
 
 
 /* --------------------------------------------------------------------------
@@ -52,9 +51,9 @@
  * ----------------------------------------------------------------------- */
 
 static const char *bindable_cstr_table[] = {
-  "COLLATION", "TLIMIT", "APPEND", "INSERT", "REMOVE", "COUNT", "LENGTH",
-  "FIRST", "LAST", "PREV", "NEXT", "VALUE", "ATVALUE", "STORE", "ATSTORE",
-  "ATINSERT", "ATREMOVE", "ALLOC", "DEALLOC", "STDIN", "STDOUT"
+  "\0", "COLLATION", "TLIMIT", "APPEND", "INSERT", "REMOVE", "COUNT",
+  "LENGTH", "FIRST", "LAST", "PREV", "NEXT", "VALUE", "ATVALUE", "STORE",
+  "ATSTORE", "ATINSERT", "ATREMOVE", "ALLOC", "DEALLOC", "STDIN", "STDOUT"
 }; /* bindable_cstr_table */ 
 
 
@@ -277,7 +276,7 @@ m2c_bindable_t m2c_bindable_for_lexeme (intstr_t lexeme) {
  * function m2c_lexeme_for_bindable(value)
  * --------------------------------------------------------------------------
  * Returns  the interned string  with the lexeme  of the  bindable identifier
- * represented by value,  or NULL if value is invalid.
+ * represented by value,  or the empty string if value is invalid.
  * ----------------------------------------------------------------------- */
 
 intstr_t m2c_lexeme_for_bindable (m2c_bindable_t value) {
@@ -285,7 +284,7 @@ intstr_t m2c_lexeme_for_bindable (m2c_bindable_t value) {
     return bindable_lexeme_table[value];
   }
   else /* invalid value */ {
-    return NULL;
+    return bindable_lexeme_table[0];
   } /* end if */
 } /* end m2c_lexeme_for_bindable */
 

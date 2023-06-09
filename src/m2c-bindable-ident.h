@@ -96,7 +96,7 @@ typedef enum {
  * bindable identifier count
  * ----------------------------------------------------------------------- */
 
-#define BINDABLE_IDENT_COUNT (BINDABLE_END_MARK-2)
+#define BINDABLE_IDENT_COUNT (BINDABLE_END_MARK-1)
 
 
 /* --------------------------------------------------------------------------
@@ -164,7 +164,7 @@ bool m2c_is_proc_bindable_ident (intstr_t lexeme);
 /* --------------------------------------------------------------------------
  * function m2c_bindable_for_lexeme(lexeme)
  * --------------------------------------------------------------------------
- * Returns the  bindable token  for lexeme,  or BINDABLE_INVALID if lexstr is
+ * Returns the  bindable token  for lexeme,  or BINDABLE_INVALID if lexeme is
  * not a bindable identifier.
  * ----------------------------------------------------------------------- */
 
@@ -175,7 +175,7 @@ m2c_bindable_t m2c_bindable_for_lexeme (intstr_t lexeme);
  * function m2c_lexeme_for_bindable(value)
  * --------------------------------------------------------------------------
  * Returns  the interned string  with the lexeme  of the  bindable identifier
- * represented by value,  or NULL if value is invalid.
+ * represented by value,  or the emptry string if value is invalid.
  * ----------------------------------------------------------------------- */
 
 intstr_t m2c_lexeme_for_bindable (m2c_bindable_t value);
