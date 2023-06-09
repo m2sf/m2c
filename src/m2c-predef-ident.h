@@ -162,7 +162,7 @@ typedef enum {
  * predefined identifier count
  * ----------------------------------------------------------------------- */
 
-#define PREDEF_IDENT_COUNT (PREDEF_END_MARK-2)
+#define PREDEF_IDENT_COUNT (PREDEF_END_MARK-1)
 
 
 /* --------------------------------------------------------------------------

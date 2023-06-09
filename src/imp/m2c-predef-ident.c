@@ -52,7 +52,7 @@
  * ----------------------------------------------------------------------- */
 
 static const char *predef_cstr_table[] = {
-  "TRUE", "FALSE", "NIL", "ARCH", "BOOLEAN", "CHAR", "UNICHAR",
+  "\0", "TRUE", "FALSE", "NIL", "ARCH", "BOOLEAN", "CHAR", "UNICHAR",
   "OCTET", "CARDINAL", "INTEGER", "LONGCARD", "LONGINT", "REAL", "LONGREAL",
   "BYTE", "WORD", "LONGWORD", "ADDRESS", "REGISTER", "APPEND", "INSERT",
   "REMOVE", "HALT", "CODE", "GETREG", "SETREG", "CHR", "UCHR", "COLLATION",
@@ -580,7 +580,7 @@ m2c_predef_ident_t m2c_predef_for_lexeme (intstr_t lexeme) {
  * function m2c_lexeme_for_predef(value)
  * --------------------------------------------------------------------------
  * Returns the interned string with the lexeme for the predefined identifier
- * represented by value,  or NULL if value is invalid.
+ * represented by value,  or the empty string if value is invalid.
  * ----------------------------------------------------------------------- */
 
 intstr_t m2c_lexeme_for_predef (m2c_predef_ident_t value) {
@@ -588,7 +588,7 @@ intstr_t m2c_lexeme_for_predef (m2c_predef_ident_t value) {
     return predef_lexeme_table[value];
   }
   else /* invalid value */ {
-    return NULL;
+    return predef_lexeme_table[0];
   } /* end if */
 } /* m2c_lexeme_for_predef */
 
