@@ -91,10 +91,10 @@ static void init_lexeme_table (void) {
 
 
 /* --------------------------------------------------------------------------
- * function m2c_predef_for_lexeme(lexstr)
+ * function m2c_predef_for_lexeme(lexeme)
  * --------------------------------------------------------------------------
- * Returns  the  enumerated value  for lexstr  if it represents  a predefined
- * identifier, otherwise returns the invalid sentinel PREDEF_INVALID.
+ * Returns the  predefined token  for lexeme,  or PREDEF_INVALID if lexeme is
+ * not a predefined identifier.
  * ----------------------------------------------------------------------- */
 
 m2c_predef_ident_t m2c_predef_for_lexeme (intstr_t lexeme) {

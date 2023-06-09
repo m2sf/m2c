@@ -274,13 +274,13 @@ typedef enum {
 
 
 /* --------------------------------------------------------------------------
- * function m2c_predef_for_lexeme(lexstr)
+ * function m2c_predef_for_lexeme(lexeme)
  * --------------------------------------------------------------------------
- * Returns the  predefined token  for lexstr,  or PREDEF_INVALID if lexstr is
+ * Returns the  predefined token  for lexeme,  or PREDEF_INVALID if lexeme is
  * not a predefined identifier.
  * ----------------------------------------------------------------------- */
 
-m2c_predef_t m2c_predef_for_lexeme (intstr_t lexstr);
+m2c_predef_t m2c_predef_for_lexeme (intstr_t lexeme);
 
 
 /* --------------------------------------------------------------------------
