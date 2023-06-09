@@ -590,7 +590,6 @@ static void init_resword_lextab(void) {
   lextab[TOKEN_CASE] = intstr_for_cstr("CASE", NULL);
   lextab[TOKEN_CONST] = intstr_for_cstr("CONST", NULL);
   lextab[TOKEN_COPY] = intstr_for_cstr("COPY", NULL);
-  lextab[TOKEN_DEFINITION] = intstr_for_cstr("DEFINITION", NULL);
   lextab[TOKEN_DIV] = intstr_for_cstr("DIV", NULL);
   lextab[TOKEN_DO] = intstr_for_cstr("DO", NULL);
   lextab[TOKEN_ELSE] = intstr_for_cstr("ELSE", NULL);
@@ -602,6 +601,7 @@ static void init_resword_lextab(void) {
   lextab[TOKEN_IMPLEMENTATION] = intstr_for_cstr("IMPLEMENTATION", NULL);
   lextab[TOKEN_IMPORT] = intstr_for_cstr("IMPORT", NULL);
   lextab[TOKEN_IN] = intstr_for_cstr("IN", NULL);
+  lextab[TOKEN_INTERFACE] = intstr_for_cstr("INTERFACE", NULL);
   lextab[TOKEN_LOOP] = intstr_for_cstr("LOOP", NULL);
   lextab[TOKEN_MOD] = intstr_for_cstr("MOD", NULL);
   lextab[TOKEN_MODULE] = intstr_for_cstr("MODULE", NULL);

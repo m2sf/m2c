@@ -1,0 +1,109 @@
+Trie Analysis for Reserved Predefined Identifiers
+
+Length = 3
+
+N|I|L
+C|H|R
+O|R|D
+O|D|D
+A|B|S
+S|G|N
+M|I|N
+M|A|X
+P|T|R
+
+2|1|3
+  *
+
+Length = 4
+
+T|R|U|E
+A|R|C|H
+C|H|A|R
+R|E|A|L
+B|Y|T|E
+W|O|R|D
+H|A|L|T
+C|O|D|E
+U|C|H|R
+L|O|G|2
+P|O|W|2
+P|R|E|D
+S|U|C|C
+L|A|S|T
+P|R|E|V
+N|E|X|T
+C|A|S|T
+T|M|I|N
+T|M|A|X
+
+7|10|5|8
+     *
+
+Length = 5
+
+F|A|L|S|E
+O|C|T|E|T
+C|O|U|N|T
+F|I|R|S|T
+T|S|I|Z|E
+V|A|L|U|E
+S|T|O|R|E
+A|L|L|O|C
+S|T|D|I|N
+
+2|2|3|1|5
+      *
+
+Length = 6
+
+A|P|P|E|N|D
+I|N|S|E|R|T
+R|E|M|O|V|E
+G|E|T|R|E|G
+S|E|T|R|E|G
+E|N|T|I|E|R
+L|E|N|G|T|H
+T|L|I|M|I|T
+S|T|D|O|U|T
+U|N|S|A|F|E
+A|T|O|M|I|C
+
+2|6|3|4|3|4
+*
+
+Length = 7
+
+B|O|O|L|E|A|N
+U|N|I|C|H|A|R
+I|N|T|E|G|E|R
+L|O|N|G|I|N|T
+A|D|D|R|E|S|S
+A|T|V|A|L|U|E
+A|T|S|T|O|R|E
+D|E|A|L|L|O|C
+
+2|3|0|1|2|1|2
+    *
+
+Length = 8
+
+C|A|R|D|I|N|A|L
+L|O|N|G|C|A|R|D
+L|O|N|G|R|E|A|L
+L|O|N|G|W|O|R|D
+R|E|G|I|S|T|E|R
+C|A|P|A|C|I|T|Y
+A|T|I|N|S|E|R|T
+A|T|R|E|M|O|V|E
+
+4|3|3|2|2|2|3|2
+          *
+
+Length = 9
+
+C|O|L|L|A|T|I|O|N
+A|S|S|E|M|B|L|E|R
+
+0|0|0|0|0|0|0|0|0
+*

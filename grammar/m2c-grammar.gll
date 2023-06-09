@@ -92,14 +92,12 @@ constDefinition :=
 /* Constant Binding */
 
 constBinding :=
-  '[' bindableIdent ']'
+  '[' constBindableIdent ']'
   ;
 
-/* Bindable Identifier */
+/* Constant Bindable Identifier */
 
-.bindableIdent := Pervasive | Primitive ;
-
-/* Constant bindable identifiers: COLLATION, TLIMIT */
+.constBindableIdent := Ident=("COLLATION" | "TLIMIT") ;
 
 
 /* Simple Constant Definition */
@@ -336,22 +334,22 @@ procBinding :=
 /* Binding Specifier */
 
 .bindingSpecifier :=
-  NEW ( argListFlag | capacityFlag )? | RETAIN | RELEASE |
-  READ allocFlag? | WRITE formatFlag? | bindableIdent
+  NEW ( ARGLIST | Ident=CAPACITY )? | RETAIN | RELEASE |
+  READ NEW? | WRITE formatFlag? | procBindableIdent
   ;
 
-/* Flags */
-
-alias argListFlag = '+' ;
-
-alias capacityFlag = '*' ;
-
-alias allocFlag = '*' ;
+/* Format Flag */
 
 alias formatFlag = '#' ;
 
-/* Procedure bindable identifiers:
-   APPEND, INSERT, REMOVE, COUNT, LENGTH, and all primitives */
+/* Procedure bindable identifiers */
+
+.procBindableIdent :=
+  Ident = (
+    "ALLOC" | "APPEND" | "INSERT" | "ATINSERT" | "ATREMOVE" | "ATSTORE" |
+    "ATVALUE" | "COUNT" | "DEALLOC" | "FIRST" | "LAST" | "LENGTH" | "NEXT" |
+    "PREV" | "REMOVE" | "STDIN" | "STDOUT" | "STORE" | "SUCC" | "VALUE" )
+  ;
 
 
 /* Procedure Signature */

@@ -1,0 +1,58 @@
+Trie Analysis for Bindable Identifiers
+
+Length = 4
+
+L|A|S|T
+N|E|X|T
+P|R|E|V
+
+0|0|0|1
+*
+
+Length = 5
+
+A|L|L|O|C
+C|O|U|N|T
+F|I|R|S|T
+S|T|D|I|N
+S|T|O|R|E
+V|A|L|U|E
+
+1|1|1|0|2
+      *
+
+LENGTH = 6
+
+T|L|I|M|I|T
+A|P|P|E|N|D
+L|E|N|G|T|H
+R|E|M|O|V|E
+S|T|D|O|U|T
+
+0|1|0|1|0|1
+*
+
+LENGTH = 7
+
+A|T|S|T|O|R|E
+A|T|V|A|L|U|E
+D|E|A|L|L|O|C
+
+1|1|0|0|1|0|1
+    *
+
+LENGTH = 8
+
+A|T|I|N|S|E|R|T
+A|T|R|E|M|O|V|E
+
+1|1|0|0|0|0|0|0
+    *
+
+LENGTH = 9
+
+C|O|L|L|A|T|I|O|N
+
+0|0|0|0|0|0|0|0|0
+*
+

@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * m2c-bindables.h                                                           *
+ * m2c-bindable-ident.h                                                      *
  *                                                                           *
- * Public interface of bindables module.                                     *
+ * Public interface for bindable identifier lookup module.                   *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -37,34 +37,34 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef M2C_BINDABLES_H
-#define M2C_BINDABLES_H
+#ifndef M2C_BINDABLE_IDENT_H
+#define M2C_BINDABLE_IDENT_H
 
 /* --------------------------------------------------------------------------
  * imports
  * ----------------------------------------------------------------------- */
 
-#include "intstr.h"
-#include <stdbool.h>
+#include "interned-strings.h"
 
 
 /* --------------------------------------------------------------------------
  * type m2c_bindable_t
  * --------------------------------------------------------------------------
- * Enumerated values representing bindable symbols.
+ * Enumerated token values representing bindable identifiers.
  * ----------------------------------------------------------------------- */
 
 typedef enum {
 
-  /* Invalid Bindable Sentinel */
+  /* Invalid Sentinel */
+  
   BINDABLE_INVALID,
 
-  /* Constant Bindables */
+  /* Constant Bindable Identifiers */
   
   BINDABLE_COLLATION,         /* COLLATION */
   BINDABLE_TLIMIT,            /* TLIMIT */
   
-  /* Procedure Bindables */
+  /* Procedure Bindable Identifiers */
   
   BINDABLE_ALLOC,             /* ALLOC */
   BINDABLE_APPEND,            /* APPEND */
@@ -77,13 +77,8 @@ typedef enum {
   BINDABLE_FIRST,             /* FIRST */
   BINDABLE_LAST,              /* LAST */
   BINDABLE_LENGTH,            /* LENGTH */
-  BINDABLE_NEW,               /* NEW */
-  BINDABLE_NEWARGS,           /* NEW+ */
-  BINDABLE_NEWCAP,            /* NEW# */
   BINDABLE_NEXT,              /* NEXT */
   BINDABLE_PREV,              /* PREV */
-  BINDABLE_READ,              /* READ */
-  BINDABLE_READNEW,           /* READ* */
   BINDABLE_RELEASE,           /* RELEASE */
   BINDABLE_RETAIN,            /* RETAIN */
   BINDABLE_REMOVE,            /* REMOVE */
@@ -92,13 +87,18 @@ typedef enum {
   BINDABLE_STORE,             /* STORE */
   BINDABLE_SUCC,              /* SUCC */
   BINDABLE_VALUE,             /* VALUE */
-  BINDABLE_WRITE,             /* WRITE */
-  BINDABLE_WRITEF,            /* WRITE# */
   
   /* Enumeration Terminator */
   
   BINDABLE_END_MARK           /* marks the end of the enumeration */
 } m2c_bindable_t;
+
+
+/* --------------------------------------------------------------------------
+ * bindable identifier count
+ * ----------------------------------------------------------------------- */
+
+#define BINDABLE_IDENT_COUNT (BINDABLE_END_MARK-2)
 
 
 /* --------------------------------------------------------------------------
@@ -112,7 +112,7 @@ typedef enum {
 #define LAST_CONST_BINDABLE BINDABLE_TLIMIT
 
 #define FIRST_PROC_BINDABLE BINDABLE_ALLOC
-#define LAST_PROC_BINDABLE BINDABLE_WRITEF
+#define LAST_PROC_BINDABLE BINDABLE_VALUE
 
 
 /* --------------------------------------------------------------------------
@@ -148,23 +148,23 @@ typedef enum {
 /* --------------------------------------------------------------------------
  * function m2c_bindable_for_lexeme(lexstr)
  * --------------------------------------------------------------------------
- * Returns the bindable for lexstr if it represents a bindable symbol, other-
- * wise returns the invalid bindable sentinel BINDABLE_INVALID.
+ * Returns the  bindable token  for lexstr,  or BINDABLE_INVALID if lexstr is
+ * not a bindable identifier.
  * ----------------------------------------------------------------------- */
 
-bool m2c_bindable_for_lexeme (intstr_t lexstr);
+m2c_bindable_t m2c_bindable_for_lexeme (intstr_t lexstr);
 
 
 /* --------------------------------------------------------------------------
  * function m2c_lexeme_for_bindable(value)
  * --------------------------------------------------------------------------
- * Returns the  interned lexeme  of the bindable symbol represented by value,
- * or NULL if value is invalid.
+ * Returns  the interned string  with the lexeme  of the  bindable identifier
+ * represented by value,  or NULL if value is invalid.
  * ----------------------------------------------------------------------- */
 
 intstr_t m2c_lexeme_for_bindable (m2c_bindable_t value);
 
 
-#endif /* M2C_BINDABLES_H */
+#endif /* M2C_BINDABLE_IDENT_H */
 
 /* END OF FILE */

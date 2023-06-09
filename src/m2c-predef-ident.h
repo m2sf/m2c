@@ -48,14 +48,15 @@
 
 
 /* --------------------------------------------------------------------------
- * type m2c_predef_ident_t
+ * type m2c_predef_t
  * --------------------------------------------------------------------------
- * Enumerated values representing reserved predefined identifiers.
+ * Enumerated token values representing reserved predefined identifiers.
  * ----------------------------------------------------------------------- */
 
 typedef enum {
 
   /* Invalid Sentinel */
+  
   PREDEF_INVALID,
 
   /* Predefined Constant Identifiers */
@@ -150,8 +151,10 @@ typedef enum {
   PREDEF_ATOMIC,           /* ATOMIC */
   PREDEF_ASSEMBLER,        /* ASSEMBLER */
     
+  /* Enumeration Terminator */
+  
   PREDEF_END_MARK          /* marks the end of the enumeration */
-} m2c_predef_ident_t;
+} m2c_predef_t;
 
 
 /* --------------------------------------------------------------------------
@@ -273,21 +276,21 @@ typedef enum {
 /* --------------------------------------------------------------------------
  * function m2c_predef_for_lexeme(lexstr)
  * --------------------------------------------------------------------------
- * Returns  the  enumerated value  for lexstr  if it represents  a predefined
- * identifier, otherwise returns the invalid sentinel PREDEF_INVALID.
+ * Returns the  predefined token  for lexstr,  or PREDEF_INVALID if lexstr is
+ * not a predefined identifier.
  * ----------------------------------------------------------------------- */
 
-m2c_predef_ident_t m2c_predef_for_lexeme (intstr_t lexstr);
+m2c_predef_t m2c_predef_for_lexeme (intstr_t lexstr);
 
 
 /* --------------------------------------------------------------------------
  * function m2c_lexeme_for_predef(value)
  * --------------------------------------------------------------------------
- * Returns the interned string with the lexeme for the predefined identifier
+ * Returns the interned string  with the lexeme of the  predefined identifier
  * represented by value,  or NULL if value is invalid.
  * ----------------------------------------------------------------------- */
 
-intstr_t m2c_lexeme_for_predef (m2c_predef_ident_t value);
+intstr_t m2c_lexeme_for_predef (m2c_predef_t value);
 
 
 #endif /* M2C_PREDEF_IDENT_H */
