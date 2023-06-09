@@ -79,13 +79,10 @@ typedef enum {
   BINDABLE_LENGTH,            /* LENGTH */
   BINDABLE_NEXT,              /* NEXT */
   BINDABLE_PREV,              /* PREV */
-  BINDABLE_RELEASE,           /* RELEASE */
-  BINDABLE_RETAIN,            /* RETAIN */
   BINDABLE_REMOVE,            /* REMOVE */
   BINDABLE_STDIN,             /* STDIN */
   BINDABLE_STDOUT,            /* STDOUT */
   BINDABLE_STORE,             /* STORE */
-  BINDABLE_SUCC,              /* SUCC */
   BINDABLE_VALUE,             /* VALUE */
   
   /* Enumeration Terminator */

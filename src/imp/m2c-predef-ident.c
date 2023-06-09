@@ -51,7 +51,7 @@
  * Table with pointers to C-strings of predefined identifiers.
  * ----------------------------------------------------------------------- */
 
-const char *predef_cstr_table[] = {
+static const char *predef_cstr_table[] = {
   "TRUE", "FALSE", "NIL", "ARCH", "BOOLEAN", "CHAR", "UNICHAR",
   "OCTET", "CARDINAL", "INTEGER", "LONGCARD", "LONGINT", "REAL", "LONGREAL",
   "BYTE", "WORD", "LONGWORD", "ADDRESS", "REGISTER", "APPEND", "INSERT",
@@ -70,13 +70,13 @@ const char *predef_cstr_table[] = {
  * Table with interned string pointers for predefined identifiers.
  * ----------------------------------------------------------------------- */
 
-intstr_t predef_lexeme_table[PREDEF_IDENT_COUNT];
+static intstr_t predef_lexeme_table[PREDEF_IDENT_COUNT];
 
-bool initialized = false;
+static bool initialized = false;
 
 
 /* --------------------------------------------------------------------------
- * private function init_predef()
+ * private function init_lexeme_table()
  * --------------------------------------------------------------------------
  * Intialises the internal predefined identifier table.
  * ----------------------------------------------------------------------- */
