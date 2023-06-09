@@ -163,6 +163,23 @@ typedef struct m2c_parser_context_s m2c_parser_context_s;
 
 
 /* --------------------------------------------------------------------------
+ * strings representing attributed binding specifiers in BINDTO astnode
+ * ----------------------------------------------------------------------- */
+
+#define BINDSPEC_NEWARG attr_bindspec.newarg;
+#define BINDSPEC_NEWCAP attr_bindspec.necap;
+#define BINDSPEC_READNEW attr_bindspec.readnew;
+#define BINDSPEC_WRITEF attr_bindspec.writef;
+
+static struct {
+  intstr_t newarg;    /* "NEWARG" represents [NEW ARGLIST] in AST node */
+  intstr_t newcap;    /* "NEWCAP" represents [NEW CAPACITY] in AST node */
+  intstr_t readnew;   /* "READNEW" represents [READ NEW] in AST node */
+  intstr_t writef;    /* "WRITEF" represents [WRITE #] in AST node */
+} attr_bindspec;
+
+
+/* --------------------------------------------------------------------------
  * function m2c_parse_file(srcpath, stats, status)
  * --------------------------------------------------------------------------
  * Parses the Modula-2 source file represented by srcpath, builds an abstract
@@ -220,6 +237,13 @@ m2c_ast_t m2c_parse_file
     return NULL;
   } /* end if */
   
+  /* init aliases for attributed binding specifiers */
+  attr_bindspec.newarg = intstr_for_cstr("NEWARG", NULL);
+  attr_bindspec.newcap = intstr_for_cstr("NEWCAP", NULL);
+  attr_bindspec.readnew = intstr_for_cstr("READNEW", NULL);
+  attr_bindspec.writef = intstr_for_cstr("WRITEF", NULL);
+  
+  /* get filename, basename and suffix */
   split_pathname(srcpath, NULL, &filename, NULL);
   split_filename(filename, &basename, &suffix, NULL);
   
@@ -2640,12 +2664,16 @@ static m2c_token_t procedure_header (m2c_parser_context_t p) {
  * private function binding_specifier()
  * --------------------------------------------------------------------------
  * bindingSpecifier :=
- *   NEW ( argListFlag | capacityFlag )? | RETAIN | RELEASE |
- *   READ allocFlag? | WRITE formatFlag? | bindableIdent
+ *   NEW ( ARGLIST | CAPACITY )? | RETAIN | RELEASE |
+ *   READ NEW? | WRITE formatFlag? | bindableIdent
  *   ;
  *
+ * alias formatFlag = '#' ;
+ *
  * astnode:
- *   (BINDTO "NEW") | (BINDTO "NEW+") | (BINDTO "NEW*") | (BINDTO "ident")
+ *   (BINDTO "NEW") | (BINDTO "NEWARG") | (BINDTO "NEWCAP") |
+ *   (BINDTO "RETAIN") | (BINDTO "RELEASE") | (BINDTO "READ") | 
+ *   (BINDTO "READNEW") | (BINDTO "WRITEF") | (BINDTO "ident")
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t binding_specifier (m2c_parser_context_t p) {
@@ -2660,19 +2688,17 @@ static m2c_token_t binding_specifier (m2c_parser_context_t p) {
       /* NEW */
       lookahead = m2c_consume_sym(p->lexer);
       
-      /* ('+' | '*')? */
-      if (lookahead == TOKEN_PLUS) {
-        /* '+' */
+      /* (ARGLIST | CAPACITY)? */
+      if (lookahead == TOKEN_ARGLIST) {
+        /* ARGLIST */
         lookahead = m2c_consume_sym(p->lexer);
-        lexeme = m2c_lexeme_for_bindable(BINDABLE_NEWARGS);
+        lexeme = BINDSPEC_NEWARG; /* "NEWARG" */
       }
-      else if (lookahead == TOKEN_HASH) {
-        /* '#' */
+      else if (m2c_lookahead_lexeme(p->lexer)
+        == m2c_lexeme_for_schroed(SCHROED_CAPACITY)) {
+        /* CAPACITY */
         lookahead = m2c_consume_sym(p->lexer);
-        lexeme = m2c_lexeme_for_bindable(BINDABLE_NEWCAP);
-      }
-      else /* no flag */ {
-        lexeme = m2c_lexeme_for_bindable(BINDABLE_NEW);
+        lexeme = BINDSPEC_NEWCAP; /* "NEWCAP" */
       } /* end if */
       break;
       
@@ -2680,27 +2706,22 @@ static m2c_token_t binding_specifier (m2c_parser_context_t p) {
       /* READ */
       lookahead = m2c_consume_sym(p->lexer);
       
-      /* '*'? */
-      if (lookahead == TOKEN_ASTERISK) {
+      /* NEW? */
+      if (lookahead == TOKEN_NEW) {
         /* '*' */
         lookahead = m2c_consume_sym(p->lexer);
-        lexeme = m2c_lexeme_for_bindable(BINDABLE_READNEW);
-      }
-      else /* no flag */ {
-        bind_target = m2c_lexeme_for_bindable(BINDABLE_READ);
+        lexeme = BINDSPEC_READNEW; /* "READNEW" */
       } /* end if */
       break;
     
     case TOKEN_RELEASE :
       /* RELEASE */
       lookahead = m2c_consume_sym(p->lexer);
-      lexeme = m2c_lexeme_for_bindable(BINDABLE_RELEASE);
       break;
     
     case TOKEN_RETAIN :
       /* RETAIN */
       lookahead = m2c_consume_sym(p->lexer);
-      lexeme = m2c_lexeme_for_bindable(BINDABLE_RETAIN);
       break;
     
     case TOKEN_WRITE :
@@ -2711,23 +2732,24 @@ static m2c_token_t binding_specifier (m2c_parser_context_t p) {
       if (lookahead == TOKEN_HASH) {
         /* '#' */
         lookahead = m2c_consume_sym(p->lexer);
-        lexeme = m2c_lexeme_for_bindable(BINDABLE_WRITEF);
-      }
-      else /* no flag */ {
-        lexeme = m2c_lexeme_for_bindable(BINDABLE_WRITE);
+        lexeme = BINDSPEC_WRITEF; /* "WRITEF" */
       } /* end if */
       break;
     
     case TOKEN_IDENT :
       lookahead = m2c_consume_sym(p->lexer);
-      lexeme = m2c_current_lexeme(p->lexer);
       
       /* check for bindable identifier */
       if (m2c_is_proc_bindable_ident(lexeme) == false) {
+        
         /* TO DO: report error -- invalid binding specifier */
         m2c_stats_inc(p->stats, M2C_STATS_SYNTAX_ERROR_COUNT);
       } /* end if */
       break;
+      
+    default :
+      /* TO DO : report error -- invalid binding specifier */
+      m2c_stats_inc(p->stats, M2C_STATS_SYNTAX_ERROR_COUNT);
   } /* end switch */
   
   /* build AST node and pass it back in p->ast */
