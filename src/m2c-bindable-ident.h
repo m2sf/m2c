@@ -45,6 +45,7 @@
  * ----------------------------------------------------------------------- */
 
 #include "interned-strings.h"
+#include <stdbool.h>
 
 
 /* --------------------------------------------------------------------------
@@ -140,6 +141,24 @@ typedef enum {
 
 #define M2C_IS_PROC_BINDABLE(_value) \
   ((_value >= FIRST_PROC_BINDABLE) && (_value <= LAST_PROC_BINDABLE))
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_is_const_bindable_ident(lexeme)
+ * --------------------------------------------------------------------------
+ * Returns true if lexeme is a constant bindable identifier, else false.
+ * ----------------------------------------------------------------------- */
+
+bool m2c_is_const_bindable_ident (intstr_t lexeme);
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_is_proc_bindable_ident(lexeme)
+ * --------------------------------------------------------------------------
+ * Returns true if lexeme is a procedure bindable identifier, else false.
+ * ----------------------------------------------------------------------- */
+
+bool m2c_is_proc_bindable_ident (intstr_t lexeme);
 
 
 /* --------------------------------------------------------------------------

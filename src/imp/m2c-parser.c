@@ -252,7 +252,7 @@ m2c_ast_t m2c_parse_file
 
 
 /* --------------------------------------------------------------------------
- * private function match_token(p, expected_token, resync_set)
+ * private function match_token(p, expected_token)
  * --------------------------------------------------------------------------
  * Matches  the lookahead symbol  to expected_token  and returns true if they
  * match.  Reports  a syntax error,  increments the error count  and  returns 
@@ -294,6 +294,51 @@ static bool match_token
     return false;
   } /* end if */
 } /* end match_token */
+
+
+/* --------------------------------------------------------------------------
+ * private function match_ident(p, expected_ident)
+ * --------------------------------------------------------------------------
+ * Matches  the lookahead symbol  to expected_ident  and returns true if they
+ * match.  Reports  a syntax error,  increments the error count  and  returns 
+ * false if they do not match.
+ * ----------------------------------------------------------------------- */
+
+static bool match_ident
+  (m2c_parser_context_t p, intstr_t expected_ident) {
+  
+  intstr_t lexeme;
+  const char *lexstr;
+  m2c_token_t lookahead;
+  unsigned short line, column;
+  
+  lookahead = m2c_next_sym(p->lexer);
+  lexeme = m2c_lookahead_lexeme(p->lexer);
+
+  if ((lookahead == TOKEN_IDENT) && (lexeme == expected_lexeme)) {
+    return true;
+  }
+  else /* no match */ {
+    /* get details for offending lookahead symbol */
+    line = m2c_lexer_lookahead_line(p->lexer);
+    column = m2c_lexer_lookahead_column(p->lexer);
+    lexstr = intstr_char_ptr(lexeme);
+    
+    /* report error */
+    m2c_emit_syntax_error_w_lexeme
+      (line, column, lookahead, lexstr, expected_lexeme);
+    
+    /* print source line */
+    if (m2c_option_verbose()) {
+      m2c_print_line_and_mark_column(p->lexer, line, column);
+    } /* end if */
+    
+    /* update error count */
+    m2c_stats_inc(p->stats, M2C_STATS_SYNTAX_ERROR_COUNT);
+  
+    return false;
+  } /* end if */
+} /* end match_ident */
 
 
 /* --------------------------------------------------------------------------
@@ -1094,6 +1139,7 @@ static m2c_token_t const_definition (m2c_parser_context_t p) {
  * ----------------------------------------------------------------------- */
 
 static m2c_token_t const_binding (m2c_parser_context_t p) {
+  intstr_t lexeme;
   m2c_token_t lookahead;
   m2c_astnode_t bind_node;
     
@@ -1107,15 +1153,14 @@ static m2c_token_t const_binding (m2c_parser_context_t p) {
     lookahead = m2c_consume_sym(p->lexer);
     lexeme = m2c_current_lexeme(p->lexer);
       
-    /* bindableIdent = COLLATION | TLIMIT */
-    if ((lexeme == m2c_res_ident(RESIDENT_COLLATION))
-      || (lexeme == m2c_res_ident(RESIDENT_TLIMIT))) {
+    /* check for bindable identifier */
+    if (m2c_is_const_bindable_ident(lexeme)) {
         bind_node = m2c_new_ast_terminal_node(AST_BINDTO, lexeme);
     }
     else /* identifier not bindable */ {
       bind_node = m2c_ast_empty_node();
         
-      /* TO DO: error -- invalid binding specifier */
+      /* TO DO: report error -- invalid binding specifier */
       m2c_stats_inc(p->stats, M2C_STATS_SYNTAX_ERROR_COUNT);
     } /* end if */
   }
@@ -2676,9 +2721,15 @@ static m2c_token_t binding_specifier (m2c_parser_context_t p) {
       lookahead = m2c_consume_sym(p->lexer);
       lexeme = m2c_current_lexeme(p->lexer);
       
-      if (m2c_bindable_for_lexeme(lexeme) == BINDABLE_INVALID) {
-        /* TO DO: report error -- symbol not bindable */
-        lexeme = intstr_empty_string();
+      /* check for bindable identifier */
+      if (m2c_is_proc_bindable_ident(lexeme)) {
+        bind_node = m2c_ast_new_terminal_node(AST_BINDTO, lexeme);
+      }
+      else /* identifier not bindable */ {
+        bind_node = m2c_ast_new_terminal_node(AST_BINDTO, NULL);
+        
+        /* TO DO: report error -- invalid binding specifier */
+        m2c_stats_inc(p->stats, M2C_STATS_SYNTAX_ERROR_COUNT);
       } /* end if */
       break;
   } /* end switch */
