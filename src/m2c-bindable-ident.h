@@ -143,13 +143,13 @@ typedef enum {
 
 
 /* --------------------------------------------------------------------------
- * function m2c_bindable_for_lexeme(lexstr)
+ * function m2c_bindable_for_lexeme(lexeme)
  * --------------------------------------------------------------------------
- * Returns the  bindable token  for lexstr,  or BINDABLE_INVALID if lexstr is
+ * Returns the  bindable token  for lexeme,  or BINDABLE_INVALID if lexstr is
  * not a bindable identifier.
  * ----------------------------------------------------------------------- */
 
-m2c_bindable_t m2c_bindable_for_lexeme (intstr_t lexstr);
+m2c_bindable_t m2c_bindable_for_lexeme (intstr_t lexeme);
 
 
 /* --------------------------------------------------------------------------
