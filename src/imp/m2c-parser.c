@@ -66,9 +66,6 @@
         m2c_string_char_ptr(m2c_lexer_lookahead_lexeme(p->lexer))); }
 
 
-static intstr_t schroed_ident_table[SCHROED_TOKEN_COUNT];
-
-
 /* --------------------------------------------------------------------------
  * private type m2c_module_context_t
  * --------------------------------------------------------------------------
