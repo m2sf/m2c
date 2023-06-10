@@ -19,9 +19,9 @@
  *                                                                           *
  * @file                                                                     *
  *                                                                           *
- * m2c-ast.h                                                                 *
+ * m2c-ast.c                                                                 *
  *                                                                           *
- * Public interface for the abstract syntax tree (AST) module.               *
+ * Implementation of the abstract syntax tree (AST) module.                  *
  *                                                                           *
  * @license                                                                  *
  *                                                                           *
@@ -37,34 +37,11 @@
  * along with M2C.  If not, see <https://www.gnu.org/copyleft/lesser.html>.  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef M2C_AST_H
-#define M2C_AST_H
-
 /* --------------------------------------------------------------------------
  * imports
  * ----------------------------------------------------------------------- */
 
-#include "fifo.h"
-#include "interned-strings.h"
-#include "m2c-ast-nodetype.h"
-
-
-/* --------------------------------------------------------------------------
- * opaque type m2c_astnode_t
- * --------------------------------------------------------------------------
- * Opaque pointer type representing an AST node object.
- * ----------------------------------------------------------------------- */
-
-typedef struct m2c_astnode_struct_t *m2c_astnode_t;
-
-
-/* --------------------------------------------------------------------------
- * function m2c_ast_empty_node()
- * --------------------------------------------------------------------------
- * Returns the empty node singleton.
- * ----------------------------------------------------------------------- */
-
-m2c_astnode_t m2c_ast_empty_node (void);
+#include "m2c-ast.h"
 
 
 /* --------------------------------------------------------------------------
@@ -89,7 +66,9 @@ m2c_astnode_t m2c_ast_empty_node (void);
  * ----------------------------------------------------------------------- */
 
 m2c_astnode_t m2c_ast_new_node
-  (m2c_ast_nodetype_t node_type, ...);
+  (m2c_ast_nodetype_t node_type, ...) {
+  
+} /* end m2c_ast_new_node */
 
 
 /* --------------------------------------------------------------------------
@@ -100,7 +79,9 @@ m2c_astnode_t m2c_ast_new_node
  * ----------------------------------------------------------------------- */
 
 m2c_astnode_t m2c_ast_new_list_node
-  (m2c_ast_nodetype_t node_type, m2c_fifo_t node_list);
+  (m2c_ast_nodetype_t node_type, m2c_fifo_t node_list) {
+  
+} /* end m2c_ast_new_list_node */
 
 
 /* --------------------------------------------------------------------------
@@ -111,7 +92,9 @@ m2c_astnode_t m2c_ast_new_list_node
  * ----------------------------------------------------------------------- */
 
 m2c_astnode_t m2c_ast_new_terminal_node
-  (m2c_ast_nodetype_t type, intstr_t value);
+  (m2c_ast_nodetype_t type, intstr_t value) {
+  
+} /* end m2c_ast_new_terminal_node */
 
 
 /* --------------------------------------------------------------------------
@@ -122,7 +105,9 @@ m2c_astnode_t m2c_ast_new_terminal_node
  * ----------------------------------------------------------------------- */
 
 m2c_astnode_t m2c_ast_new_terminal_list_node
-  (m2c_ast_nodetype_t node_type, m2c_fifo_t value_list);
+  (m2c_ast_nodetype_t node_type, m2c_fifo_t value_list) {
+  
+} /* end m2c_ast_new_terminal_list_node */
 
 
 /* --------------------------------------------------------------------------
@@ -131,7 +116,9 @@ m2c_astnode_t m2c_ast_new_terminal_list_node
  * Returns the node type of node,  or AST_INVALID if node is NULL.
  * ----------------------------------------------------------------------- */
 
-m2c_ast_nodetype_t m2c_ast_nodetype (m2c_astnode_t node);
+m2c_ast_nodetype_t m2c_ast_nodetype (m2c_astnode_t node) {
+
+} /* end m2c_ast_nodetype */
 
 
 /* --------------------------------------------------------------------------
@@ -140,7 +127,9 @@ m2c_ast_nodetype_t m2c_ast_nodetype (m2c_astnode_t node);
  * Returns the number of subnodes or values of node. 
  * ----------------------------------------------------------------------- */
 
-uint_t m2c_ast_subnode_count (m2c_astnode_t node);
+unsigned short m2c_ast_subnode_count (m2c_astnode_t node) {
+
+} /* end m2c_ast_subnode_count */
 
 
 /* --------------------------------------------------------------------------
@@ -151,7 +140,9 @@ uint_t m2c_ast_subnode_count (m2c_astnode_t node);
  * ----------------------------------------------------------------------- */
 
 m2c_astnode_t m2c_ast_subnode_at_index
-  (m2c_astnode_t node, unsigned short index);
+  (m2c_astnode_t node, unsigned short index) {
+  
+ /* end m2c_ast_subnode_at_index */}
 
 
 /* --------------------------------------------------------------------------
@@ -161,17 +152,10 @@ m2c_astnode_t m2c_ast_subnode_at_index
  * or NULL if the node does not store any value at the given index.
  * ----------------------------------------------------------------------- */
 
-m2c_string_t m2c_ast_value_at_index
-  (m2c_astnode_t node, unsigned short index);
-
-
-/* --------------------------------------------------------------------------
- * convenience macro m2c_ast_value(node)
- * --------------------------------------------------------------------------
- * Calls function m2c_ast_value_at_index with an index of zero. 
- * ----------------------------------------------------------------------- */
-
-#define m2c_ast_value(_node) m2c_ast_value_at_index(node, 0)
+intstr_t m2c_ast_value_at_index
+  (m2c_astnode_t node, unsigned short index) {
+  
+} /* end m2c_ast_value_at_index */
 
 
 /* --------------------------------------------------------------------------
@@ -181,7 +165,9 @@ m2c_string_t m2c_ast_value_at_index
  * ----------------------------------------------------------------------- */
 
 m2c_astnode_t m2c_ast_replace_subnode
-  (m2c_astnode_t in_node, unsigned short at_index, m2c_astnode_t with_subnode);
+  (m2c_astnode_t in_node, unsigned short at_index, m2c_astnode_t with_subnode) {
+  
+} /* end m2c_ast_replace_subnode */
 
 
 /* --------------------------------------------------------------------------
@@ -190,8 +176,10 @@ m2c_astnode_t m2c_ast_replace_subnode
  * Replaces a value and returns the replaced value,  or NULL on failure.
  * ----------------------------------------------------------------------- */
 
-m2c_string_t m2c_ast_replace_value
-  (m2c_astnode_t in_node, unsigned short at_index, intstr_t with_value);
+intstr_t m2c_ast_replace_value
+  (m2c_astnode_t in_node, unsigned short at_index, intstr_t with_value) {
+  
+} /* end m2c_ast_replace_value */
 
 
 /* --------------------------------------------------------------------------
@@ -202,7 +190,5 @@ m2c_string_t m2c_ast_replace_value
 
 void m2c_ast_release_node (m2c_astnode_t node);
 
-
-#endif /* M2C_AST_H */
 
 /* END OF FILE */
