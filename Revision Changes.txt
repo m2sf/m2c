@@ -1,0 +1,77 @@
+Changes to the Language Specification since 2021
+
+
+(1) Changed declaration and definition nomenclature.
+
+A declaration states that an entity exists.
+
+A definition defines and institutes the entity.
+
+To be consistent, the proper nomenclature requires
+a change of the syntax for the module headers of
+so called 'definition' modules to either declaration
+or interface modules. Since their primary purpose is
+that of interface, they are renamed to interface
+modules and their module header syntax changed to
+
+INTERFACE MODULE Ident;
+
+Since this is perhaps the most intrusive change
+in the entire revision, our compiler implements
+DEFINITION as a synonym for INTERFACE to ease
+the transition for users of classical Modula-2.
+
+The associated file type is ".ifm" but the
+continued use of ".def" is permissible.
+
+For the benefit of clarity to human readers, it is
+recommended to use ".def" for interface modules that
+only contain constant, variable and type definitions
+and thus lack an implementation counterpart.
+
+
+(2) Removed POINTER from OPAQUE type constructor.
+
+Use OPAQUE alone instead of OPAQUE POINTER.
+
+
+(3) Restricted use of OCTETSEQ to formal type only.
+
+Use of PROCEDURE P ( arg : CAST OCTETSEQ ) is legal,
+but RECORD field : OCTETSEQ; ... END is illegal.
+
+
+(4) Changed attributes in binding specifiers.
+
+Use reserved words instead of single characters:
+
+PROCEDURE [NEW+] NewWithArgs ( ... );
+
+=> PROCEDURE [NEW ARGLIST] NewWithArgs ( ... );
+
+PROCEDURE [NEW#] NewWithCapacity ( ... );
+
+=> PROCEDURE [NEW CAPACITY] NewWithCapacity ( ... );
+
+PROCEDURE [READ*] ReadNew ( ... );
+
+=> PROCEDURE [READ NEW] ReadNew ( ... );
+
+HOWEVER, the single character attribute '#' for
+formatted writing remains:
+
+PROCEDURE [WRITE #] WriteF ( ... );
+
+This maps 1:1 to the WRITE statement syntax
+
+WRITE #("5;2", amount);
+
+and its use in the binding is thus intuitive.
+
+
+(5) removed syntax for universal set {*}
+
+Use {TMIN(ValueType)..TMAX(ValueType)} instead.
+
+
+
