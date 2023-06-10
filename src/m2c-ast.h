@@ -171,7 +171,7 @@ intstr_t m2c_ast_value_at_index
  * Calls function m2c_ast_value_at_index with an index of zero. 
  * ----------------------------------------------------------------------- */
 
-#define m2c_ast_value(_node) m2c_ast_value_at_index(node, 0)
+#define m2c_ast_value(_node) m2c_ast_value_at_index(_node, 0)
 
 
 /* --------------------------------------------------------------------------
