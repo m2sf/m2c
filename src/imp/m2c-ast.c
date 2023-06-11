@@ -419,6 +419,9 @@ void m2c_ast_release_node (m2c_astnode_t node) {
   } /* end if */
   
   free(node);
+  
+  /* TO DO: recursively deallocate sub-nodes */
+  
 } /* end m2c_ast_release_node */
 
 
