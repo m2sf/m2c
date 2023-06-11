@@ -331,7 +331,7 @@ m2c_astnode_t m2c_ast_subnode_at_index
   unsigned short subnode_count;
   m2c_ast_nodetype_t node_type;
   
-  if ((node == NULL) {
+  if (node == NULL) {
     return NULL;
   } /* end if */
   
@@ -363,7 +363,7 @@ intstr_t m2c_ast_value_at_index
   unsigned short value_count;
   m2c_ast_nodetype_t node_type;
   
-  if ((node == NULL) {
+  if (node == NULL) {
     return NULL;
   } /* end if */
   
