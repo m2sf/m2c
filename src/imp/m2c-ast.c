@@ -413,7 +413,12 @@ intstr_t m2c_ast_replace_value
  * ----------------------------------------------------------------------- */
 
 void m2c_ast_release_node (m2c_astnode_t node) {
-
+  
+  if (node == NULL) {
+    return;
+  } /* end if */
+  
+  free(node);
 } /* end m2c_ast_release_node */
 
 
