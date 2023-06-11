@@ -328,7 +328,26 @@ unsigned short m2c_ast_subnode_count (m2c_astnode_t node) {
 m2c_astnode_t m2c_ast_subnode_at_index
   (m2c_astnode_t node, unsigned short index) {
   
- /* end m2c_ast_subnode_at_index */}
+  unsigned short subnode_count;
+  m2c_ast_nodetype_t node_type;
+  
+  if ((node == NULL) {
+    return NULL;
+  } /* end if */
+  
+  node_type = node->node_type;
+  subnode_count = node->subnode_count;
+  
+  if ((index < subnode_count)
+    && ((AST_IS_NONTERMINAL_NODETYPE(node_type))
+    || (AST_IS_NONTERMINAL_LIST_NODETYPE(node_type)))) {
+  
+    return node->subnode_table[index].non_terminal;
+  }
+  else /* invalid index or node type */ {
+    return NULL;
+  } /* end if */
+} /* end m2c_ast_subnode_at_index */
 
 
 /* --------------------------------------------------------------------------
@@ -341,6 +360,25 @@ m2c_astnode_t m2c_ast_subnode_at_index
 intstr_t m2c_ast_value_at_index
   (m2c_astnode_t node, unsigned short index) {
   
+  unsigned short value_count;
+  m2c_ast_nodetype_t node_type;
+  
+  if ((node == NULL) {
+    return NULL;
+  } /* end if */
+  
+  node_type = node->node_type;
+  value_count = node->subnode_count;
+  
+  if ((index < value_count)
+    && ((AST_IS_TERMINAL_NODETYPE(node_type))
+    || (AST_IS_TERMINAL_LIST_NODETYPE(node_type)))) {
+  
+    return node->subnode_table[index].terminal;
+  }
+  else /* invalid index or node type */ {
+    return NULL;
+  } /* end if */
 } /* end m2c_ast_value_at_index */
 
 
@@ -374,7 +412,9 @@ intstr_t m2c_ast_replace_value
  * Deallocates node. 
  * ----------------------------------------------------------------------- */
 
-void m2c_ast_release_node (m2c_astnode_t node);
+void m2c_ast_release_node (m2c_astnode_t node) {
+
+} /* end m2c_ast_release_node */
 
 
 /* END OF FILE */
