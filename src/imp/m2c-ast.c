@@ -43,6 +43,51 @@
 
 #include "m2c-ast.h"
 
+#include <stddef.h>
+#include <stdlib.h>
+
+
+/* --------------------------------------------------------------------------
+ * hidden type m2c_astnode_struct_t
+ * --------------------------------------------------------------------------
+ * record type representing an AST node object.
+ * ----------------------------------------------------------------------- */
+
+struct m2c_astnode_struct_t {
+  /* node_type */     m2c_ast_nodetype_t node_type;
+  /* subnode_count */ unsigned short subnode_count;
+  /* subnode_table */ m2c_astnode_variant subnode_table[];
+};
+
+typedef struct m2c_astnode_struct_t m2c_astnode_struct_t;
+
+union m2c_astnode_variant {
+  intstr_t terminal;
+  m2c_astnode_t non_terminal;
+};
+
+typedef union m2c_astnode_variant m2c_astnode_variant;
+
+
+/* --------------------------------------------------------------------------
+ * empty node singleton
+ * ----------------------------------------------------------------------- */
+
+static const m2c_astnode_struct_t m2c_ast_empty_node_struct = {
+  AST_EMPTY, 0, NULL
+};
+
+
+/* --------------------------------------------------------------------------
+ * function m2c_ast_empty_node()
+ * --------------------------------------------------------------------------
+ * Returns the empty node singleton.
+ * ----------------------------------------------------------------------- */
+
+m2c_astnode_t m2c_ast_empty_node (void) {
+  return (m2c_astnode_t) &m2c_ast_empty_node_struct;
+} /* end m2c_ast_empty_node */
+
 
 /* --------------------------------------------------------------------------
  * function m2c_ast_new_node(node_type, subnode0, subnode1, subnode2, ...)
@@ -68,6 +113,52 @@
 m2c_astnode_t m2c_ast_new_node
   (m2c_ast_nodetype_t node_type, ...) {
   
+  m2c_astnode_t this_subnode, new_node;
+  unsigned short subnode_count, index;
+  va_list subnode_list;
+  
+  if (!m2c_ast_is_nonterminal_nodetype(node_type)) {
+    return NULL;
+  } /* end if */
+  
+  /* count subnodes in arglist */
+  subnode_count = 0;
+  va_start(subnode_list, node_type);
+  this_subnode = va_arg(subnode_list, m2c_astnode_t);
+  while (this_subnode != NULL) {
+    subnode_count++;
+    this_subnode = va_arg(subnode_list, m2c_astnode_t);
+  } /* end while */
+  
+  va_end(subnode_list);
+  
+  /* verify subnode count */
+  if (!m2c_ast_is_legal_subnode_count(node_type, subnode_count)) {
+    return NULL;
+  } /* end if */
+  
+  if (node_type == AST_EMPTY) {
+    return (m2c_astnode_t) &m2c_ast_empty_node_struct;
+  } /* end if */
+  
+  /* allocate node */
+  new_node = malloc
+    (sizeof(m2c_astnode_struct_t) + subnode_count * sizeof(m2c_astnode_t));
+  
+  /* initialise fields */
+  new_node->node_type = node_type;
+  new_node->subnode_count = subnode_count;
+  
+  /* store subnodes in table */
+  va_start(subnode_list, node_type);
+  for (index = 0; index < subnode_count; index++) {
+    new_node->subnode_table[index].non_terminal =
+      va_arg(subnode_list, m2c_astnode_t);
+  } /* end for */
+  
+  va_end(subnode_list);
+  
+  return new_node;
 } /* end m2c_ast_new_node */
 
 
@@ -81,6 +172,37 @@ m2c_astnode_t m2c_ast_new_node
 m2c_astnode_t m2c_ast_new_list_node
   (m2c_ast_nodetype_t node_type, m2c_fifo_t node_list) {
   
+  m2c_astnode_t new_node;
+  unsigned short subnode_count, index;
+  
+  if (!AST_IS_NONTERMINAL_LIST_NODETYPE(node_type)) {
+    return NULL;
+  } /* end if */
+    
+  if (node_list == NULL) {
+    return NULL;
+  } /* end if */
+  
+  subnode_count = m2c_fifo_entry_count(node_list);
+  
+  if (subnode_count == 0) {
+    return NULL;
+  } /* end if */
+  
+  /* allocate node */
+  new_node = malloc
+    (sizeof(m2c_astnode_struct_t) + subnode_count * sizeof(m2c_astnode_t));
+  
+  /* initialise fields */
+  new_node->node_type = node_type;
+  new_node->subnode_count = subnode_count;
+  
+  /* store subnodes in table */
+  for (index = 0; index < subnode_count; index++) {
+    new_node->subnode_table[index].non_terminal = m2c_fifo_dequeue(node_list);
+  } /* end for */
+  
+  return new_node;
 } /* end m2c_ast_new_list_node */
 
 
