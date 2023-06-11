@@ -203,7 +203,6 @@ typedef enum {
   AST_IMPLIST,          /* import list */
   AST_RXPLIST,          /* re-export list */
   AST_DEFLIST,          /* definition list */
-  AST_IDENTLIST,        /* identifier list */
   AST_FIELDLISTSEQ,     /* field list sequence */
   AST_FTYPELIST,        /* formal type list */
   AST_FPARAMLIST,       /* formal parameter list */
@@ -362,8 +361,8 @@ bool m2c_ast_is_legal_subnode_count
 /* --------------------------------------------------------------------------
  * function m2c_name_for_nodetype(node_type)
  * --------------------------------------------------------------------------
- * Returns an immutable pointer to a NUL terminated character string with
- * a human readable name for node_type, or NULL if node_type is invalid.
+ * Returns a const pointer to a NUL terminated character string with a human
+ * readable name for node_type,  or empty string if node_type is invalid.
  * ----------------------------------------------------------------------- */
 
 const char *m2c_name_for_nodetype (m2c_ast_nodetype_t node_type);
