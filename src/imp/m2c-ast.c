@@ -216,6 +216,29 @@ m2c_astnode_t m2c_ast_new_list_node
 m2c_astnode_t m2c_ast_new_terminal_node
   (m2c_ast_nodetype_t type, intstr_t value) {
   
+  m2c_astnode_t new_node;
+  
+  if (!AST_IS_TERMINAL_NODETYPE(node_type)) {
+    return NULL;
+  } /* end if */
+  
+  /* verify subnode count */
+  if (!m2c_ast_is_legal_subnode_count(node_type, 1)) {
+    return NULL;
+  } /* end if */
+  
+  /* allocate node */
+  new_node = malloc
+    (sizeof(m2c_astnode_struct_t) + sizeof(m2c_astnode_t));
+  
+  /* initialise fields */
+  new_node->node_type = node_type;
+  new_node->subnode_count = 1;
+  
+  /* store value */
+  new_node->subnode_table[0].terminal = value;
+  
+  return new_node;
 } /* end m2c_ast_new_terminal_node */
 
 
@@ -229,6 +252,37 @@ m2c_astnode_t m2c_ast_new_terminal_node
 m2c_astnode_t m2c_ast_new_terminal_list_node
   (m2c_ast_nodetype_t node_type, m2c_fifo_t value_list) {
   
+  m2c_astnode_t new_node;
+  unsigned short subnode_count, index;
+  
+  if (!AST_IS_TERMINAL_LIST_NODETYPE(node_type)) {
+    return NULL;
+  } /* end if */
+  
+  if (value_list == NULL) {
+    return NULL;
+  } /* end if */
+  
+  subnode_count = m2c_fifo_entry_count(value_list);
+  
+  if (subnode_count == 0) {
+    return NULL;
+  } /* end if */
+  
+  /* allocate node */
+  new_node = malloc
+    (sizeof(m2c_astnode_struct_t) + subnode_count * sizeof(m2c_astnode_t));
+  
+  /* initialise fields */
+  new_node->node_type = node_type;
+  new_node->subnode_count = subnode_count;
+  
+  /* store values in table */
+  for (index = 0; index < subnode_count; index++) {
+    new_node->subnode_table[index].terminal = m2c_fifo_dequeue(value_list);
+  } /* end for */
+  
+  return new_node;
 } /* end m2c_ast_new_terminal_list_node */
 
 
@@ -239,7 +293,12 @@ m2c_astnode_t m2c_ast_new_terminal_list_node
  * ----------------------------------------------------------------------- */
 
 m2c_ast_nodetype_t m2c_ast_nodetype (m2c_astnode_t node) {
-
+  
+  if (node == NULL) {
+    return AST_INVALID;
+  } /* end if */
+  
+  return node->node_type;  
 } /* end m2c_ast_nodetype */
 
 
@@ -250,7 +309,12 @@ m2c_ast_nodetype_t m2c_ast_nodetype (m2c_astnode_t node) {
  * ----------------------------------------------------------------------- */
 
 unsigned short m2c_ast_subnode_count (m2c_astnode_t node) {
-
+  
+  if (node == NULL) {
+    return 0;
+  } /* end if */
+  
+  return node->subnode_count;  
 } /* end m2c_ast_subnode_count */
 
 
