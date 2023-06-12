@@ -391,6 +391,24 @@ intstr_t m2c_ast_value_at_index
 m2c_astnode_t m2c_ast_replace_subnode
   (m2c_astnode_t in_node, unsigned short at_index, m2c_astnode_t with_subnode) {
   
+  m2c_astnode_t replaced_node;
+  m2c_ast_nodetype_t node_type;
+
+  if (in_node == NULL)
+    return NULL;
+  } /* end if */
+  
+  node_type = in_node->node_type;
+  
+  if ((AST_IS_TERMINAL_NODETYPE(node_type))
+    || (AST_IS_TERMINAL_LIST_NODETYPE(node_type))) {
+    return NULL;
+  } /* end if */
+  
+  replaced_node = in_node->subnode_table[at_index].non_terminal;
+  in_node->subnode_table[at_index].non_terminal = with_subnode;
+  
+  return replaced_node;
 } /* end m2c_ast_replace_subnode */
 
 
@@ -403,6 +421,24 @@ m2c_astnode_t m2c_ast_replace_subnode
 intstr_t m2c_ast_replace_value
   (m2c_astnode_t in_node, unsigned short at_index, intstr_t with_value) {
   
+  intstr_t replaced_value;
+  m2c_ast_nodetype_t node_type;
+
+  if (in_node == NULL)
+    return NULL;
+  } /* end if */
+  
+  node_type = in_node->node_type;
+  
+  if ((AST_IS_NONTERMINAL_NODETYPE(node_type))
+    || (AST_IS_NONTERMINAL_LIST_NODETYPE(node_type))) {
+    return NULL;
+  } /* end if */
+  
+  replaced_value = in_node->subnode_table[at_index].terminal;
+  in_node->subnode_table[at_index].non_terminal = with_value;
+  
+  return replaced_value;
 } /* end m2c_ast_replace_value */
 
 
