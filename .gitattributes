@@ -1,3 +1,4 @@
 *.txt linguist-documentation
 *.gll linguist-documentation
+*.tpl linguist-documentation
 *.vim linguist-vendored
