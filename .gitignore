@@ -42,6 +42,9 @@
 *.idb
 *.pdb
 
+# Template files
+*.tpl
+
 # Utilities
 /src/utilities/gen-first-follow-sets/m2make/m2make
 /src/utilities/gen-first-follow-sets/m2mkdep/m2mkdep
