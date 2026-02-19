@@ -304,16 +304,16 @@ bool is_valid_filename (const char *filename) {
 
 
 /* --------------------------------------------------------------------------
- * function is_ifm_suffix(suffix)
+ * function is_if_suffix(suffix)
  * --------------------------------------------------------------------------
- * Returns true if suffix is ".ifm" or ".IFM", otherwise false.
+ * Returns true if suffix is ".if" or ".IF", otherwise false.
  * ----------------------------------------------------------------------- */
 
-bool is_ifm_suffix (const char *suffix) {
-  return (suffix[0] == '.') && (suffix[4] == ASCII_NUL) &&
-    (((suffix[1] == 'i') && (suffix[2] == 'f') && (suffix[3] == 'm')) ||
-     ((suffix[1] == 'I') && (suffix[2] == 'F') && (suffix[3] == 'M')));
-} /* end is_ifm_suffix */
+bool is_if_suffix (const char *suffix) {
+  return (suffix[0] == '.') && (suffix[3] == ASCII_NUL) &&
+    (((suffix[1] == 'i') && (suffix[2] == 'f')) ||
+     ((suffix[1] == 'I') && (suffix[2] == 'F')));
+} /* end is_if_suffix */
 
 
 /* --------------------------------------------------------------------------
