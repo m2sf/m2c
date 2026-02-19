@@ -1,11 +1,11 @@
 FIRST Sets for Modula-2 R10 grammar
 
 compilationUnit = {
-  DEFINITION, IMPLEMENTATION, MODULE
+  INTERFACE, IMPLEMENTATION, MODULE
 }
 
-definitionModule = {
-  DEFINITION
+interfaceModule = {
+  INTERFACE
 }
 
 implementationModule = {
@@ -146,10 +146,6 @@ privateImport = {
 
 block = {
   CONST, TYPE, VAR, PROCEDURE, UNQUALIFIED, TO, BEGIN
-}
-
-implementationModule = {
-  IMPLEMENTATION
 }
 
 possiblyEmptyBlock = {
