@@ -293,7 +293,7 @@ bool is_valid_filename (const char *filename) {
  * Returns true if suffix is ".ifm" or ".IFM", otherwise false.
  * ----------------------------------------------------------------------- */
 
-bool is_def_suffix (const char *suffix) {
+bool is_ifm_suffix (const char *suffix) {
   return (suffix[0] == '.') && (suffix[4] == ASCII_NUL) &&
     (((suffix[1] == 'i') && (suffix[2] == 'f') && (suffix[3] == 'm')) ||
      ((suffix[1] == 'I') && (suffix[2] == 'F') && (suffix[3] == 'M')));
