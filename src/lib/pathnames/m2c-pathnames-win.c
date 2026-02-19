@@ -308,16 +308,16 @@ bool is_valid_filename (const char *filename) {
 
 
 /* --------------------------------------------------------------------------
- * function is_def_suffix(suffix)
+ * function is_ifm_suffix(suffix)
  * --------------------------------------------------------------------------
- * Returns true if suffix is ".def" or ".DEF", otherwise false.
+ * Returns true if suffix is ".ifm" or ".IFM", otherwise false.
  * ----------------------------------------------------------------------- */
 
-bool is_def_suffix (const char *suffix) {
+bool is_ifm_suffix (const char *suffix) {
   return (suffix[0] == '.') && (suffix[4] == ASCII_NUL) &&
-    (((suffix[1] == 'd') && (suffix[2] == 'e') && (suffix[3] == 'f')) ||
-     ((suffix[1] == 'D') && (suffix[2] == 'E') && (suffix[3] == 'F')));
-} /* end is_def_suffix */
+    (((suffix[1] == 'i') && (suffix[2] == 'f') && (suffix[3] == 'm')) ||
+     ((suffix[1] == 'I') && (suffix[2] == 'F') && (suffix[3] == 'M')));
+} /* end is_ifm_suffix */
 
 
 /* --------------------------------------------------------------------------
