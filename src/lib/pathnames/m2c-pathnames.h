@@ -129,12 +129,12 @@ bool is_valid_filename (const char *filename);
 
 
 /* --------------------------------------------------------------------------
- * function is_ifm_suffix(suffix)
+ * function is_if_suffix(suffix)
  * --------------------------------------------------------------------------
- * Returns true if suffix is ".ifm" or ".IFM", otherwise false.
+ * Returns true if suffix is ".if" or ".IF", otherwise false.
  * ----------------------------------------------------------------------- */
 
-bool is_ifm_suffix (const char *suffix);
+bool is_if_suffix (const char *suffix);
 
 
 /* --------------------------------------------------------------------------
