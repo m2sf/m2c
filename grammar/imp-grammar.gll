@@ -42,7 +42,7 @@ grammar m2import;
 /* * *   R e s e r v e d   W o r d s   * * */
 
 reserved
-  BEGIN, CONST, DEFINITION, END, IMPLEMENTATION, IMPORT, MODULE, PROCEDURE,
+  BEGIN, CONST, END, IMPLEMENTATION, IMPORT, INTERFACE, MODULE, PROCEDURE,
   TO, TYPE, VAR;
 
 
@@ -51,14 +51,14 @@ reserved
 /* Module Header and Import */
 
 moduleHeaderAndImport :=
-  defModHdrAndImport | impOrPgmModHdrAndImport
+  ifcModHdrAndImport | impOrPgmModHdrAndImport
   ;
 
-/* Definition Module Header and Import */
+/* Interface Module Header and Import */
 
-defModHdrAndImport :=
-  DEFINITION MODULE moduleIdent ';'
-  import* endOfDefModImport;
+ifcModHdrAndImport :=
+  INTERCFACE MODULE moduleIdent ';'
+  import* endOfIfcModImport;
   ;
 
 alias moduleIdent = Ident ;
@@ -99,9 +99,9 @@ identList :=
   ;
 
 
-/* End of Definition Module Import */
+/* End of Interface Module Import */
 
-endOfDefModImport :=
+endOfIfcModImport :=
   CONST | TYPE | VAR | PROCEDURE | TO | EndOfFile
   ;
 
@@ -109,7 +109,7 @@ endOfDefModImport :=
 /* End of Implementation and Program Module Import */
 
 endOfImpAndPgmModImport :=
-  BEGIN | endOfDefModImport
+  BEGIN | endOfIfcModImport
   ;
 
 
