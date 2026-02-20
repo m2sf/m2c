@@ -1,11 +1,11 @@
 Changes to the Language Specification since 2021
 
 
-(1) Changed declaration and definition nomenclature.
+(1) Clarified declaration and definition nomenclature.
 
 A declaration states that an entity exists.
 
-A definition defines and institutes the entity.
+A definition defines an entity.
 
 To be consistent, the proper nomenclature requires
 a change of the syntax for the module headers of
@@ -16,18 +16,11 @@ modules and their module header syntax changed to
 
 INTERFACE MODULE Ident;
 
-Since this is perhaps the most intrusive change
-in the entire revision, our compiler implements
-DEFINITION as a synonym for INTERFACE to ease
-the transition for users of classical Modula-2.
+The associated file type is ".if" but the
+all-caps representation ".IF" is also permissible.
 
-The associated file type is ".ifm" but the
-continued use of ".def" is permissible.
-
-For the benefit of clarity to human readers, it is
-recommended to use ".def" for interface modules that
-only contain constant, variable and type definitions
-and thus lack an implementation counterpart.
+The previous file type ".def" and its all-caps
+represenation ".DEF" are NOT supported.
 
 
 (2) Removed POINTER from OPAQUE type constructor.
