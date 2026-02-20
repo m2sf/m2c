@@ -73,7 +73,7 @@
  * ----------------------------------------------------------------------- */
 
 typedef enum {
-  IFC_MODULE,   /* INTERFACE MODULE */
+  IF_MODULE,    /* INTERFACE MODULE */
   IMP_MODULE,   /* IMPLEMENATION MODULE */
   PGM_MODULE    /* (*PROGRAM*) MODULE */
 } m2c_module_context_t;
@@ -580,12 +580,12 @@ static m2c_token_t compilation_unit (m2c_parser_context_t p) {
   
   switch (lookahead) {
     case TOKEN_INTERFACE :
-      if (is_def_suffix(p->suffix) == false) {
+      if (is_if_suffix(p->suffix) == false) {
         /* TO DO: report error -- incorrect file type */
         m2c_stats_inc(p->stats, M2C_STATS_SEMANTIC_ERROR_COUNT);
       } /* end if */
       
-      p->module_context = IFC_MODULE;
+      p->module_context = IF_MODULE;
       lookahead = interface_module(p);
       break;
       
@@ -659,7 +659,7 @@ static m2c_token_t module_header (m2c_parser_context_t p) {
     lookahead = m2c_consume_sym(p->lexer);
   }
   else /* resync */ {
-    lookahead = skipt_token_or_set(p, TOKEN_IMPORT, FOLLOW(IMPORT));
+    lookahead = skip_to_token_or_set(p, TOKEN_IMPORT, FOLLOW(IMPORT));
   } /* end if */
   
   /* pass AST node back in p->ast */
