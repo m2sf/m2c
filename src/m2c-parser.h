@@ -54,7 +54,7 @@
 
 typedef enum {
   M2C_ANY_SOURCE,
-  M2C_DEF_SOURCE,
+  M2C_IF_SOURCE,
   M2C_MOD_SOURCE
 } m2c_sourcetype_t;
 
