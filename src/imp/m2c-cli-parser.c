@@ -155,7 +155,7 @@ cli_token_t parse_info_request (cli_token_t token) {
       break;
   
   /* --license */
-    case CLI_TOKEN_VERSION :
+    case CLI_TOKEN_LICENSE :
       status = CLI_PARSER_STATUS_LICENSE_REQUESTED;
       break;
   } /* end switch */
