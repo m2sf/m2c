@@ -3,7 +3,7 @@ Simple Format for Export List Files
 
 Purpose
 
-Upon processing a definition module, a list of all exported identifiers and
+Upon processing an interface module, a list of all exported identifiers and
 their kind is written into an export list (.exl) file.
 
 
