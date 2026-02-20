@@ -521,14 +521,6 @@ m2c_token_t m2c_resword_token_for_lexeme
 	        return default_token;
       } /* end switch */
       
-    case /* length = 10 */ 10 :
-      /* Synonym DEFINITION */
-      if (lexeme == intstr_for_cstr("DEFINITION", NULL);) {
-	      return TOKEN_INTERFACE;
-      } /* end if */
-      
-      return default_token;
-    
     case /* length = 11 */ 11 :
       /* UNQUALIFIED */
       if (lexeme == lextab[TOKEN_UNQUALIFIED]) {
