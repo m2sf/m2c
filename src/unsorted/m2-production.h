@@ -51,7 +51,7 @@
 typedef enum {
   /* Productions with unique FIRST and FOLLOW sets */
 
-  DEFINITION_MODULE,        /* definitionModule */
+  DINTERFACE_MODULE,        /* interfaceModule */
   IMPORT,                   /* import */
   QUALIFIED_IMPORT,         /* qualifiedImport */
   UNQUALIFIED_IMPORT,       /* unqualifiedImport */
